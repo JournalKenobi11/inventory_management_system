@@ -1,0 +1,22 @@
+# .woodpecker.yml
+steps:
+  - name: install
+    image: ghcr.io/cirruslabs/flutter:3.24
+    commands:
+      - flutter pub get
+
+  - name: analyze
+    image: ghcr.io/cirruslabs/flutter:3.24
+    commands:
+      - flutter analyze
+
+  - name: architecture-check
+    image: ghcr.io/cirruslabs/flutter:3.24
+    commands:
+      - chmod +x scripts/check_architecture.sh
+      - ./scripts/check_architecture.sh
+
+  - name: test
+    image: ghcr.io/cirruslabs/flutter:3.24
+    commands:
+      - flutter test
