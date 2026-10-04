@@ -1,14 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../database/app_database.dart' as db;
+import '../../../core/di/providers.dart';
 import '../models/customer.dart';
 import '../repositories/interfaces/customer_repository.dart';
 import '../repositories/sqlite/sqlite_customer_repository.dart';
 import '../services/customer_service.dart';
-
-final appDatabaseProvider = Provider<db.AppDatabase>((ref) {
-  return db.AppDatabase();
-});
 
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
   return SqliteCustomerRepository(
