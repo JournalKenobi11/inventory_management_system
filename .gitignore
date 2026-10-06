@@ -48,3 +48,6 @@ app.*.map.json
 *.apk
 *.aab
 *.sha1
+
+# Allow release APK for distribution
+!apk/app-release.apk
