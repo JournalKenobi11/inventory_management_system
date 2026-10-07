@@ -8,3 +8,4 @@ export 'providers/billing_provider.dart';
 export 'repositories/interfaces/invoice_repository.dart';
 export 'repositories/interfaces/service_repository.dart';
 export 'repositories/interfaces/service_part_repository.dart';
+export 'screens/billing_screen.dart';

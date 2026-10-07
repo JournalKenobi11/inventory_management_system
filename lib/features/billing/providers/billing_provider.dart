@@ -91,3 +91,9 @@ class BillingController
     }
   }
 }
+
+final invoicesListProvider =
+    FutureProvider.autoDispose<List<Invoice>>((ref) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getAllInvoices();
+});
