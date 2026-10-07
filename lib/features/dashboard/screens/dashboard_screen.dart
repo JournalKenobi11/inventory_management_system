@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../billing/screens/billing_screen.dart';
 import '../models/dashboard_summary.dart';
 import '../providers/dashboard_provider.dart';
 import '../services/dashboard_service.dart';
@@ -25,11 +26,13 @@ class _DashboardScreenState
 
     final now = DateTime.now();
 
-    _selectedRange = DashboardDateRange.month(now);
+    _selectedRange =
+        DashboardDateRange.month(now);
   }
 
   Future<void> _selectDateRange() async {
-    final selected = await showDateRangePicker(
+    final selected =
+        await showDateRangePicker(
       context: context,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
@@ -44,7 +47,8 @@ class _DashboardScreenState
     }
 
     setState(() {
-      _selectedRange = DashboardDateRange(
+      _selectedRange =
+          DashboardDateRange(
         start: selected.start,
         end: selected.end,
       );
@@ -54,71 +58,112 @@ class _DashboardScreenState
   void _selectThisMonth() {
     setState(() {
       _selectedRange =
-          DashboardDateRange.month(DateTime.now());
+          DashboardDateRange.month(
+        DateTime.now(),
+      );
     });
   }
 
   void _selectThisYear() {
     setState(() {
       _selectedRange =
-          DashboardDateRange.year(DateTime.now());
+          DashboardDateRange.year(
+        DateTime.now(),
+      );
     });
   }
 
   void _refresh() {
     ref.invalidate(
-      dashboardProvider(_selectedRange),
+      dashboardProvider(
+        _selectedRange,
+      ),
+    );
+  }
+
+  void _openBilling() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            const BillingScreen(),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final dashboardAsync =
-        ref.watch(dashboardProvider(_selectedRange));
+        ref.watch(
+      dashboardProvider(
+        _selectedRange,
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text(
+          'Dashboard',
+        ),
         actions: [
           IconButton(
             onPressed: _refresh,
             tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(
+              Icons.refresh,
+            ),
           ),
         ],
       ),
       body: dashboardAsync.when(
         loading: () => const Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(),
         ),
-        error: (error, stackTrace) {
+        error: (
+          error,
+          stackTrace,
+        ) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding:
+                  const EdgeInsets.all(24),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize:
+                    MainAxisSize.min,
                 children: [
                   const Icon(
                     Icons.error_outline,
                     size: 48,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(
+                    height: 12,
+                  ),
                   const Text(
                     'Unable to load dashboard',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
                   Text(
                     error.toString(),
-                    textAlign: TextAlign.center,
+                    textAlign:
+                        TextAlign.center,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(
+                    height: 16,
+                  ),
                   FilledButton(
-                    onPressed: _refresh,
-                    child: const Text('Retry'),
+                    onPressed:
+                        _refresh,
+                    child:
+                        const Text(
+                      'Retry',
+                    ),
                   ),
                 ],
               ),
@@ -129,11 +174,15 @@ class _DashboardScreenState
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(
-                dashboardProvider(_selectedRange),
+                dashboardProvider(
+                  _selectedRange,
+                ),
               );
 
               await ref.read(
-                dashboardProvider(_selectedRange).future,
+                dashboardProvider(
+                  _selectedRange,
+                ).future,
               );
             },
             child: _buildDashboard(
@@ -151,8 +200,11 @@ class _DashboardScreenState
     DashboardSummary summary,
   ) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding:
+          const EdgeInsets.all(16),
       children: [
+        _buildBillingButton(),
+        const SizedBox(height: 16),
         _buildDateControls(context),
         const SizedBox(height: 16),
         _buildSummaryGrid(summary),
@@ -165,17 +217,44 @@ class _DashboardScreenState
     );
   }
 
-  Widget _buildDateControls(BuildContext context) {
+  Widget _buildBillingButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: FilledButton.icon(
+        onPressed: _openBilling,
+        icon: const Icon(
+          Icons.receipt_long,
+          size: 26,
+        ),
+        label: const Text(
+          'Billing',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight:
+                FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateControls(
+    BuildContext context,
+  ) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding:
+            const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.stretch,
           children: [
             Text(
               'Date Range',
-              style: Theme.of(context)
+              style: Theme.of(
+                context,
+              )
                   .textTheme
                   .titleMedium,
             ),
@@ -185,16 +264,28 @@ class _DashboardScreenState
               runSpacing: 8,
               children: [
                 OutlinedButton(
-                  onPressed: _selectThisMonth,
-                  child: const Text('This Month'),
+                  onPressed:
+                      _selectThisMonth,
+                  child:
+                      const Text(
+                    'This Month',
+                  ),
                 ),
                 OutlinedButton(
-                  onPressed: _selectThisYear,
-                  child: const Text('This Year'),
+                  onPressed:
+                      _selectThisYear,
+                  child:
+                      const Text(
+                    'This Year',
+                  ),
                 ),
                 FilledButton.tonal(
-                  onPressed: _selectDateRange,
-                  child: const Text('Custom Range'),
+                  onPressed:
+                      _selectDateRange,
+                  child:
+                      const Text(
+                    'Custom Range',
+                  ),
                 ),
               ],
             ),
@@ -203,7 +294,9 @@ class _DashboardScreenState
               '${_formatDate(_selectedRange.start)}'
               ' - '
               '${_formatDate(_selectedRange.end)}',
-              style: Theme.of(context)
+              style: Theme.of(
+                context,
+              )
                   .textTheme
                   .bodyMedium,
             ),
@@ -217,8 +310,12 @@ class _DashboardScreenState
     DashboardSummary summary,
   ) {
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
+      builder: (
+        context,
+        constraints,
+      ) {
+        final width =
+            constraints.maxWidth;
 
         final crossAxisCount =
             width >= 900
@@ -228,7 +325,8 @@ class _DashboardScreenState
                     : 2;
 
         return GridView.count(
-          crossAxisCount: crossAxisCount,
+          crossAxisCount:
+              crossAxisCount,
           shrinkWrap: true,
           physics:
               const NeverScrollableScrollPhysics(),
@@ -241,40 +339,50 @@ class _DashboardScreenState
               value: _formatAmount(
                 summary.totalSales,
               ),
-              icon: Icons.point_of_sale,
+              icon:
+                  Icons.point_of_sale,
             ),
             _SummaryCard(
               title: 'Expenses',
               value: _formatAmount(
                 summary.totalExpenses,
               ),
-              icon: Icons.money_off,
+              icon:
+                  Icons.money_off,
             ),
             _SummaryCard(
               title: 'Profit',
               value: _formatAmount(
                 summary.profit,
               ),
-              icon: Icons.trending_up,
+              icon:
+                  Icons.trending_up,
             ),
             _SummaryCard(
-              title: 'Services Completed',
-              value: summary.servicesCompleted
+              title:
+                  'Services Completed',
+              value: summary
+                  .servicesCompleted
                   .toString(),
               icon: Icons.build,
             ),
             _SummaryCard(
-              title: 'Inventory Value',
+              title:
+                  'Inventory Value',
               value: _formatAmount(
                 summary.inventoryValue,
               ),
-              icon: Icons.inventory_2,
+              icon:
+                  Icons.inventory_2,
             ),
             _SummaryCard(
               title: 'Low Stock',
-              value: summary.lowStockParts.length
+              value: summary
+                  .lowStockParts
+                  .length
                   .toString(),
-              icon: Icons.warning_amber,
+              icon:
+                  Icons.warning_amber,
             ),
           ],
         );
@@ -287,7 +395,8 @@ class _DashboardScreenState
   ) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding:
+            const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
@@ -296,27 +405,41 @@ class _DashboardScreenState
               'Low Stock',
               style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
-            if (summary.lowStockParts.isEmpty)
+            const SizedBox(
+              height: 12,
+            ),
+            if (summary
+                .lowStockParts
+                .isEmpty)
               const Text(
                 'No parts are currently low on stock.',
               )
             else
-              ...summary.lowStockParts.map(
+              ...summary
+                  .lowStockParts
+                  .map(
                 (part) {
                   return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const Icon(
-                      Icons.warning_amber,
+                    contentPadding:
+                        EdgeInsets.zero,
+                    leading:
+                        const Icon(
+                      Icons
+                          .warning_amber,
                     ),
-                    title: Text(part.partName),
-                    subtitle: Text(
+                    title: Text(
+                      part.partName,
+                    ),
+                    subtitle:
+                        Text(
                       'Part No: ${part.partNumber}',
                     ),
-                    trailing: Text(
+                    trailing:
+                        Text(
                       '${part.currentStock} / '
                       '${part.lowStockThreshold}',
                     ),
@@ -334,7 +457,8 @@ class _DashboardScreenState
   ) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding:
+            const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
@@ -343,33 +467,52 @@ class _DashboardScreenState
               'Top Selling Parts',
               style: TextStyle(
                 fontSize: 20,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
-            if (summary.topSellingParts.isEmpty)
+            const SizedBox(
+              height: 12,
+            ),
+            if (summary
+                .topSellingParts
+                .isEmpty)
               const Text(
                 'No parts sold in this period.',
               )
             else
-              ...summary.topSellingParts.asMap().entries.map(
+              ...summary
+                  .topSellingParts
+                  .asMap()
+                  .entries
+                  .map(
                 (entry) {
-                  final index = entry.key;
-                  final part = entry.value;
+                  final index =
+                      entry.key;
+                  final part =
+                      entry.value;
 
                   return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
+                    contentPadding:
+                        EdgeInsets.zero,
+                    leading:
+                        CircleAvatar(
                       child: Text(
                         '${index + 1}',
                       ),
                     ),
-                    title: Text(part.partName),
-                    subtitle: Text(
+                    title: Text(
+                      part.partName,
+                    ),
+                    subtitle:
+                        Text(
                       '${part.quantitySold} units sold',
                     ),
-                    trailing: Text(
-                      _formatAmount(part.revenue),
+                    trailing:
+                        Text(
+                      _formatAmount(
+                        part.revenue,
+                      ),
                     ),
                   );
                 },
@@ -380,18 +523,23 @@ class _DashboardScreenState
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(
+    DateTime date,
+  ) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
   }
 
-  String _formatAmount(double amount) {
+  String _formatAmount(
+    double amount,
+  ) {
     return '₹${amount.toStringAsFixed(2)}';
   }
 }
 
-class _SummaryCard extends StatelessWidget {
+class _SummaryCard
+    extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
@@ -403,29 +551,37 @@ class _SummaryCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(
+    BuildContext context,
+  ) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding:
+            const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
           mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
+              MainAxisAlignment
+                  .spaceBetween,
           children: [
             Icon(icon),
             Text(
               title,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              overflow:
+                  TextOverflow.ellipsis,
             ),
             Text(
               value,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              overflow:
+                  TextOverflow.ellipsis,
+              style:
+                  const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+                fontWeight:
+                    FontWeight.bold,
               ),
             ),
           ],

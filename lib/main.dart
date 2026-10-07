@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/billing/billing.dart';
 import 'features/customers/customers.dart';
 import 'features/dashboard/dashboard.dart';
 import 'features/expenses/expenses.dart';
@@ -50,6 +51,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   final List<Widget> _screens = const [
     DashboardScreen(),
+    BillingScreen(),
     PartListScreen(),
     CustomerListScreen(),
     ReportsScreen(),
@@ -100,12 +102,21 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.inventory_2_rounded),
-              title: const Text('Parts & Inventory'),
+              leading: const Icon(Icons.point_of_sale_rounded),
+              title: const Text('Billing'),
               selected: _currentIndex == 1,
               onTap: () {
                 Navigator.pop(context);
                 setState(() => _currentIndex = 1);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.inventory_2_rounded),
+              title: const Text('Parts & Inventory'),
+              selected: _currentIndex == 2,
+              onTap: () {
+                Navigator.pop(context);
+                setState(() => _currentIndex = 2);
               },
             ),
             ListTile(
@@ -122,19 +133,19 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             ListTile(
               leading: const Icon(Icons.people_alt_rounded),
               title: const Text('Customers'),
-              selected: _currentIndex == 2,
+              selected: _currentIndex == 3,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 2);
+                setState(() => _currentIndex = 3);
               },
             ),
             ListTile(
               leading: const Icon(Icons.analytics_rounded),
               title: const Text('Reports & Analytics'),
-              selected: _currentIndex == 3,
+              selected: _currentIndex == 4,
               onTap: () {
                 Navigator.pop(context);
-                setState(() => _currentIndex = 3);
+                setState(() => _currentIndex = 4);
               },
             ),
             const Divider(),
@@ -186,6 +197,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard_rounded),
             label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.point_of_sale_outlined),
+            selectedIcon: Icon(Icons.point_of_sale_rounded),
+            label: 'Billing',
           ),
           NavigationDestination(
             icon: Icon(Icons.inventory_2_outlined),
