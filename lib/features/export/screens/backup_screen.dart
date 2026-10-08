@@ -26,8 +26,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _handleCreateBackup() async {
     setState(() => _isProcessing = true);
     try {
-      final summary =
-          await ref.read(backupControllerProvider.notifier).createBackup();
+      final summary = await ref
+          .read(backupControllerProvider.notifier)
+          .createBackup();
 
       if (!mounted) return;
 
@@ -65,15 +66,15 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _handleShareDatabaseFile() async {
     setState(() => _isProcessing = true);
     try {
-      final backupFile =
-          await ref.read(backupServiceProvider).exportDatabaseFile();
+      final backupFile = await ref
+          .read(backupServiceProvider)
+          .exportDatabaseFile();
 
       if (!mounted) return;
 
-      await ref.read(shareServiceProvider).shareBackupFile(
-            backupFile,
-            subject: 'Garage SQLite Database File',
-          );
+      await ref
+          .read(shareServiceProvider)
+          .shareBackupFile(backupFile, subject: 'Garage SQLite Database File');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -117,9 +118,14 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+            ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Confirm Restore', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Confirm Restore',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -168,8 +174,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
   Future<void> _copyBackupJsonToClipboard() async {
     setState(() => _isProcessing = true);
     try {
-      final json =
-          await ref.read(backupServiceProvider).exportBackupJsonString();
+      final json = await ref
+          .read(backupServiceProvider)
+          .exportBackupJsonString();
       await Clipboard.setData(ClipboardData(text: json));
 
       if (!mounted) return;
@@ -197,9 +204,7 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     final backupSummary = ref.watch(backupControllerProvider).value;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Backup & Restore'),
-      ),
+      appBar: AppBar(title: const Text('Backup & Restore')),
       body: _isProcessing
           ? const Center(
               child: Column(
@@ -223,8 +228,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.shield_outlined,
-                                color: Colors.blue.shade700),
+                            Icon(
+                              Icons.shield_outlined,
+                              color: Colors.blue.shade700,
+                            ),
                             const SizedBox(width: 8),
                             const Text(
                               'Offline Data Safety',
@@ -273,7 +280,9 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                           child: Icon(Icons.copy_outlined),
                         ),
                         title: const Text('Copy Backup JSON'),
-                        subtitle: const Text('Copy full backup text to clipboard'),
+                        subtitle: const Text(
+                          'Copy full backup text to clipboard',
+                        ),
                         trailing: TextButton.icon(
                           onPressed: _copyBackupJsonToClipboard,
                           icon: const Icon(Icons.copy, size: 18),
@@ -321,9 +330,10 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                             spacing: 8,
                             runSpacing: 4,
                             children: backupSummary.tableCounts.entries
-                                .map((e) => Chip(
-                                      label: Text('${e.key}: ${e.value}'),
-                                    ))
+                                .map(
+                                  (e) =>
+                                      Chip(label: Text('${e.key}: ${e.value}')),
+                                )
                                 .toList(),
                           ),
                         ],

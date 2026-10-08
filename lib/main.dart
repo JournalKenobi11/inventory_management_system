@@ -7,17 +7,14 @@ import 'features/dashboard/dashboard.dart';
 import 'features/expenses/expenses.dart';
 import 'features/export/export.dart';
 import 'features/parts/parts.dart';
+import 'features/personal_finance/personal_finance.dart';
 import 'features/purchases/purchases.dart';
 import 'features/reports/reports.dart';
 import 'features/salaries/salaries.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    const ProviderScope(
-      child: InventoryManagementApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: InventoryManagementApp()));
 }
 
 class InventoryManagementApp extends StatelessWidget {
@@ -30,9 +27,7 @@ class InventoryManagementApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0D47A1),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0D47A1)),
       ),
       home: const MainNavigationShell(),
     );
@@ -84,31 +79,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                   ),
                   Text(
                     'Management System',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.dashboard_rounded),
-              title: const Text('Dashboard'),
-              selected: _currentIndex == 0,
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 0);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.point_of_sale_rounded),
-              title: const Text('Billing'),
-              selected: _currentIndex == 1,
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 1);
-              },
             ),
             ListTile(
               leading: const Icon(Icons.inventory_2_rounded),
@@ -126,17 +100,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const PurchaseEntryScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const PurchaseEntryScreen(),
+                  ),
                 );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.people_alt_rounded),
-              title: const Text('Customers'),
-              selected: _currentIndex == 3,
-              onTap: () {
-                Navigator.pop(context);
-                setState(() => _currentIndex = 3);
               },
             ),
             ListTile(
@@ -157,6 +124,19 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ExpensesScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_rounded),
+              title: const Text('Personal Finance'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PersonalFinanceScreen(),
+                  ),
                 );
               },
             ),
@@ -185,10 +165,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ],
         ),
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),

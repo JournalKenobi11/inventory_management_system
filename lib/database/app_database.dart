@@ -123,8 +123,8 @@ class Attendances extends Table {
 
   @override
   List<Set<Column>> get uniqueKeys => [
-        {employeeId, date},
-      ];
+    {employeeId, date},
+  ];
 }
 
 // Invoice numbering counter — avoids collisions, server-migration-friendly
@@ -136,43 +136,95 @@ class Counters extends Table {
   Set<Column> get primaryKey => {name};
 }
 
+// Personal finance accounts table
+class PersonalFinanceAccounts extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  RealColumn get openingBalance => real().withDefault(const Constant(0.0))();
+  TextColumn get createdDate => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+// Personal finance transactions table
+class PersonalFinanceTransactions extends Table {
+  TextColumn get id => text()();
+  TextColumn get accountId => text().references(PersonalFinanceAccounts, #id)();
+  TextColumn get type => text()(); // 'credit' | 'debit'
+  RealColumn get amount => real()();
+  TextColumn get category => text()();
+  TextColumn get payee => text().nullable()();
+  TextColumn get note => text().nullable()();
+  TextColumn get transactionDate => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ---------- Database ----------
 
-@DriftDatabase(tables: [
-  Customers,
-  Parts,
-  Purchases,
-  ServiceJobs,
-  ServiceParts,
-  Invoices,
-  Expenses,
-  Employees,
-  SalaryPayments,
-  Attendances,
-  Counters,
-])
+@DriftDatabase(
+  tables: [
+    Customers,
+    Parts,
+    Purchases,
+    ServiceJobs,
+    ServiceParts,
+    Invoices,
+    Expenses,
+    Employees,
+    SalaryPayments,
+    Attendances,
+    Counters,
+    PersonalFinanceAccounts,
+    PersonalFinanceTransactions,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   AppDatabase.forTesting(super.e) : super();
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (Migrator m) async {
-          await m.createAll();
-          // seed the invoice number counter
-          await into(counters).insert(
-            CountersCompanion.insert(name: 'invoice_number', value: const Value(0)),
-          );
-        },
-        onUpgrade: (Migrator m, int from, int to) async {
-          if (from < 2) {
-            await m.createTable(attendances);
-          }
-        },
+    onCreate: (Migrator m) async {
+      await m.createAll();
+      // seed the invoice number counter
+      await into(counters).insert(
+        CountersCompanion.insert(name: 'invoice_number', value: const Value(0)),
       );
+      // seed default owner account
+      await into(personalFinanceAccounts).insert(
+        PersonalFinanceAccountsCompanion.insert(
+          id: 'default-owner-account',
+          name: "Owner's Account",
+          openingBalance: const Value(0.0),
+          createdDate: DateTime.now().toIso8601String(),
+        ),
+      );
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        await m.createTable(attendances);
+      }
+      if (from < 3) {
+        await m.createTable(personalFinanceAccounts);
+        await m.createTable(personalFinanceTransactions);
+        await into(personalFinanceAccounts).insert(
+          PersonalFinanceAccountsCompanion.insert(
+            id: 'default-owner-account',
+            name: "Owner's Account",
+            openingBalance: const Value(0.0),
+            createdDate: DateTime.now().toIso8601String(),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

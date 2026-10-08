@@ -223,6 +223,25 @@ table, read it back.
 
 ---
 
+## Module 10: Personal Finance
+**Depends on:** Module 0 only. Independent manual ledger for the owner's personal money.
+
+**Files:**
+- `models/personal_finance_account.dart` — `id, name, openingBalance, createdDate`.
+- `models/personal_finance_transaction.dart` — `id, accountId, type ('credit'|'debit'), amount, category, payee, note, transactionDate`.
+- `models/personal_finance_categories.dart` — predefined credit and debit category lists.
+- `models/personal_finance_monthly_summary.dart` — `openingBalance, totalCredits, totalDebits, netChange, currentBalance`.
+- `repositories/interfaces/personal_finance_account_repository.dart` — `create, getById, getDefaultAccount, update`.
+- `repositories/interfaces/personal_finance_transaction_repository.dart` — `create, getById, getAll, getByDateRange, getByType, getByCategory, getForAccount, getTotalCredits, getTotalDebits`.
+- `repositories/sqlite/sqlite_personal_finance_account_repository.dart`.
+- `repositories/sqlite/sqlite_personal_finance_transaction_repository.dart`.
+- `services/personal_finance_service.dart` — business logic, positive-only amounts, credit/debit calculation (`openingBalance + credits - debits`), monthly summaries.
+- `providers/personal_finance_provider.dart` — Riverpod state management.
+- `screens/personal_finance_screen.dart` — running balance, monthly summary, transactions list (newest first).
+- `screens/personal_finance_transaction_entry_screen.dart` — entry form for credits and debits.
+
+---
+
 ## Assembly Sequence (Dependency Order)
 
 ```
@@ -236,8 +255,9 @@ Module 0 (Core/DB)
                  ▼
         Module 4 (Billing)  ← highest risk, most tests
                  │
-   ├── Module 5 (Expenses)      [independent, any time after Module 0]
-   ├── Module 6 (Salaries)      [independent, any time after Module 0]
+   ├── Module 5 (Expenses)          [independent, any time after Module 0]
+   ├── Module 6 (Salaries)          [independent, any time after Module 0]
+   ├── Module 10 (Personal Finance) [independent, any time after Module 0]
    │
    ▼ (needs 1-6 to have real data to aggregate)
    Module 7 (Dashboard)

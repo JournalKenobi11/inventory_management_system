@@ -150,7 +150,9 @@ class PdfService {
                 border: pw.TableBorder.all(color: PdfColors.grey300),
                 children: [
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey200,
+                    ),
                     children: [
                       _tableCell('Metric', isHeader: true),
                       _tableCell('Amount', isHeader: true, alignRight: true),
@@ -158,33 +160,56 @@ class PdfService {
                   ),
                   pw.TableRow(
                     children: [
-                      _tableCell('Total Sales (${report.sales.invoiceCount} invoices)'),
-                      _tableCell('Rs. ${report.sales.totalSales.toStringAsFixed(2)}', alignRight: true),
+                      _tableCell(
+                        'Total Sales (${report.sales.invoiceCount} invoices)',
+                      ),
+                      _tableCell(
+                        'Rs. ${report.sales.totalSales.toStringAsFixed(2)}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                   pw.TableRow(
                     children: [
                       _tableCell('Business Expenses'),
-                      _tableCell('Rs. ${report.expenses.totalBusinessExpenses.toStringAsFixed(2)}', alignRight: true),
+                      _tableCell(
+                        'Rs. ${report.expenses.totalBusinessExpenses.toStringAsFixed(2)}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                   pw.TableRow(
                     children: [
                       _tableCell('Staff Salary Expenses (Paid)'),
-                      _tableCell('Rs. ${report.expenses.totalSalaryExpenses.toStringAsFixed(2)}', alignRight: true),
+                      _tableCell(
+                        'Rs. ${report.expenses.totalSalaryExpenses.toStringAsFixed(2)}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                   pw.TableRow(
                     children: [
                       _tableCell('Total Expenses (Business + Salaries)'),
-                      _tableCell('Rs. ${report.expenses.totalExpenses.toStringAsFixed(2)}', alignRight: true),
+                      _tableCell(
+                        'Rs. ${report.expenses.totalExpenses.toStringAsFixed(2)}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.grey100,
+                    ),
                     children: [
-                      _tableCell('Net Profit (Margin: ${report.profit.profitMarginPercentage.toStringAsFixed(1)}%)', isBold: true),
-                      _tableCell('Rs. ${report.profit.netProfit.toStringAsFixed(2)}', isBold: true, alignRight: true),
+                      _tableCell(
+                        'Net Profit (Margin: ${report.profit.profitMarginPercentage.toStringAsFixed(1)}%)',
+                        isBold: true,
+                      ),
+                      _tableCell(
+                        'Rs. ${report.profit.netProfit.toStringAsFixed(2)}',
+                        isBold: true,
+                        alignRight: true,
+                      ),
                     ],
                   ),
                 ],
@@ -204,19 +229,28 @@ class PdfService {
                   pw.TableRow(
                     children: [
                       _tableCell('Services / Jobs Completed'),
-                      _tableCell('${report.servicesCompleted}', alignRight: true),
+                      _tableCell(
+                        '${report.servicesCompleted}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                   pw.TableRow(
                     children: [
                       _tableCell('Inventory Value'),
-                      _tableCell('Rs. ${report.inventory.totalInventoryValue.toStringAsFixed(2)}', alignRight: true),
+                      _tableCell(
+                        'Rs. ${report.inventory.totalInventoryValue.toStringAsFixed(2)}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                   pw.TableRow(
                     children: [
                       _tableCell('Low Stock Items Count'),
-                      _tableCell('${report.inventory.lowStockCount}', alignRight: true),
+                      _tableCell(
+                        '${report.inventory.lowStockCount}',
+                        alignRight: true,
+                      ),
                     ],
                   ),
                 ],
@@ -255,12 +289,18 @@ class PdfService {
             if (data.garageAddress != null)
               pw.Text(
                 data.garageAddress!,
-                style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                style: const pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey700,
+                ),
               ),
             if (data.garagePhone != null)
               pw.Text(
                 'Phone: ${data.garagePhone!}',
-                style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                style: const pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.grey700,
+                ),
               ),
             if (data.isGstRegistered && data.gstNumber != null)
               pw.Text(
@@ -465,7 +505,10 @@ class PdfService {
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(
                     top: pw.BorderSide(color: PdfColors.blueGrey800, width: 1),
-                    bottom: pw.BorderSide(color: PdfColors.blueGrey800, width: 2),
+                    bottom: pw.BorderSide(
+                      color: PdfColors.blueGrey800,
+                      width: 2,
+                    ),
                   ),
                 ),
                 child: _amountRow(
@@ -531,10 +574,7 @@ class PdfService {
             ),
             pw.Text(
               'Authorized Signatory',
-              style: const pw.TextStyle(
-                fontSize: 9,
-                color: PdfColors.grey700,
-              ),
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
             ),
           ],
         ),

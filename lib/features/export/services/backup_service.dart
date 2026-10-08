@@ -13,7 +13,7 @@ class BackupService {
 
   BackupService(this.backupRepository);
 
-  static const int currentBackupVersion = 1;
+  static const int currentBackupVersion = 2;
   static const String appIdentifier = 'inventory_management_system';
 
   Future<BackupSummary> createBackup({String? customDirectoryPath}) async {
@@ -39,8 +39,8 @@ class BackupService {
 
     final jsonString = const JsonEncoder.withIndent('  ').convert(payload);
 
-    final dirPath = customDirectoryPath ??
-        (await getApplicationDocumentsDirectory()).path;
+    final dirPath =
+        customDirectoryPath ?? (await getApplicationDocumentsDirectory()).path;
     final timestamp =
         '${now.year}${_two(now.month)}${_two(now.day)}_${_two(now.hour)}${_two(now.minute)}${_two(now.second)}';
     final fileName = 'backup_$timestamp.json';
@@ -122,7 +122,8 @@ class BackupService {
     return RestoreResult(
       success: true,
       restoredCounts: counts,
-      message: 'Database restored successfully with ${counts.values.fold<int>(0, (a, b) => a + b)} records.',
+      message:
+          'Database restored successfully with ${counts.values.fold<int>(0, (a, b) => a + b)} records.',
     );
   }
 
@@ -146,7 +147,9 @@ class BackupService {
         : await getApplicationDocumentsDirectory();
 
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final targetFile = File(p.join(dir.path, 'database_backup_$timestamp.sqlite'));
+    final targetFile = File(
+      p.join(dir.path, 'database_backup_$timestamp.sqlite'),
+    );
 
     return sourceDb.copy(targetFile.path);
   }

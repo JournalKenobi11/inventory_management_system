@@ -30,8 +30,8 @@ final shareServiceProvider = Provider<ShareService>((ref) {
 
 final backupControllerProvider =
     AsyncNotifierProvider<BackupController, BackupSummary?>(
-  BackupController.new,
-);
+      BackupController.new,
+    );
 
 class BackupController extends AsyncNotifier<BackupSummary?> {
   @override
@@ -54,8 +54,9 @@ class BackupController extends AsyncNotifier<BackupSummary?> {
   Future<RestoreResult> restoreFromFile(File file) async {
     state = const AsyncLoading();
     try {
-      final result =
-          await ref.read(backupServiceProvider).restoreFromFile(file);
+      final result = await ref
+          .read(backupServiceProvider)
+          .restoreFromFile(file);
       state = const AsyncData(null);
       return result;
     } catch (e, st) {
@@ -67,8 +68,9 @@ class BackupController extends AsyncNotifier<BackupSummary?> {
   Future<RestoreResult> restoreFromJsonString(String jsonContent) async {
     state = const AsyncLoading();
     try {
-      final result =
-          await ref.read(backupServiceProvider).restoreFromJson(jsonContent);
+      final result = await ref
+          .read(backupServiceProvider)
+          .restoreFromJson(jsonContent);
       state = const AsyncData(null);
       return result;
     } catch (e, st) {

@@ -14,7 +14,9 @@ void main() {
   });
 
   test('can insert and read a customer', () async {
-    await db.into(db.customers).insert(
+    await db
+        .into(db.customers)
+        .insert(
           CustomersCompanion.insert(
             id: 'test-id-1',
             name: 'Test Customer',

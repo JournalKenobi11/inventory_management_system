@@ -121,13 +121,13 @@ class BackupSummary {
   });
 
   Map<String, dynamic> toJson() => {
-        'exportDate': exportDate,
-        'version': version,
-        'totalRecords': totalRecords,
-        'tableCounts': tableCounts,
-        'filePath': filePath,
-        'fileSizeBytes': fileSizeBytes,
-      };
+    'exportDate': exportDate,
+    'version': version,
+    'totalRecords': totalRecords,
+    'tableCounts': tableCounts,
+    'filePath': filePath,
+    'fileSizeBytes': fileSizeBytes,
+  };
 }
 
 class RestoreResult {

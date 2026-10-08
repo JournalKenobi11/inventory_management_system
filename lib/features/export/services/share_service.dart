@@ -35,14 +35,13 @@ class WhatsAppShareResult {
       WhatsAppShareResult(
         success: false,
         isWhatsAppUnavailable: true,
-        errorMessage: message ??
+        errorMessage:
+            message ??
             'WhatsApp is not installed or could not be opened on this device.',
       );
 
-  factory WhatsAppShareResult.failure(String message) => WhatsAppShareResult(
-        success: false,
-        errorMessage: message,
-      );
+  factory WhatsAppShareResult.failure(String message) =>
+      WhatsAppShareResult(success: false, errorMessage: message);
 }
 
 class ShareService {
@@ -114,8 +113,8 @@ class ShareService {
       buffer.writeln('');
       buffer.writeln('*Parts:*');
       for (final item in details.items) {
-        final partNo = (item.partNumber != null &&
-                item.partNumber!.trim().isNotEmpty)
+        final partNo =
+            (item.partNumber != null && item.partNumber!.trim().isNotEmpty)
             ? ' (${item.partNumber!.trim()})'
             : '';
         buffer.writeln(
@@ -156,8 +155,9 @@ class ShareService {
     }
 
     final encoded = Uri.encodeComponent(message);
-    final whatsappSchemeUri =
-        Uri.parse('whatsapp://send?phone=$normalized&text=$encoded');
+    final whatsappSchemeUri = Uri.parse(
+      'whatsapp://send?phone=$normalized&text=$encoded',
+    );
     final waMeUri = Uri.parse('https://wa.me/$normalized?text=$encoded');
 
     try {
@@ -237,8 +237,9 @@ class ShareService {
 
     var count = 1;
     for (final sp in serviceParts) {
-      final fallbackId =
-          sp.partId.length > 6 ? sp.partId.substring(0, 6) : sp.partId;
+      final fallbackId = sp.partId.length > 6
+          ? sp.partId.substring(0, 6)
+          : sp.partId;
       final name = partNamesById?[sp.partId] ?? 'Part $fallbackId';
       buffer.writeln(
         '${count++}. $name x${sp.quantity} @ Rs.${sp.priceEach.toStringAsFixed(2)} = Rs.${sp.lineTotal.toStringAsFixed(2)}',
@@ -253,7 +254,8 @@ class ShareService {
 
     buffer.writeln('------------------------------------');
     buffer.writeln(
-        '*TOTAL AMOUNT: Rs.${invoice.totalAmount.toStringAsFixed(2)}*');
+      '*TOTAL AMOUNT: Rs.${invoice.totalAmount.toStringAsFixed(2)}*',
+    );
     buffer.writeln('------------------------------------');
     buffer.writeln('Thank you for choosing us!');
 
