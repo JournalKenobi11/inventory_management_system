@@ -5,9 +5,9 @@ import '../../customers/models/customer.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../parts/models/part.dart';
 import '../../parts/providers/part_provider.dart';
-import '../models/invoice.dart';
 import '../models/service_part.dart';
 import '../providers/billing_provider.dart';
+import 'invoice_overview_screen.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   const BillingScreen({
@@ -412,7 +412,22 @@ class _BillingScreenState
         return;
       }
 
-      await _showInvoiceResult(invoice);
+      final details = await ref
+          .read(billingServiceProvider)
+          .getInvoiceDetails(invoice.id);
+
+      if (!mounted) {
+        return;
+      }
+
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InvoiceOverviewScreen(
+            invoiceDetails: details,
+          ),
+        ),
+      );
 
       if (!mounted) {
         return;
@@ -440,50 +455,6 @@ class _BillingScreenState
         ),
       );
     }
-  }
-
-  Future<void> _showInvoiceResult(
-    Invoice invoice,
-  ) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text(
-            'Invoice Generated',
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Invoice #${invoice.invoiceNumber}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Total: ₹${invoice.totalAmount.toStringAsFixed(2)}',
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Stock has been deducted and the invoice has been saved.',
-              ),
-            ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () =>
-                  Navigator.pop(context),
-              child: const Text('Done'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override

@@ -41,6 +41,45 @@ class PdfService {
     return pdf.save();
   }
 
+  Future<File> saveInvoicePdfToFile(
+    InvoicePdfData data, {
+    String? customFileName,
+  }) async {
+    final bytes = await generateInvoicePdf(data);
+    final tempDir = await getTemporaryDirectory();
+    final fileName =
+        customFileName ?? 'Invoice_${data.invoice.invoiceNumber}.pdf';
+    final file = File(p.join(tempDir.path, fileName));
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
+  Future<File> downloadInvoicePdf(
+    InvoicePdfData data, {
+    String? customFileName,
+  }) async {
+    final bytes = await generateInvoicePdf(data);
+    Directory? saveDir;
+    try {
+      saveDir = await getDownloadsDirectory();
+    } catch (_) {}
+
+    if (saveDir == null && Platform.isAndroid) {
+      final androidDownload = Directory('/storage/emulated/0/Download');
+      if (await androidDownload.exists()) {
+        saveDir = androidDownload;
+      }
+    }
+
+    saveDir ??= await getApplicationDocumentsDirectory();
+
+    final fileName =
+        customFileName ?? 'Invoice_${data.invoice.invoiceNumber}.pdf';
+    final file = File(p.join(saveDir.path, fileName));
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
+
   Future<Uint8List> generateReportPdf(
     ComprehensiveReport report, {
     String garageName = 'Auto Care Garage & Service Center',

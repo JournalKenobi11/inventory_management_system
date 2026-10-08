@@ -50,6 +50,42 @@ class InvoicePdfData {
     this.gstRatePercentage = 18.0,
   });
 
+  factory InvoicePdfData.fromDetails(
+    InvoiceDetails details, {
+    String garageName = 'Auto Care Garage & Service Center',
+    String? garagePhone,
+    String? garageAddress,
+    String? gstNumber,
+    bool isGstRegistered = false,
+    double gstRatePercentage = 18.0,
+  }) {
+    return InvoicePdfData(
+      invoice: details.invoice,
+      service: details.service,
+      customer: details.customer,
+      parts: details.items
+          .map(
+            (item) => InvoicePartLineItem(
+              partId: item.partId,
+              partName: item.partName,
+              partNumber: item.partNumber ?? '',
+              quantity: item.quantity,
+              priceEach: item.priceEach,
+              lineTotal: item.lineTotal,
+            ),
+          )
+          .toList(),
+      labourCharge: details.labourCharge,
+      totalAmount: details.totalAmount,
+      garageName: garageName,
+      garagePhone: garagePhone,
+      garageAddress: garageAddress,
+      gstNumber: gstNumber,
+      isGstRegistered: isGstRegistered,
+      gstRatePercentage: gstRatePercentage,
+    );
+  }
+
   double get partsTotal =>
       parts.fold<double>(0.0, (sum, p) => sum + p.lineTotal);
 

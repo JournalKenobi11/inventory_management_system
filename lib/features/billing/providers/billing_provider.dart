@@ -4,6 +4,7 @@ import '../../../core/di/providers.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../parts/providers/part_provider.dart';
 import '../models/invoice.dart';
+import '../models/invoice_details.dart';
 import '../models/service_part.dart';
 import '../repositories/interfaces/invoice_repository.dart';
 import '../repositories/interfaces/service_part_repository.dart';
@@ -96,4 +97,11 @@ final invoicesListProvider =
     FutureProvider.autoDispose<List<Invoice>>((ref) async {
   final billingService = ref.watch(billingServiceProvider);
   return billingService.getAllInvoices();
-});
+});
+
+final invoiceDetailsProvider =
+    FutureProvider.autoDispose.family<InvoiceDetails, String>((ref, invoiceId) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getInvoiceDetails(invoiceId);
+});
+

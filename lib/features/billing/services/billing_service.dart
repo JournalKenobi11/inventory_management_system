@@ -7,6 +7,7 @@ import '../../customers/services/customer_service.dart';
 import '../../parts/models/part.dart';
 import '../../parts/services/part_service.dart';
 import '../models/invoice.dart';
+import '../models/invoice_details.dart';
 import '../models/service.dart';
 import '../models/service_part.dart';
 import '../repositories/interfaces/invoice_repository.dart';
@@ -239,6 +240,55 @@ class BillingService {
 
   Future<List<Invoice>> getAllInvoices() {
     return invoiceRepository.getAll();
+  }
+
+  Future<InvoiceDetails> getInvoiceDetails(String invoiceId) async {
+    final invoice = await invoiceRepository.getById(invoiceId);
+    if (invoice == null) {
+      throw NotFoundException('Invoice', invoiceId);
+    }
+    return getInvoiceDetailsByInvoice(invoice);
+  }
+
+  Future<InvoiceDetails> getInvoiceDetailsByInvoice(Invoice invoice) async {
+    final service = await serviceRepository.getById(invoice.serviceId);
+    if (service == null) {
+      throw NotFoundException('Service', invoice.serviceId);
+    }
+
+    final customer = await customerService.getCustomer(service.customerId);
+    if (customer == null) {
+      throw NotFoundException('Customer', service.customerId);
+    }
+
+    final serviceParts =
+        await servicePartRepository.getByServiceId(service.id);
+    final items = <InvoiceLineItem>[];
+
+    for (final sp in serviceParts) {
+      final part = await partService.getPartById(sp.partId);
+      final fallbackName =
+          sp.partId.length > 6 ? sp.partId.substring(0, 6) : sp.partId;
+      items.add(
+        InvoiceLineItem(
+          partId: sp.partId,
+          partName: part?.partName ?? 'Part $fallbackName',
+          partNumber: part?.partNumber,
+          quantity: sp.quantity,
+          priceEach: sp.priceEach,
+          lineTotal: sp.lineTotal,
+        ),
+      );
+    }
+
+    return InvoiceDetails(
+      invoice: invoice,
+      service: service,
+      customer: customer,
+      items: items,
+      labourCharge: service.labourCharge,
+      totalAmount: invoice.totalAmount,
+    );
   }
 
   List<ServicePartInput> _normalizeParts(
