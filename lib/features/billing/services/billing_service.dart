@@ -291,6 +291,76 @@ class BillingService {
     );
   }
 
+  Future<List<InvoiceDetails>> getCustomerBillingHistory(
+    String customerId,
+  ) async {
+    final customer = await customerService.getCustomer(customerId);
+    if (customer == null) {
+      throw NotFoundException('Customer', customerId);
+    }
+
+    final services =
+        await serviceRepository.getByCustomerId(customerId);
+
+    // Sort newest service date first
+    services.sort((a, b) => b.serviceDate.compareTo(a.serviceDate));
+
+    final history = <InvoiceDetails>[];
+
+    for (final service in services) {
+      Invoice? invoice;
+      if (service.invoiceId != null) {
+        invoice = await invoiceRepository.getById(service.invoiceId!);
+      }
+      if (invoice == null) {
+        final allInvoices = await invoiceRepository.getAll();
+        for (final inv in allInvoices) {
+          if (inv.serviceId == service.id) {
+            invoice = inv;
+            break;
+          }
+        }
+      }
+
+      if (invoice == null) {
+        continue;
+      }
+
+      final serviceParts =
+          await servicePartRepository.getByServiceId(service.id);
+      final items = <InvoiceLineItem>[];
+
+      for (final sp in serviceParts) {
+        final part = await partService.getPartById(sp.partId);
+        final fallbackName =
+            sp.partId.length > 6 ? sp.partId.substring(0, 6) : sp.partId;
+        items.add(
+          InvoiceLineItem(
+            partId: sp.partId,
+            partName: part?.partName ?? 'Part $fallbackName',
+            partNumber: part?.partNumber,
+            quantity: sp.quantity,
+            priceEach: sp.priceEach, // Historical snapshot price!
+            lineTotal: sp.lineTotal,
+          ),
+        );
+      }
+
+      history.add(
+        InvoiceDetails(
+          invoice: invoice,
+          service: service,
+          customer: customer,
+          items: items,
+          labourCharge: service.labourCharge,
+          totalAmount: invoice.totalAmount,
+        ),
+      );
+    }
+
+    return history;
+  }
+
   List<ServicePartInput> _normalizeParts(
     List<ServicePartInput> partsUsed,
   ) {

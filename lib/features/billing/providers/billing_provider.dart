@@ -104,4 +104,12 @@ final invoiceDetailsProvider =
   final billingService = ref.watch(billingServiceProvider);
   return billingService.getInvoiceDetails(invoiceId);
 });
+
+final customerBillingHistoryProvider =
+    FutureProvider.autoDispose.family<List<InvoiceDetails>, String>(
+        (ref, customerId) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getCustomerBillingHistory(customerId);
+});
+
 

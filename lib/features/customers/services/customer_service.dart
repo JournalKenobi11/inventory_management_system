@@ -6,8 +6,12 @@ import '../repositories/interfaces/customer_repository.dart';
 
 class CustomerService {
   final CustomerRepository repository;
+  final Future<bool> Function(String customerId)? hasBillingHistory;
 
-  CustomerService(this.repository);
+  CustomerService(
+    this.repository, {
+    this.hasBillingHistory,
+  });
 
   Future<Customer> createCustomer({
     required String name,
@@ -72,7 +76,12 @@ class CustomerService {
     );
   }
 
-  Future<void> deleteCustomer(String id) {
+  Future<void> deleteCustomer(String id) async {
+    if (hasBillingHistory != null && await hasBillingHistory!(id)) {
+      throw ValidationException(
+        'Customer cannot be deleted because service/billing history exists.',
+      );
+    }
     return repository.delete(id);
   }
 }

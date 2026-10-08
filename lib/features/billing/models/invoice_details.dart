@@ -75,4 +75,32 @@ class InvoiceDetails {
     }
     return invoice.createdDate;
   }
+
+  String get displayDate {
+    final rawDate = invoice.createdDate.isNotEmpty
+        ? invoice.createdDate
+        : service.serviceDate;
+    try {
+      final dt = DateTime.parse(rawDate);
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      final day = dt.day.toString().padLeft(2, '0');
+      final month = months[dt.month - 1];
+      return '$day $month ${dt.year}';
+    } catch (_) {
+      return formattedDate;
+    }
+  }
 }

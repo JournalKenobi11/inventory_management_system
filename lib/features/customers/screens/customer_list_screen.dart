@@ -40,9 +40,22 @@ class _CustomerListScreenState
     BuildContext context,
     String id,
   ) async {
-    await ref
-        .read(customersProvider.notifier)
-        .deleteCustomer(id);
+    try {
+      await ref
+          .read(customersProvider.notifier)
+          .deleteCustomer(id);
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error.toString().replaceFirst('Exception: ', ''),
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
+    }
   }
 
   @override

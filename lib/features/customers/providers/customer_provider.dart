@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
+import '../../billing/billing.dart';
 import '../models/customer.dart';
 import '../repositories/interfaces/customer_repository.dart';
 import '../repositories/sqlite/sqlite_customer_repository.dart';
@@ -15,6 +16,11 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
 final customerServiceProvider = Provider<CustomerService>((ref) {
   return CustomerService(
     ref.read(customerRepositoryProvider),
+    hasBillingHistory: (customerId) async {
+      final serviceRepo = ref.read(serviceRepositoryProvider);
+      final services = await serviceRepo.getByCustomerId(customerId);
+      return services.isNotEmpty;
+    },
   );
 });
 
