@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_drawer_button.dart';
+
 import 'customer_detail_screen.dart';
 import 'customer_form_screen.dart';
 import '../providers/customer_provider.dart';
@@ -11,14 +13,11 @@ class CustomerListScreen extends ConsumerStatefulWidget {
   const CustomerListScreen({super.key});
 
   @override
-  ConsumerState<CustomerListScreen> createState() =>
-      _CustomerListScreenState();
+  ConsumerState<CustomerListScreen> createState() => _CustomerListScreenState();
 }
 
-class _CustomerListScreenState
-    extends ConsumerState<CustomerListScreen> {
-  final TextEditingController _searchController =
-      TextEditingController();
+class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void dispose() {
@@ -36,21 +35,14 @@ class _CustomerListScreenState
     }
   }
 
-  Future<void> _deleteCustomer(
-    BuildContext context,
-    String id,
-  ) async {
+  Future<void> _deleteCustomer(BuildContext context, String id) async {
     try {
-      await ref
-          .read(customersProvider.notifier)
-          .deleteCustomer(id);
+      await ref.read(customersProvider.notifier).deleteCustomer(id);
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              error.toString().replaceFirst('Exception: ', ''),
-            ),
+            content: Text(error.toString().replaceFirst('Exception: ', '')),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -64,6 +56,7 @@ class _CustomerListScreenState
 
     return Scaffold(
       appBar: AppBar(
+        leading: appDrawerLeading(context),
         title: const Text('Customers'),
       ),
       body: Column(
@@ -84,9 +77,7 @@ class _CustomerListScreenState
             child: customers.when(
               data: (items) {
                 if (items.isEmpty) {
-                  return const Center(
-                    child: Text('No customers found'),
-                  );
+                  return const Center(child: Text('No customers found'));
                 }
 
                 return ListView.builder(
@@ -109,9 +100,7 @@ class _CustomerListScreenState
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  CustomerDetailScreen(
-                                customer: customer,
-                              ),
+                                  CustomerDetailScreen(customer: customer),
                             ),
                           );
                         },
@@ -132,25 +121,17 @@ class _CustomerListScreenState
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) =>
-                                      CustomerFormScreen(
-                                    customer: customer,
-                                  ),
+                                      CustomerFormScreen(customer: customer),
                                 ),
                               );
 
                               ref
-                                  .read(
-                                    customersProvider
-                                        .notifier,
-                                  )
+                                  .read(customersProvider.notifier)
                                   .loadCustomers();
                             }
 
                             if (value == 'delete') {
-                              await _deleteCustomer(
-                                context,
-                                customer.id,
-                              );
+                              await _deleteCustomer(context, customer.id);
                             }
                           },
                         ),
@@ -159,12 +140,9 @@ class _CustomerListScreenState
                   },
                 );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              error: (error, stackTrace) => Center(
-                child: Text(error.toString()),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stackTrace) =>
+                  Center(child: Text(error.toString())),
             ),
           ),
         ],
@@ -173,15 +151,10 @@ class _CustomerListScreenState
         onPressed: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  const CustomerFormScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const CustomerFormScreen()),
           );
 
-          ref
-              .read(customersProvider.notifier)
-              .loadCustomers();
+          ref.read(customersProvider.notifier).loadCustomers();
         },
         child: const Icon(Icons.add),
       ),

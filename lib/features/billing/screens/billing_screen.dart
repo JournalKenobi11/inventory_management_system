@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_drawer_button.dart';
+
 import '../../customers/models/customer.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../parts/models/part.dart';
@@ -10,17 +12,13 @@ import '../providers/billing_provider.dart';
 import 'invoice_overview_screen.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
-  const BillingScreen({
-    super.key,
-  });
+  const BillingScreen({super.key});
 
   @override
-  ConsumerState<BillingScreen> createState() =>
-      _BillingScreenState();
+  ConsumerState<BillingScreen> createState() => _BillingScreenState();
 }
 
-class _BillingScreenState
-    extends ConsumerState<BillingScreen> {
+class _BillingScreenState extends ConsumerState<BillingScreen> {
   Customer? _selectedCustomer;
 
   final _problemController = TextEditingController();
@@ -36,10 +34,7 @@ class _BillingScreenState
   }
 
   double get _labourCharge {
-    return double.tryParse(
-          _labourController.text.trim(),
-        ) ??
-        0;
+    return double.tryParse(_labourController.text.trim()) ?? 0;
   }
 
   double get _partsTotal {
@@ -72,24 +67,18 @@ class _BillingScreenState
               children: [
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer Name',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Customer Name'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: mobileController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Mobile',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Mobile'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: vehicleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Vehicle',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Vehicle'),
                 ),
               ],
             ),
@@ -101,10 +90,8 @@ class _BillingScreenState
             ),
             FilledButton(
               onPressed: () async {
-                final name =
-                    nameController.text.trim();
-                final mobile =
-                    mobileController.text.trim();
+                final name = nameController.text.trim();
+                final mobile = mobileController.text.trim();
 
                 if (name.isEmpty || mobile.isEmpty) {
                   return;
@@ -115,10 +102,9 @@ class _BillingScreenState
                     .createCustomer(
                       name: name,
                       mobile: mobile,
-                      vehicleName:
-                          vehicleController.text.trim().isEmpty
-                              ? null
-                              : vehicleController.text.trim(),
+                      vehicleName: vehicleController.text.trim().isEmpty
+                          ? null
+                          : vehicleController.text.trim(),
                     );
 
                 if (!context.mounted) {
@@ -148,9 +134,7 @@ class _BillingScreenState
   }
 
   Future<void> _selectCustomer() async {
-    final customers = await ref
-        .read(customerServiceProvider)
-        .getCustomers();
+    final customers = await ref.read(customerServiceProvider).getCustomers();
 
     if (!mounted) {
       return;
@@ -165,16 +149,11 @@ class _BillingScreenState
             width: 500,
             height: 450,
             child: customers.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No customers found.',
-                    ),
-                  )
+                ? const Center(child: Text('No customers found.'))
                 : ListView.builder(
                     itemCount: customers.length,
                     itemBuilder: (context, index) {
-                      final customer =
-                          customers[index];
+                      final customer = customers[index];
 
                       return ListTile(
                         title: Text(customer.name),
@@ -183,10 +162,7 @@ class _BillingScreenState
                           '${customer.vehicleName == null ? '' : ' • ${customer.vehicleName}'}',
                         ),
                         onTap: () {
-                          Navigator.pop(
-                            context,
-                            customer,
-                          );
+                          Navigator.pop(context, customer);
                         },
                       );
                     },
@@ -194,8 +170,7 @@ class _BillingScreenState
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context),
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
           ],
@@ -211,9 +186,7 @@ class _BillingScreenState
   }
 
   Future<void> _addPart() async {
-    final parts = await ref
-        .read(partServiceProvider)
-        .getAllParts();
+    final parts = await ref.read(partServiceProvider).getAllParts();
 
     if (!mounted) {
       return;
@@ -228,11 +201,7 @@ class _BillingScreenState
             width: 550,
             height: 500,
             child: parts.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No parts available.',
-                    ),
-                  )
+                ? const Center(child: Text('No parts available.'))
                 : ListView.builder(
                     itemCount: parts.length,
                     itemBuilder: (context, index) {
@@ -244,18 +213,12 @@ class _BillingScreenState
                           '${part.partNumber} • '
                           '₹${part.sellingPrice.toStringAsFixed(2)}',
                         ),
-                        trailing: Text(
-                          'Stock: ${part.currentStock}',
-                        ),
-                        enabled:
-                            part.currentStock > 0,
+                        trailing: Text('Stock: ${part.currentStock}'),
+                        enabled: part.currentStock > 0,
                         onTap: part.currentStock <= 0
                             ? null
                             : () {
-                                Navigator.pop(
-                                  context,
-                                  part,
-                                );
+                                Navigator.pop(context, part);
                               },
                       );
                     },
@@ -263,8 +226,7 @@ class _BillingScreenState
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context),
+              onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
           ],
@@ -276,26 +238,15 @@ class _BillingScreenState
       return;
     }
 
-    if (_selectedParts.any(
-      (item) => item.part.id == selected.id,
-    )) {
+    if (_selectedParts.any((item) => item.part.id == selected.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'This part is already added.',
-          ),
-        ),
+        const SnackBar(content: Text('This part is already added.')),
       );
       return;
     }
 
     setState(() {
-      _selectedParts.add(
-        _SelectedPart(
-          part: selected,
-          quantity: 1,
-        ),
-      );
+      _selectedParts.add(_SelectedPart(part: selected, quantity: 1));
     });
   }
 
@@ -305,10 +256,7 @@ class _BillingScreenState
     });
   }
 
-  void _changeQuantity(
-    int index,
-    int quantity,
-  ) {
+  void _changeQuantity(int index, int quantity) {
     final item = _selectedParts[index];
 
     if (quantity < 1) {
@@ -338,22 +286,15 @@ class _BillingScreenState
   Future<void> _generateInvoice() async {
     if (_selectedCustomer == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Select or create a customer first.',
-          ),
-        ),
+        const SnackBar(content: Text('Select or create a customer first.')),
       );
       return;
     }
 
-    if (_selectedParts.isEmpty &&
-        _labourCharge <= 0) {
+    if (_selectedParts.isEmpty && _labourCharge <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Add at least one part or labour charge.',
-          ),
+          content: Text('Add at least one part or labour charge.'),
         ),
       );
       return;
@@ -372,13 +313,11 @@ class _BillingScreenState
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(context, false),
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.pop(context, true),
+              onPressed: () => Navigator.pop(context, true),
               child: const Text('Generate'),
             ),
           ],
@@ -395,8 +334,7 @@ class _BillingScreenState
           .read(billingControllerProvider.notifier)
           .billService(
             customerId: _selectedCustomer!.id,
-            problemDesc:
-                _problemController.text.trim(),
+            problemDesc: _problemController.text.trim(),
             labourCharge: _labourCharge,
             partsUsed: _selectedParts
                 .map(
@@ -423,9 +361,7 @@ class _BillingScreenState
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
-          builder: (context) => InvoiceOverviewScreen(
-            invoiceDetails: details,
-          ),
+          builder: (context) => InvoiceOverviewScreen(invoiceDetails: details),
         ),
       );
 
@@ -447,25 +383,21 @@ class _BillingScreenState
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Invoice failed: $error',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Invoice failed: $error')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final billingState =
-        ref.watch(billingControllerProvider);
+    final billingState = ref.watch(billingControllerProvider);
 
     final isLoading = billingState.isLoading;
 
     return Scaffold(
       appBar: AppBar(
+        leading: appDrawerLeading(context),
         title: const Text('Billing'),
       ),
       body: AbsorbPointer(
@@ -473,8 +405,7 @@ class _BillingScreenState
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildCustomerCard(),
               const SizedBox(height: 16),
@@ -490,19 +421,10 @@ class _BillingScreenState
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child:
-                            CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(
-                        Icons.receipt_long,
-                      ),
-                label: Text(
-                  isLoading
-                      ? 'Generating...'
-                      : 'Generate Invoice',
-                ),
+                    : const Icon(Icons.receipt_long),
+                label: Text(isLoading ? 'Generating...' : 'Generate Invoice'),
               ),
             ],
           ),
@@ -516,15 +438,11 @@ class _BillingScreenState
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Customer',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             if (_selectedCustomer == null)
@@ -533,12 +451,8 @@ class _BillingScreenState
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _selectCustomer,
-                      icon: const Icon(
-                        Icons.person_search,
-                      ),
-                      label: const Text(
-                        'Select Customer',
-                      ),
+                      icon: const Icon(Icons.person_search),
+                      label: const Text('Select Customer'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -546,9 +460,7 @@ class _BillingScreenState
                     child: FilledButton.tonalIcon(
                       onPressed: _createCustomer,
                       icon: const Icon(Icons.person_add),
-                      label: const Text(
-                        'New Customer',
-                      ),
+                      label: const Text('New Customer'),
                     ),
                   ),
                 ],
@@ -556,12 +468,8 @@ class _BillingScreenState
             else
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                title: Text(
-                  _selectedCustomer!.name,
-                ),
+                leading: const CircleAvatar(child: Icon(Icons.person)),
+                title: Text(_selectedCustomer!.name),
                 subtitle: Text(
                   '${_selectedCustomer!.mobile}'
                   '${_selectedCustomer!.vehicleName == null ? '' : ' • ${_selectedCustomer!.vehicleName}'}',
@@ -582,15 +490,11 @@ class _BillingScreenState
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Service Details',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -604,8 +508,7 @@ class _BillingScreenState
             const SizedBox(height: 12),
             TextField(
               controller: _labourController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(
+              keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               onChanged: (_) => setState(() {}),
@@ -626,18 +529,14 @@ class _BillingScreenState
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 const Expanded(
                   child: Text(
                     'Parts',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
                 FilledButton.tonalIcon(
@@ -649,82 +548,52 @@ class _BillingScreenState
             ),
             const SizedBox(height: 12),
             if (_selectedParts.isEmpty)
-              const Text(
-                'No parts added.',
-              )
+              const Text('No parts added.')
             else
-              ..._selectedParts
-                  .asMap()
-                  .entries
-                  .map(
-                (entry) {
-                  final index = entry.key;
-                  final item = entry.value;
+              ..._selectedParts.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
 
-                  return Card(
-                    margin: const EdgeInsets.only(
-                      bottom: 8,
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(item.part.partName),
+                    subtitle: Text(
+                      '₹${item.part.sellingPrice.toStringAsFixed(2)} × ${item.quantity} = '
+                      '₹${(item.part.sellingPrice * item.quantity).toStringAsFixed(2)}',
                     ),
-                    child: ListTile(
-                      title: Text(
-                        item.part.partName,
-                      ),
-                      subtitle: Text(
-                        '₹${item.part.sellingPrice.toStringAsFixed(2)} × ${item.quantity} = '
-                        '₹${(item.part.sellingPrice * item.quantity).toStringAsFixed(2)}',
-                      ),
-                      leading: IconButton(
-                        onPressed: () =>
-                            _removePart(index),
-                        icon: const Icon(
-                          Icons.delete_outline,
+                    leading: IconButton(
+                      onPressed: () => _removePart(index),
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          onPressed: item.quantity <= 1
+                              ? null
+                              : () {
+                                  _changeQuantity(index, item.quantity - 1);
+                                },
+                          icon: const Icon(Icons.remove),
                         ),
-                      ),
-                      trailing: Row(
-                        mainAxisSize:
-                            MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            onPressed: item.quantity <= 1
-                                ? null
-                                : () {
-                                    _changeQuantity(
-                                      index,
-                                      item.quantity - 1,
-                                    );
-                                  },
-                            icon: const Icon(
-                              Icons.remove,
-                            ),
-                          ),
-                          Text(
-                            item.quantity.toString(),
-                            style: const TextStyle(
-                              fontWeight:
-                                  FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed:
-                                item.quantity >=
-                                        item.part.currentStock
-                                    ? null
-                                    : () {
-                                        _changeQuantity(
-                                          index,
-                                          item.quantity + 1,
-                                        );
-                                      },
-                            icon: const Icon(
-                              Icons.add,
-                            ),
-                          ),
-                        ],
-                      ),
+                        Text(
+                          item.quantity.toString(),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          onPressed: item.quantity >= item.part.currentStock
+                              ? null
+                              : () {
+                                  _changeQuantity(index, item.quantity + 1);
+                                },
+                          icon: const Icon(Icons.add),
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              }),
           ],
         ),
       ),
@@ -737,47 +606,28 @@ class _BillingScreenState
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _totalRow(
-              'Parts',
-              _partsTotal,
-            ),
+            _totalRow('Parts', _partsTotal),
             const SizedBox(height: 8),
-            _totalRow(
-              'Labour',
-              _labourCharge,
-            ),
+            _totalRow('Labour', _labourCharge),
             const Divider(height: 24),
-            _totalRow(
-              'Total',
-              _grandTotal,
-              bold: true,
-            ),
+            _totalRow('Total', _grandTotal, bold: true),
           ],
         ),
       ),
     );
   }
 
-  Widget _totalRow(
-    String label,
-    double amount, {
-    bool bold = false,
-  }) {
+  Widget _totalRow(String label, double amount, {bool bold = false}) {
     final style = TextStyle(
       fontSize: bold ? 20 : 16,
-      fontWeight:
-          bold ? FontWeight.bold : FontWeight.normal,
+      fontWeight: bold ? FontWeight.bold : FontWeight.normal,
     );
 
     return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: style),
-        Text(
-          '₹${amount.toStringAsFixed(2)}',
-          style: style,
-        ),
+        Text('₹${amount.toStringAsFixed(2)}', style: style),
       ],
     );
   }
@@ -787,8 +637,5 @@ class _SelectedPart {
   final Part part;
   final int quantity;
 
-  const _SelectedPart({
-    required this.part,
-    required this.quantity,
-  });
+  const _SelectedPart({required this.part, required this.quantity});
 }

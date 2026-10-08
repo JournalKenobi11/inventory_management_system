@@ -2,6 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_drawer_button.dart';
+
 import '../models/report_models.dart';
 import '../providers/report_provider.dart';
 
@@ -41,10 +43,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     );
 
     if (selected != null) {
-      ref.read(selectedReportRangeProvider.notifier).setCustomRange(
-            selected.start,
-            selected.end,
-          );
+      ref
+          .read(selectedReportRangeProvider.notifier)
+          .setCustomRange(selected.start, selected.end);
     }
   }
 
@@ -55,6 +56,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: appDrawerLeading(context),
         title: const Text('Reports & Analytics'),
         actions: [
           IconButton(
@@ -84,20 +86,23 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
           _buildDateRangeSelector(selectedRange),
           Expanded(
             child: reportAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          size: 48, color: Colors.red),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: Colors.red,
+                      ),
                       const SizedBox(height: 12),
-                      Text('Error loading reports: $err',
-                          textAlign: TextAlign.center),
+                      Text(
+                        'Error loading reports: $err',
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () =>
@@ -143,13 +148,15 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
             children: [
               ActionChip(
                 label: const Text('This Month'),
-                onPressed: () =>
-                    ref.read(selectedReportRangeProvider.notifier).setThisMonth(),
+                onPressed: () => ref
+                    .read(selectedReportRangeProvider.notifier)
+                    .setThisMonth(),
               ),
               ActionChip(
                 label: const Text('This Year'),
-                onPressed: () =>
-                    ref.read(selectedReportRangeProvider.notifier).setThisYear(),
+                onPressed: () => ref
+                    .read(selectedReportRangeProvider.notifier)
+                    .setThisYear(),
               ),
               ActionChip(
                 avatar: const Icon(Icons.calendar_today, size: 16),
@@ -210,10 +217,10 @@ class _FinancialOverviewTab extends StatelessWidget {
                 value: '₹${profit.netProfit.toStringAsFixed(2)}',
                 subtitle:
                     'Margin: ${profit.profitMarginPercentage.toStringAsFixed(1)}%',
-                color: isProfitable ? Colors.green.shade700 : Colors.red.shade700,
-                icon: isProfitable
-                    ? Icons.trending_up
-                    : Icons.trending_down,
+                color: isProfitable
+                    ? Colors.green.shade700
+                    : Colors.red.shade700,
+                icon: isProfitable ? Icons.trending_up : Icons.trending_down,
               ),
             ),
             const SizedBox(width: 12),
@@ -253,7 +260,8 @@ class _FinancialOverviewTab extends StatelessWidget {
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: report.sales.trends
+                    maxY:
+                        report.sales.trends
                             .map((t) => t.totalSales)
                             .reduce((a, b) => a > b ? a : b) *
                         1.2,
@@ -273,7 +281,8 @@ class _FinancialOverviewTab extends StatelessWidget {
                           getTitlesWidget: (val, meta) {
                             final idx = val.toInt();
                             if (idx >= 0 && idx < report.sales.trends.length) {
-                              final label = report.sales.trends[idx].periodLabel;
+                              final label =
+                                  report.sales.trends[idx].periodLabel;
                               final short = label.length > 5
                                   ? label.substring(label.length - 5)
                                   : label;
@@ -405,34 +414,31 @@ class _ExpenseBreakdownTab extends StatelessWidget {
                   PieChartData(
                     sectionsSpace: 2,
                     centerSpaceRadius: 36,
-                    sections: List.generate(
-                      categories.length,
-                      (i) {
-                        final cat = categories[i];
-                        final colors = [
-                          Colors.blue,
-                          Colors.orange,
-                          Colors.green,
-                          Colors.purple,
-                          Colors.red,
-                          Colors.teal,
-                          Colors.amber,
-                          Colors.cyan,
-                        ];
-                        final color = colors[i % colors.length];
-                        return PieChartSectionData(
-                          value: cat.amount,
-                          title: '${cat.percentage.toStringAsFixed(0)}%',
-                          color: color,
-                          radius: 50,
-                          titleStyle: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        );
-                      },
-                    ),
+                    sections: List.generate(categories.length, (i) {
+                      final cat = categories[i];
+                      final colors = [
+                        Colors.blue,
+                        Colors.orange,
+                        Colors.green,
+                        Colors.purple,
+                        Colors.red,
+                        Colors.teal,
+                        Colors.amber,
+                        Colors.cyan,
+                      ];
+                      final color = colors[i % colors.length];
+                      return PieChartSectionData(
+                        value: cat.amount,
+                        title: '${cat.percentage.toStringAsFixed(0)}%',
+                        color: color,
+                        radius: 50,
+                        titleStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      );
+                    }),
                   ),
                 ),
               ),
@@ -449,12 +455,16 @@ class _ExpenseBreakdownTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
                 leading: CircleAvatar(
-                  child: Text(cat.category.isNotEmpty
-                      ? cat.category[0].toUpperCase()
-                      : '?'),
+                  child: Text(
+                    cat.category.isNotEmpty
+                        ? cat.category[0].toUpperCase()
+                        : '?',
+                  ),
                 ),
-                title: Text(cat.category,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  cat.category,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 subtitle: Text('${cat.count} transactions'),
                 trailing: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -546,9 +556,7 @@ class _TopPartsTab extends StatelessWidget {
     final parts = report.topParts;
 
     if (parts.isEmpty) {
-      return const Center(
-        child: Text('No parts sold in selected period.'),
-      );
+      return const Center(child: Text('No parts sold in selected period.'));
     }
 
     return ListView.builder(
@@ -559,9 +567,7 @@ class _TopPartsTab extends StatelessWidget {
         return Card(
           margin: const EdgeInsets.only(bottom: 10),
           child: ListTile(
-            leading: CircleAvatar(
-              child: Text('${part.quantitySold}x'),
-            ),
+            leading: CircleAvatar(child: Text('${part.quantitySold}x')),
             title: Text(
               part.partName,
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -639,9 +645,11 @@ class _SalarySummaryTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
                 leading: CircleAvatar(
-                  child: Text(item.employeeName.isNotEmpty
-                      ? item.employeeName[0].toUpperCase()
-                      : '?'),
+                  child: Text(
+                    item.employeeName.isNotEmpty
+                        ? item.employeeName[0].toUpperCase()
+                        : '?',
+                  ),
                 ),
                 title: Text(
                   item.employeeName,
@@ -747,11 +755,7 @@ class _SummaryCol extends StatelessWidget {
   final String value;
   final Color? color;
 
-  const _SummaryCol({
-    required this.title,
-    required this.value,
-    this.color,
-  });
+  const _SummaryCol({required this.title, required this.value, this.color});
 
   @override
   Widget build(BuildContext context) {

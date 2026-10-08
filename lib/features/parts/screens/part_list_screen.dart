@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/app_drawer_button.dart';
+
 import '../models/part.dart';
 import '../providers/part_provider.dart';
 import 'part_form_screen.dart';
@@ -27,6 +29,7 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: appDrawerLeading(context),
         title: const Text('Inventory'),
       ),
       body: Column(
@@ -59,9 +62,7 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
           ),
           Expanded(
             child: partsAsync.when(
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stackTrace) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -73,16 +74,12 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
               ),
               data: (parts) {
                 if (parts.isEmpty) {
-                  return const Center(
-                    child: Text('No parts found.'),
-                  );
+                  return const Center(child: Text('No parts found.'));
                 }
 
                 return RefreshIndicator(
                   onRefresh: () {
-                    return ref
-                        .read(partsProvider.notifier)
-                        .loadParts();
+                    return ref.read(partsProvider.notifier).loadParts();
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.only(
@@ -104,9 +101,7 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final created = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (_) => const PartFormScreen(),
-            ),
+            MaterialPageRoute(builder: (_) => const PartFormScreen()),
           );
 
           if (created == true && mounted) {
@@ -122,14 +117,11 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
 class _PartCard extends StatelessWidget {
   final Part part;
 
-  const _PartCard({
-    required this.part,
-  });
+  const _PartCard({required this.part});
 
   @override
   Widget build(BuildContext context) {
-    final isLowStock =
-        part.currentStock <= part.lowStockThreshold;
+    final isLowStock = part.currentStock <= part.lowStockThreshold;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -137,9 +129,7 @@ class _PartCard extends StatelessWidget {
         contentPadding: const EdgeInsets.all(16),
         title: Text(
           part.partName,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
@@ -147,12 +137,9 @@ class _PartCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Part No: ${part.partNumber}'),
-              if (part.category != null)
-                Text('Category: ${part.category}'),
+              if (part.category != null) Text('Category: ${part.category}'),
               const SizedBox(height: 4),
-              Text(
-                'Selling Price: ₹${part.sellingPrice.toStringAsFixed(2)}',
-              ),
+              Text('Selling Price: ₹${part.sellingPrice.toStringAsFixed(2)}'),
             ],
           ),
         ),
@@ -164,9 +151,7 @@ class _PartCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: isLowStock
-                    ? Theme.of(context).colorScheme.error
-                    : null,
+                color: isLowStock ? Theme.of(context).colorScheme.error : null,
               ),
             ),
             Text(
@@ -174,9 +159,7 @@ class _PartCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: isLowStock
-                    ? Theme.of(context).colorScheme.error
-                    : null,
+                color: isLowStock ? Theme.of(context).colorScheme.error : null,
               ),
             ),
           ],
