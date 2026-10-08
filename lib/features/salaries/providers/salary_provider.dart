@@ -1,12 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
+import '../models/attendance.dart';
+import '../models/attendance_config.dart';
+import '../models/attendance_period.dart';
 import '../models/employee.dart';
+import '../models/employee_attendance_summary.dart';
 import '../models/salary_payment.dart';
+import '../repositories/interfaces/attendance_repository.dart';
 import '../repositories/interfaces/employee_repository.dart';
 import '../repositories/interfaces/salary_payment_repository.dart';
+import '../repositories/sqlite/sqlite_attendance_repository.dart';
 import '../repositories/sqlite/sqlite_employee_repository.dart';
 import '../repositories/sqlite/sqlite_salary_payment_repository.dart';
+import '../services/attendance_service.dart';
 import '../services/salary_service.dart';
 
 final employeeRepositoryProvider =
@@ -23,10 +30,62 @@ final salaryPaymentRepositoryProvider =
   );
 });
 
+final attendanceRepositoryProvider =
+    Provider<AttendanceRepository>((ref) {
+  return SqliteAttendanceRepository(
+    ref.read(appDatabaseProvider),
+  );
+});
+
+final attendanceConfigProvider =
+    Provider<AttendanceConfig>((ref) {
+  return const AttendanceConfig();
+});
+
 final salaryServiceProvider = Provider<SalaryService>((ref) {
   return SalaryService(
     ref.read(employeeRepositoryProvider),
     ref.read(salaryPaymentRepositoryProvider),
+    ref.read(attendanceRepositoryProvider),
+  );
+});
+
+final attendanceServiceProvider = Provider<AttendanceService>((ref) {
+  return AttendanceService(
+    ref.read(employeeRepositoryProvider),
+    ref.read(attendanceRepositoryProvider),
+    config: ref.watch(attendanceConfigProvider),
+  );
+});
+
+final selectedAttendancePeriodProvider =
+    NotifierProvider<AttendancePeriodNotifier, AttendancePeriod>(
+  AttendancePeriodNotifier.new,
+);
+
+class AttendancePeriodNotifier extends Notifier<AttendancePeriod> {
+  @override
+  AttendancePeriod build() => AttendancePeriod.thisMonth;
+
+  void setPeriod(AttendancePeriod period) {
+    state = period;
+  }
+}
+
+final todayAttendanceMapProvider =
+    FutureProvider<Map<String, Attendance>>((ref) async {
+  final service = ref.watch(attendanceServiceProvider);
+  return service.getTodayAttendanceForAll();
+});
+
+final employeeAttendanceSummariesProvider =
+    FutureProvider<Map<String, EmployeeAttendanceSummary>>((ref) async {
+  final service = ref.watch(attendanceServiceProvider);
+  final period = ref.watch(selectedAttendancePeriodProvider);
+  final range = period.getDateRange();
+  return service.getSummariesForPeriod(
+    startDate: range.startDate,
+    endDate: range.endDate,
   );
 });
 

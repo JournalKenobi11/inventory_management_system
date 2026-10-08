@@ -3,17 +3,20 @@ import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/id_generator.dart';
 import '../models/employee.dart';
 import '../models/salary_payment.dart';
+import '../repositories/interfaces/attendance_repository.dart';
 import '../repositories/interfaces/employee_repository.dart';
 import '../repositories/interfaces/salary_payment_repository.dart';
 
 class SalaryService {
   final EmployeeRepository employeeRepository;
   final SalaryPaymentRepository salaryPaymentRepository;
+  final AttendanceRepository? attendanceRepository;
 
   SalaryService(
     this.employeeRepository,
-    this.salaryPaymentRepository,
-  );
+    this.salaryPaymentRepository, [
+    this.attendanceRepository,
+  ]);
 
   Future<Employee> createEmployee({
     required String name,
@@ -97,6 +100,17 @@ class SalaryService {
       throw ValidationException(
         'Employee cannot be deleted because salary payments exist.',
       );
+    }
+
+    if (attendanceRepository != null) {
+      final attendances =
+          await attendanceRepository!.getByEmployeeId(id);
+
+      if (attendances.isNotEmpty) {
+        throw ValidationException(
+          'Employee cannot be deleted because attendance records exist.',
+        );
+      }
     }
 
     await employeeRepository.delete(id);

@@ -110,6 +110,23 @@ class SalaryPayments extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// Attendance tracking table
+class Attendances extends Table {
+  TextColumn get id => text()();
+  TextColumn get employeeId => text().references(Employees, #id)();
+  TextColumn get date => text()(); // YYYY-MM-DD
+  TextColumn get status => text()(); // 'present' | 'absent'
+  TextColumn get reportingTime => text().nullable()(); // 'HH:mm'
+
+  @override
+  Set<Column> get primaryKey => {id};
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {employeeId, date},
+      ];
+}
+
 // Invoice numbering counter — avoids collisions, server-migration-friendly
 class Counters extends Table {
   TextColumn get name => text()();
@@ -131,6 +148,7 @@ class Counters extends Table {
   Expenses,
   Employees,
   SalaryPayments,
+  Attendances,
   Counters,
 ])
 class AppDatabase extends _$AppDatabase {
@@ -138,7 +156,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e) : super();
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -148,6 +166,11 @@ class AppDatabase extends _$AppDatabase {
           await into(counters).insert(
             CountersCompanion.insert(name: 'invoice_number', value: const Value(0)),
           );
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.createTable(attendances);
+          }
         },
       );
 }
