@@ -23,6 +23,12 @@ class SqliteServiceRepository implements ServiceRepository {
             invoiceId: service.invoiceId == null
                 ? const Value.absent()
                 : Value(service.invoiceId!),
+            serviceReport: service.serviceReport == null
+                ? const Value.absent()
+                : Value(service.serviceReport!),
+            labourEntries: service.labourEntriesJson == null
+                ? const Value.absent()
+                : Value(service.labourEntriesJson!),
           ),
         );
 
@@ -104,6 +110,8 @@ class SqliteServiceRepository implements ServiceRepository {
       labourCharge: row.labourCharge,
       serviceDate: row.serviceDate,
       invoiceId: row.invoiceId,
+      serviceReport: row.serviceReport,
+      labourEntriesJson: row.labourEntries,
     );
   }
 }

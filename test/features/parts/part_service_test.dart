@@ -36,7 +36,7 @@ void main() {
     );
 
     expect(part.partNumber, 'BRK-001');
-    expect(part.partName, 'Brake Pad');
+    expect(part.partName, 'BRAKE PAD');
     expect(part.purchasePrice, 500.0);
     expect(part.sellingPrice, 750.0);
     expect(part.currentStock, 10);
@@ -176,7 +176,7 @@ void main() {
 
     final result = await service.getPartById(part.id);
 
-    expect(result!.partName, 'Premium Brake Pad');
+    expect(result!.partName, 'PREMIUM BRAKE PAD');
     expect(result.sellingPrice, 850.0);
     expect(result.partNumber, 'BRK-001');
   });

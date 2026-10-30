@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../billing/billing.dart';
 import '../models/customer.dart';
@@ -17,6 +18,8 @@ class CustomerDetailScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final historyAsync =
         ref.watch(customerBillingHistoryProvider(customer.id));
+    final reminderAsync =
+        ref.watch(customerReminderProvider(customer.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -25,15 +28,20 @@ class CustomerDetailScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(customerBillingHistoryProvider(customer.id));
+          ref.invalidate(customerReminderProvider(customer.id));
         },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             // 1. Customer Information Card
             _buildCustomerInfoCard(context, theme),
+            const SizedBox(height: 16),
+
+            // 2. Service Reminder Card (6 Months from previous service)
+            _buildServiceReminderCard(context, theme, reminderAsync),
             const SizedBox(height: 20),
 
-            // 2. Section Header: Service / Billing History
+            // 3. Section Header: Service / Billing History
             _buildHistoryHeader(theme, historyAsync),
             const SizedBox(height: 12),
 
@@ -232,6 +240,204 @@ class CustomerDetailScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildServiceReminderCard(
+    BuildContext context,
+    ThemeData theme,
+    AsyncValue<CustomerServiceReminder?> reminderAsync,
+  ) {
+    return reminderAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (reminder) {
+        if (reminder == null) {
+          return Card(
+            elevation: 0,
+            color: theme.colorScheme.surfaceContainerLow,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.notifications_none_rounded,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'No previous service recorded. The 6-month reminder activates after the first billed service.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final isDue = reminder.isDue;
+        final dueDateFormatted =
+            '${reminder.reminderDueDate.day.toString().padLeft(2, '0')}/${reminder.reminderDueDate.month.toString().padLeft(2, '0')}/${reminder.reminderDueDate.year}';
+        final lastDateFormatted =
+            '${reminder.lastServiceDate.day.toString().padLeft(2, '0')}/${reminder.lastServiceDate.month.toString().padLeft(2, '0')}/${reminder.lastServiceDate.year}';
+
+        return Card(
+          elevation: isDue ? 2 : 0,
+          color: isDue
+              ? theme.colorScheme.errorContainer.withAlpha(90)
+              : theme.colorScheme.primaryContainer.withAlpha(70),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isDue
+                  ? theme.colorScheme.error.withAlpha(160)
+                  : theme.colorScheme.primary.withAlpha(100),
+              width: isDue ? 1.5 : 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      isDue
+                          ? Icons.warning_amber_rounded
+                          : Icons.access_time_rounded,
+                      color: isDue
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isDue
+                                ? 'SERVICE DUE (6-Month Reminder)'
+                                : 'Next Service Reminder',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: isDue
+                                  ? theme.colorScheme.error
+                                  : theme.colorScheme.primary,
+                            ),
+                          ),
+                          Text(
+                            isDue
+                                ? 'Overdue by ${reminder.daysOverdue} days'
+                                : 'Due in ${reminder.daysRemaining} days (on $dueDateFormatted)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isDue
+                                  ? theme.colorScheme.error
+                                  : theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDue
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        isDue ? 'DUE NOW' : 'ON TRACK',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Previous Service: $lastDateFormatted',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      'Reminder Due: $dueDateFormatted',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                if (isDue) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () async {
+                            final vehicle = customer.vehicleName ?? 'your vehicle';
+                            final text = Uri.encodeComponent(
+                              'Hello ${customer.name}, your $vehicle is due for its 6-month periodic service at our garage. Please visit us to keep your vehicle in top running condition!',
+                            );
+                            final cleanPhone =
+                                customer.mobile.replaceAll(RegExp(r'\D'), '');
+                            final uri = Uri.parse(
+                              'https://wa.me/$cleanPhone?text=$text',
+                            );
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(
+                                uri,
+                                mode: LaunchMode.externalApplication,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.chat_bubble, size: 16),
+                          label: const Text('WhatsApp Reminder'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(
+                        onPressed: () async {
+                          final uri = Uri.parse('tel:${customer.mobile}');
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          }
+                        },
+                        icon: const Icon(Icons.call, size: 18),
+                        tooltip: 'Call Customer',
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/utils/phone_number_utils.dart';
 import '../../export/export.dart';
+import '../models/bill_terms.dart';
 import '../models/invoice_details.dart';
 import '../providers/billing_provider.dart';
 
@@ -185,11 +186,29 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
                 _buildPartsCard(details, theme),
                 const SizedBox(height: 12),
 
-                // 5. Cost Breakdown & Totals
+                // 5. Labour Services Breakdown
+                if (details.service.labourEntries.isNotEmpty ||
+                    details.labourCharge > 0) ...[
+                  _buildLabourBreakdownCard(details, theme),
+                  const SizedBox(height: 12),
+                ],
+
+                // 6. Cost Breakdown & Totals
                 _buildSummaryCard(details, theme),
+                const SizedBox(height: 16),
+
+                // 7. Report Section (Service Summary)
+                if (details.service.serviceReport != null &&
+                    details.service.serviceReport!.trim().isNotEmpty) ...[
+                  _buildReportCard(details, theme),
+                  const SizedBox(height: 16),
+                ],
+
+                // 8. Terms and Conditions (below Report section)
+                _buildTermsAndConditionsCard(theme),
                 const SizedBox(height: 20),
 
-                // 6. Action Buttons
+                // 9. Action Buttons
                 _buildActionButtons(details),
                 const SizedBox(height: 24),
               ],
@@ -523,6 +542,187 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabourBreakdownCard(InvoiceDetails details, ThemeData theme) {
+    final labourEntries = details.service.labourEntries;
+    if (labourEntries.isEmpty && details.labourCharge <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.engineering_outlined,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Labour Charges (${labourEntries.length})',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Total: ₹${details.labourCharge.toStringAsFixed(2)}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 20),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: labourEntries.length,
+              separatorBuilder: (context, index) => const Divider(height: 12),
+              itemBuilder: (context, index) {
+                final entry = labourEntries[index];
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        entry.description,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '₹${entry.charge.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReportCard(InvoiceDetails details, ThemeData theme) {
+    final report = details.service.serviceReport;
+    if (report == null || report.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      color: theme.colorScheme.surfaceContainerLow,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.assignment_outlined,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Report (Service Summary)',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Text(
+              report.trim(),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTermsAndConditionsCard(ThemeData theme) {
+    return Card(
+      color: theme.colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withAlpha(120),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.gavel_outlined,
+                  color: theme.colorScheme.secondary,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Terms & Conditions',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.secondary,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            ...BillTerms.standardTerms.asMap().entries.map(
+                  (entry) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${entry.key + 1}. ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            entry.value,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
           ],
         ),
       ),

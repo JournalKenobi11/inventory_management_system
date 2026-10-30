@@ -1351,6 +1351,28 @@ class $ServiceJobsTable extends ServiceJobs
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _serviceReportMeta = const VerificationMeta(
+    'serviceReport',
+  );
+  @override
+  late final GeneratedColumn<String> serviceReport = GeneratedColumn<String>(
+    'service_report',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _labourEntriesMeta = const VerificationMeta(
+    'labourEntries',
+  );
+  @override
+  late final GeneratedColumn<String> labourEntries = GeneratedColumn<String>(
+    'labour_entries',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1359,6 +1381,8 @@ class $ServiceJobsTable extends ServiceJobs
     labourCharge,
     serviceDate,
     invoiceId,
+    serviceReport,
+    labourEntries,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1420,6 +1444,24 @@ class $ServiceJobsTable extends ServiceJobs
         invoiceId.isAcceptableOrUnknown(data['invoice_id']!, _invoiceIdMeta),
       );
     }
+    if (data.containsKey('service_report')) {
+      context.handle(
+        _serviceReportMeta,
+        serviceReport.isAcceptableOrUnknown(
+          data['service_report']!,
+          _serviceReportMeta,
+        ),
+      );
+    }
+    if (data.containsKey('labour_entries')) {
+      context.handle(
+        _labourEntriesMeta,
+        labourEntries.isAcceptableOrUnknown(
+          data['labour_entries']!,
+          _labourEntriesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1453,6 +1495,14 @@ class $ServiceJobsTable extends ServiceJobs
         DriftSqlType.string,
         data['${effectivePrefix}invoice_id'],
       ),
+      serviceReport: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}service_report'],
+      ),
+      labourEntries: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}labour_entries'],
+      ),
     );
   }
 
@@ -1469,6 +1519,8 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
   final double labourCharge;
   final String serviceDate;
   final String? invoiceId;
+  final String? serviceReport;
+  final String? labourEntries;
   const ServiceJob({
     required this.id,
     required this.customerId,
@@ -1476,6 +1528,8 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     required this.labourCharge,
     required this.serviceDate,
     this.invoiceId,
+    this.serviceReport,
+    this.labourEntries,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1489,6 +1543,12 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     map['service_date'] = Variable<String>(serviceDate);
     if (!nullToAbsent || invoiceId != null) {
       map['invoice_id'] = Variable<String>(invoiceId);
+    }
+    if (!nullToAbsent || serviceReport != null) {
+      map['service_report'] = Variable<String>(serviceReport);
+    }
+    if (!nullToAbsent || labourEntries != null) {
+      map['labour_entries'] = Variable<String>(labourEntries);
     }
     return map;
   }
@@ -1505,6 +1565,12 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       invoiceId: invoiceId == null && nullToAbsent
           ? const Value.absent()
           : Value(invoiceId),
+      serviceReport: serviceReport == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serviceReport),
+      labourEntries: labourEntries == null && nullToAbsent
+          ? const Value.absent()
+          : Value(labourEntries),
     );
   }
 
@@ -1520,6 +1586,8 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       labourCharge: serializer.fromJson<double>(json['labourCharge']),
       serviceDate: serializer.fromJson<String>(json['serviceDate']),
       invoiceId: serializer.fromJson<String?>(json['invoiceId']),
+      serviceReport: serializer.fromJson<String?>(json['serviceReport']),
+      labourEntries: serializer.fromJson<String?>(json['labourEntries']),
     );
   }
   @override
@@ -1532,6 +1600,8 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       'labourCharge': serializer.toJson<double>(labourCharge),
       'serviceDate': serializer.toJson<String>(serviceDate),
       'invoiceId': serializer.toJson<String?>(invoiceId),
+      'serviceReport': serializer.toJson<String?>(serviceReport),
+      'labourEntries': serializer.toJson<String?>(labourEntries),
     };
   }
 
@@ -1542,6 +1612,8 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     double? labourCharge,
     String? serviceDate,
     Value<String?> invoiceId = const Value.absent(),
+    Value<String?> serviceReport = const Value.absent(),
+    Value<String?> labourEntries = const Value.absent(),
   }) => ServiceJob(
     id: id ?? this.id,
     customerId: customerId ?? this.customerId,
@@ -1549,6 +1621,12 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     labourCharge: labourCharge ?? this.labourCharge,
     serviceDate: serviceDate ?? this.serviceDate,
     invoiceId: invoiceId.present ? invoiceId.value : this.invoiceId,
+    serviceReport: serviceReport.present
+        ? serviceReport.value
+        : this.serviceReport,
+    labourEntries: labourEntries.present
+        ? labourEntries.value
+        : this.labourEntries,
   );
   ServiceJob copyWithCompanion(ServiceJobsCompanion data) {
     return ServiceJob(
@@ -1566,6 +1644,12 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
           ? data.serviceDate.value
           : this.serviceDate,
       invoiceId: data.invoiceId.present ? data.invoiceId.value : this.invoiceId,
+      serviceReport: data.serviceReport.present
+          ? data.serviceReport.value
+          : this.serviceReport,
+      labourEntries: data.labourEntries.present
+          ? data.labourEntries.value
+          : this.labourEntries,
     );
   }
 
@@ -1577,7 +1661,9 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
           ..write('problemDesc: $problemDesc, ')
           ..write('labourCharge: $labourCharge, ')
           ..write('serviceDate: $serviceDate, ')
-          ..write('invoiceId: $invoiceId')
+          ..write('invoiceId: $invoiceId, ')
+          ..write('serviceReport: $serviceReport, ')
+          ..write('labourEntries: $labourEntries')
           ..write(')'))
         .toString();
   }
@@ -1590,6 +1676,8 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     labourCharge,
     serviceDate,
     invoiceId,
+    serviceReport,
+    labourEntries,
   );
   @override
   bool operator ==(Object other) =>
@@ -1600,7 +1688,9 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
           other.problemDesc == this.problemDesc &&
           other.labourCharge == this.labourCharge &&
           other.serviceDate == this.serviceDate &&
-          other.invoiceId == this.invoiceId);
+          other.invoiceId == this.invoiceId &&
+          other.serviceReport == this.serviceReport &&
+          other.labourEntries == this.labourEntries);
 }
 
 class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
@@ -1610,6 +1700,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
   final Value<double> labourCharge;
   final Value<String> serviceDate;
   final Value<String?> invoiceId;
+  final Value<String?> serviceReport;
+  final Value<String?> labourEntries;
   final Value<int> rowid;
   const ServiceJobsCompanion({
     this.id = const Value.absent(),
@@ -1618,6 +1710,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     this.labourCharge = const Value.absent(),
     this.serviceDate = const Value.absent(),
     this.invoiceId = const Value.absent(),
+    this.serviceReport = const Value.absent(),
+    this.labourEntries = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ServiceJobsCompanion.insert({
@@ -1627,6 +1721,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     this.labourCharge = const Value.absent(),
     required String serviceDate,
     this.invoiceId = const Value.absent(),
+    this.serviceReport = const Value.absent(),
+    this.labourEntries = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        customerId = Value(customerId),
@@ -1638,6 +1734,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     Expression<double>? labourCharge,
     Expression<String>? serviceDate,
     Expression<String>? invoiceId,
+    Expression<String>? serviceReport,
+    Expression<String>? labourEntries,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1647,6 +1745,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
       if (labourCharge != null) 'labour_charge': labourCharge,
       if (serviceDate != null) 'service_date': serviceDate,
       if (invoiceId != null) 'invoice_id': invoiceId,
+      if (serviceReport != null) 'service_report': serviceReport,
+      if (labourEntries != null) 'labour_entries': labourEntries,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1658,6 +1758,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     Value<double>? labourCharge,
     Value<String>? serviceDate,
     Value<String?>? invoiceId,
+    Value<String?>? serviceReport,
+    Value<String?>? labourEntries,
     Value<int>? rowid,
   }) {
     return ServiceJobsCompanion(
@@ -1667,6 +1769,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
       labourCharge: labourCharge ?? this.labourCharge,
       serviceDate: serviceDate ?? this.serviceDate,
       invoiceId: invoiceId ?? this.invoiceId,
+      serviceReport: serviceReport ?? this.serviceReport,
+      labourEntries: labourEntries ?? this.labourEntries,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1692,6 +1796,12 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     if (invoiceId.present) {
       map['invoice_id'] = Variable<String>(invoiceId.value);
     }
+    if (serviceReport.present) {
+      map['service_report'] = Variable<String>(serviceReport.value);
+    }
+    if (labourEntries.present) {
+      map['labour_entries'] = Variable<String>(labourEntries.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1707,6 +1817,8 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
           ..write('labourCharge: $labourCharge, ')
           ..write('serviceDate: $serviceDate, ')
           ..write('invoiceId: $invoiceId, ')
+          ..write('serviceReport: $serviceReport, ')
+          ..write('labourEntries: $labourEntries, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6051,6 +6163,8 @@ typedef $$ServiceJobsTableCreateCompanionBuilder =
       Value<double> labourCharge,
       required String serviceDate,
       Value<String?> invoiceId,
+      Value<String?> serviceReport,
+      Value<String?> labourEntries,
       Value<int> rowid,
     });
 typedef $$ServiceJobsTableUpdateCompanionBuilder =
@@ -6061,6 +6175,8 @@ typedef $$ServiceJobsTableUpdateCompanionBuilder =
       Value<double> labourCharge,
       Value<String> serviceDate,
       Value<String?> invoiceId,
+      Value<String?> serviceReport,
+      Value<String?> labourEntries,
       Value<int> rowid,
     });
 
@@ -6154,6 +6270,16 @@ class $$ServiceJobsTableFilterComposer
 
   ColumnFilters<String> get invoiceId => $composableBuilder(
     column: $table.invoiceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serviceReport => $composableBuilder(
+    column: $table.serviceReport,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get labourEntries => $composableBuilder(
+    column: $table.labourEntries,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6265,6 +6391,16 @@ class $$ServiceJobsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get serviceReport => $composableBuilder(
+    column: $table.serviceReport,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get labourEntries => $composableBuilder(
+    column: $table.labourEntries,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CustomersTableOrderingComposer get customerId {
     final $$CustomersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6318,6 +6454,16 @@ class $$ServiceJobsTableAnnotationComposer
 
   GeneratedColumn<String> get invoiceId =>
       $composableBuilder(column: $table.invoiceId, builder: (column) => column);
+
+  GeneratedColumn<String> get serviceReport => $composableBuilder(
+    column: $table.serviceReport,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get labourEntries => $composableBuilder(
+    column: $table.labourEntries,
+    builder: (column) => column,
+  );
 
   $$CustomersTableAnnotationComposer get customerId {
     final $$CustomersTableAnnotationComposer composer = $composerBuilder(
@@ -6431,6 +6577,8 @@ class $$ServiceJobsTableTableManager
                 Value<double> labourCharge = const Value.absent(),
                 Value<String> serviceDate = const Value.absent(),
                 Value<String?> invoiceId = const Value.absent(),
+                Value<String?> serviceReport = const Value.absent(),
+                Value<String?> labourEntries = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServiceJobsCompanion(
                 id: id,
@@ -6439,6 +6587,8 @@ class $$ServiceJobsTableTableManager
                 labourCharge: labourCharge,
                 serviceDate: serviceDate,
                 invoiceId: invoiceId,
+                serviceReport: serviceReport,
+                labourEntries: labourEntries,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6449,6 +6599,8 @@ class $$ServiceJobsTableTableManager
                 Value<double> labourCharge = const Value.absent(),
                 required String serviceDate,
                 Value<String?> invoiceId = const Value.absent(),
+                Value<String?> serviceReport = const Value.absent(),
+                Value<String?> labourEntries = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServiceJobsCompanion.insert(
                 id: id,
@@ -6457,6 +6609,8 @@ class $$ServiceJobsTableTableManager
                 labourCharge: labourCharge,
                 serviceDate: serviceDate,
                 invoiceId: invoiceId,
+                serviceReport: serviceReport,
+                labourEntries: labourEntries,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_drawer_button.dart';
 
-import '../../billing/screens/billing_screen.dart';
+import '../../billing/billing.dart';
+import '../../customers/customers.dart';
 import '../models/dashboard_summary.dart';
 import '../providers/dashboard_provider.dart';
 import '../services/dashboard_service.dart';
@@ -135,12 +136,64 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _buildDateControls(context),
         const SizedBox(height: 16),
         _buildSummaryGrid(summary),
+        const SizedBox(height: 16),
+        _buildServiceRemindersAlert(),
         const SizedBox(height: 24),
         _buildLowStockSection(summary),
         const SizedBox(height: 24),
         _buildTopSellingSection(summary),
         const SizedBox(height: 24),
       ],
+    );
+  }
+
+  Widget _buildServiceRemindersAlert() {
+    final remindersAsync = ref.watch(customerServiceRemindersProvider);
+
+    return remindersAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (reminders) {
+        final dueReminders = reminders.where((r) => r.isDue).toList();
+        if (dueReminders.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Card(
+          elevation: 1,
+          color: Theme.of(context).colorScheme.errorContainer.withAlpha(90),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.error.withAlpha(120),
+            ),
+          ),
+          child: ListTile(
+            leading: Icon(
+              Icons.alarm_on_rounded,
+              color: Theme.of(context).colorScheme.error,
+              size: 28,
+            ),
+            title: Text(
+              '${dueReminders.length} Customer${dueReminders.length > 1 ? 's' : ''} Due for Service',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            subtitle: const Text(
+              'Periodic 6-month service reminder. Tap to review customer list.',
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CustomerListScreen()),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 

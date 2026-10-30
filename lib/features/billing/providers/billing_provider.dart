@@ -14,6 +14,9 @@ import '../repositories/sqlite/sqlite_service_part_repository.dart';
 import '../repositories/sqlite/sqlite_service_repository.dart';
 import '../services/billing_service.dart';
 
+import '../models/customer_service_reminder.dart';
+import '../models/labour_entry.dart';
+
 final serviceRepositoryProvider =
     Provider<ServiceRepository>((ref) {
   final database = ref.watch(appDatabaseProvider);
@@ -64,7 +67,9 @@ class BillingController
   Future<Invoice> billService({
     required String customerId,
     required String problemDesc,
-    required double labourCharge,
+    double? labourCharge,
+    List<LabourEntry>? labourEntries,
+    String? serviceReport,
     required List<ServicePartInput> partsUsed,
   }) async {
     state = const AsyncLoading<Invoice?>();
@@ -76,6 +81,8 @@ class BillingController
             customerId: customerId,
             problemDesc: problemDesc,
             labourCharge: labourCharge,
+            labourEntries: labourEntries,
+            serviceReport: serviceReport,
             partsUsed: partsUsed,
           );
 
@@ -110,6 +117,19 @@ final customerBillingHistoryProvider =
         (ref, customerId) async {
   final billingService = ref.watch(billingServiceProvider);
   return billingService.getCustomerBillingHistory(customerId);
+});
+
+final customerServiceRemindersProvider =
+    FutureProvider.autoDispose<List<CustomerServiceReminder>>((ref) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getCustomerServiceReminders();
+});
+
+final customerReminderProvider =
+    FutureProvider.autoDispose.family<CustomerServiceReminder?, String>(
+        (ref, customerId) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getCustomerReminder(customerId);
 });
 
 

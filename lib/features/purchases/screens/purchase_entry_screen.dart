@@ -183,10 +183,37 @@ class _PurchaseEntryScreenState
               validator: _validateQuantity,
             ),
             const SizedBox(height: 16),
+            if (_selectedPart != null) ...[
+              Card(
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Theme.of(context).colorScheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Catalog Worth: ₹${_selectedPart!.purchasePrice.toStringAsFixed(2)} per unit',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             TextFormField(
               controller: _purchasePriceController,
               decoration: const InputDecoration(
-                labelText: 'Purchase Price',
+                labelText: 'Amount Paid (per unit)',
+                helperText:
+                    'Enter the actual price you paid, not the catalog worth',
                 prefixText: '₹ ',
                 border: OutlineInputBorder(),
               ),

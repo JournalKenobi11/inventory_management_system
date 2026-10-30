@@ -130,40 +130,150 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     );
   }
 
+  String _formatDateDisplay(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final d = date.day.toString().padLeft(2, '0');
+    final m = months[date.month - 1];
+    return '$d $m ${date.year}';
+  }
+
   Widget _buildDateRangeSelector(ReportDateRange selectedRange) {
+    final theme = Theme.of(context);
+    final startDateStr = _formatDateDisplay(selectedRange.start);
+    final endDateStr = _formatDateDisplay(selectedRange.end);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Row(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.primary.withAlpha(70),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Text(
-              selectedRange.label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-              overflow: TextOverflow.ellipsis,
+          // Dedicated Date Display Header
+          InkWell(
+            onTap: _pickCustomDateRange,
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.calendar_month_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'ACTIVE REPORT PERIOD',
+                          style: TextStyle(
+                            fontSize: 10,
+                            letterSpacing: 1.1,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$startDateStr  —  $endDateStr',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        Text(
+                          selectedRange.label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.edit_calendar_outlined,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
-          Wrap(
-            spacing: 8,
-            children: [
-              ActionChip(
-                label: const Text('This Month'),
-                onPressed: () => ref
-                    .read(selectedReportRangeProvider.notifier)
-                    .setThisMonth(),
-              ),
-              ActionChip(
-                label: const Text('This Year'),
-                onPressed: () => ref
-                    .read(selectedReportRangeProvider.notifier)
-                    .setThisYear(),
-              ),
-              ActionChip(
-                avatar: const Icon(Icons.calendar_today, size: 16),
-                label: const Text('Custom'),
-                onPressed: _pickCustomDateRange,
-              ),
-            ],
+          const Divider(height: 1, thickness: 1),
+          // Filter presets row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ActionChip(
+                    avatar: const Icon(Icons.today_outlined, size: 16),
+                    label: const Center(child: Text('This Month')),
+                    onPressed: () => ref
+                        .read(selectedReportRangeProvider.notifier)
+                        .setThisMonth(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ActionChip(
+                    avatar: const Icon(Icons.date_range_outlined, size: 16),
+                    label: const Center(child: Text('This Year')),
+                    onPressed: () => ref
+                        .read(selectedReportRangeProvider.notifier)
+                        .setThisYear(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ActionChip(
+                    avatar: const Icon(Icons.tune_rounded, size: 16),
+                    label: const Center(child: Text('Custom')),
+                    onPressed: _pickCustomDateRange,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

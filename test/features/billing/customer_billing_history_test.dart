@@ -101,7 +101,7 @@ void main() {
       expect(item.service.problemDesc, 'Brake inspection and pad replacement');
       expect(item.labourCharge, 500.0);
       expect(item.items.length, 1);
-      expect(item.items.first.partName, 'Brake Pad');
+      expect(item.items.first.partName, 'BRAKE PAD');
       expect(item.items.first.quantity, 2);
       expect(item.items.first.priceEach, 850.0);
       expect(item.items.first.lineTotal, 1700.0);

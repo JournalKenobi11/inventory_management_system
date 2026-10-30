@@ -191,10 +191,10 @@ void main() {
 
     // Verify Top Selling Parts: Oil (2 qty sold, 1000 rev) > Brake pad (1 qty sold, 400 rev)
     expect(report.topParts.length, equals(2));
-    expect(report.topParts.first.partName, equals('Engine Oil 10W40'));
+    expect(report.topParts.first.partName, equals('ENGINE OIL 10W40'));
     expect(report.topParts.first.quantitySold, equals(2));
     expect(report.topParts.first.totalRevenue, equals(1000.0));
-    expect(report.topParts[1].partName, equals('Brake Pad Set'));
+    expect(report.topParts[1].partName, equals('BRAKE PAD SET'));
     expect(report.topParts[1].quantitySold, equals(1));
 
     // Verify Salaries

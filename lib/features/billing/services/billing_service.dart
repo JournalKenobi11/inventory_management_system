@@ -1,13 +1,15 @@
+import 'dart:convert';
+
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/id_generator.dart';
 import '../../../database/app_database.dart' as db;
-import '../../customers/models/customer.dart';
-import '../../customers/services/customer_service.dart';
-import '../../parts/models/part.dart';
-import '../../parts/services/part_service.dart';
+import '../../customers/customers.dart';
+import '../../parts/parts.dart';
+import '../models/customer_service_reminder.dart';
 import '../models/invoice.dart';
 import '../models/invoice_details.dart';
+import '../models/labour_entry.dart';
 import '../models/service.dart';
 import '../models/service_part.dart';
 import '../repositories/interfaces/invoice_repository.dart';
@@ -34,11 +36,22 @@ class BillingService {
   Future<Invoice> billService({
     required String customerId,
     required String problemDesc,
-    required double labourCharge,
+    double? labourCharge,
+    List<LabourEntry>? labourEntries,
+    String? serviceReport,
     required List<ServicePartInput> partsUsed,
   }) async {
     final cleanCustomerId = customerId.trim();
     final cleanProblemDesc = problemDesc.trim();
+    final cleanServiceReport = serviceReport?.trim();
+
+    double effectiveLabourCharge = labourCharge ?? 0.0;
+    if (labourEntries != null && labourEntries.isNotEmpty) {
+      effectiveLabourCharge = labourEntries.fold<double>(
+        0.0,
+        (sum, entry) => sum + entry.charge,
+      );
+    }
 
     if (cleanCustomerId.isEmpty) {
       throw ValidationException(
@@ -46,10 +59,20 @@ class BillingService {
       );
     }
 
-    if (labourCharge < 0) {
+    if (effectiveLabourCharge < 0) {
       throw ValidationException(
         'Labour charge cannot be negative.',
       );
+    }
+
+    if (labourEntries != null) {
+      for (final entry in labourEntries) {
+        if (entry.charge < 0) {
+          throw ValidationException(
+            'Labour service charge cannot be negative.',
+          );
+        }
+      }
     }
 
     final normalizedParts = _normalizeParts(partsUsed);
@@ -116,8 +139,14 @@ class BillingService {
         problemDesc: cleanProblemDesc.isEmpty
             ? null
             : cleanProblemDesc,
-        labourCharge: labourCharge,
+        labourCharge: effectiveLabourCharge,
         serviceDate: AppDateUtils.nowIso(),
+        serviceReport: cleanServiceReport == null || cleanServiceReport.isEmpty
+            ? null
+            : cleanServiceReport,
+        labourEntriesJson: labourEntries != null && labourEntries.isNotEmpty
+            ? jsonEncode(labourEntries.map((e) => e.toJson()).toList())
+            : null,
       );
 
       await serviceRepository.create(service);
@@ -165,7 +194,7 @@ class BillingService {
       // ------------------------------------------------------------
 
       final totalAmount =
-          partsTotal + labourCharge;
+          partsTotal + effectiveLabourCharge;
 
       // ------------------------------------------------------------
       // 7. Generate sequential invoice number
@@ -394,6 +423,90 @@ class BillingService {
           ),
         )
         .toList();
+  }
+
+  Future<List<CustomerServiceReminder>> getCustomerServiceReminders({
+    DateTime? referenceDate,
+  }) async {
+    final now = referenceDate ?? DateTime.now();
+    final allServices = await serviceRepository.getAll();
+    final allCustomers = await customerService.getCustomers();
+
+    final customerById = <String, Customer>{
+      for (final c in allCustomers) c.id: c,
+    };
+
+    final latestServiceByCustomer = <String, Service>{};
+    for (final service in allServices) {
+      final existing = latestServiceByCustomer[service.customerId];
+      if (existing == null ||
+          service.serviceDate.compareTo(existing.serviceDate) > 0) {
+        latestServiceByCustomer[service.customerId] = service;
+      }
+    }
+
+    final reminders = <CustomerServiceReminder>[];
+    for (final entry in latestServiceByCustomer.entries) {
+      final customer = customerById[entry.key];
+      if (customer == null) continue;
+
+      final lastService = entry.value;
+      DateTime lastDate;
+      try {
+        lastDate = DateTime.parse(lastService.serviceDate);
+      } catch (_) {
+        continue;
+      }
+
+      final reminder = CustomerServiceReminder.fromLastService(
+        customer: customer,
+        lastServiceDate: lastDate,
+        referenceDate: now,
+        lastProblemDesc: lastService.problemDesc,
+        lastServiceReport: lastService.serviceReport,
+      );
+
+      reminders.add(reminder);
+    }
+
+    reminders.sort((a, b) {
+      if (a.isDue && !b.isDue) return -1;
+      if (!a.isDue && b.isDue) return 1;
+      if (a.isDue && b.isDue) {
+        return b.daysOverdue.compareTo(a.daysOverdue);
+      }
+      return a.daysRemaining.compareTo(b.daysRemaining);
+    });
+
+    return reminders;
+  }
+
+  Future<CustomerServiceReminder?> getCustomerReminder(
+    String customerId, {
+    DateTime? referenceDate,
+  }) async {
+    final customer = await customerService.getCustomer(customerId);
+    if (customer == null) return null;
+
+    final customerServices =
+        await serviceRepository.getByCustomerId(customerId);
+    if (customerServices.isEmpty) return null;
+
+    final latestService = customerServices.first;
+    DateTime lastDate;
+    try {
+      lastDate = DateTime.parse(latestService.serviceDate);
+    } catch (_) {
+      return null;
+    }
+
+    return CustomerServiceReminder.fromLastService(
+      customer: customer,
+      lastServiceDate: lastDate,
+      referenceDate: referenceDate,
+      lastProblemDesc: latestService.problemDesc,
+      lastServiceReport: latestService.serviceReport,
+    );
   }
 }
 

@@ -35,7 +35,7 @@ class PartService {
     final part = Part(
       id: IdGenerator.generate(),
       partNumber: partNumber.trim(),
-      partName: partName.trim(),
+      partName: partName.trim().toUpperCase(),
       category: _normalizeCategory(category),
       purchasePrice: purchasePrice,
       sellingPrice: sellingPrice,
@@ -82,7 +82,7 @@ class PartService {
     await repository.update(
       part.copyWith(
         partNumber: part.partNumber.trim(),
-        partName: part.partName.trim(),
+        partName: part.partName.trim().toUpperCase(),
         category: _normalizeCategory(part.category),
       ),
     );

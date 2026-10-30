@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../billing/billing.dart';
 import '../../reports/models/report_models.dart';
 import '../models/export_models.dart';
 
@@ -28,8 +29,15 @@ class PdfService {
               _buildMetaDetails(data),
               pw.SizedBox(height: 16),
               _buildItemsTable(data),
-              pw.SizedBox(height: 16),
+              pw.SizedBox(height: 12),
               _buildTotalsSection(data),
+              pw.SizedBox(height: 12),
+              if (data.service.serviceReport != null &&
+                  data.service.serviceReport!.trim().isNotEmpty) ...[
+                _buildServiceReportSection(data),
+                pw.SizedBox(height: 10),
+              ],
+              _buildTermsAndConditionsSection(),
               pw.Spacer(),
               _buildFooter(data),
             ],
@@ -449,7 +457,21 @@ class PdfService {
       );
     }
 
-    if (data.labourCharge > 0) {
+    if (data.service.labourEntries.isNotEmpty) {
+      for (final labour in data.service.labourEntries) {
+        rows.add(
+          pw.TableRow(
+            children: [
+              _tableCell('${slNo++}'),
+              _tableCell(labour.description, isBold: true),
+              _tableCell('1', alignRight: true),
+              _tableCell(labour.charge.toStringAsFixed(2), alignRight: true),
+              _tableCell(labour.charge.toStringAsFixed(2), alignRight: true),
+            ],
+          ),
+        );
+      }
+    } else if (data.labourCharge > 0) {
       rows.add(
         pw.TableRow(
           children: [
@@ -579,6 +601,90 @@ class PdfService {
           ],
         ),
       ],
+    );
+  }
+
+  pw.Widget _buildServiceReportSection(InvoicePdfData data) {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey100,
+        borderRadius: pw.BorderRadius.circular(4),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'SERVICE REPORT / WORK PERFORMED',
+            style: pw.TextStyle(
+              fontSize: 8.5,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blueGrey900,
+            ),
+          ),
+          pw.SizedBox(height: 3),
+          pw.Text(
+            data.service.serviceReport!.trim(),
+            style: const pw.TextStyle(
+              fontSize: 8,
+              color: PdfColors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildTermsAndConditionsSection() {
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(8),
+      decoration: pw.BoxDecoration(
+        borderRadius: pw.BorderRadius.circular(4),
+        border: pw.Border.all(color: PdfColors.grey300),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'TERMS & CONDITIONS',
+            style: pw.TextStyle(
+              fontSize: 8,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blueGrey800,
+            ),
+          ),
+          pw.SizedBox(height: 3),
+          ...BillTerms.standardTerms.asMap().entries.map(
+                (entry) => pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 1.5),
+                  child: pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        '${entry.key + 1}. ',
+                        style: const pw.TextStyle(
+                          fontSize: 6.5,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                      pw.Expanded(
+                        child: pw.Text(
+                          entry.value,
+                          style: const pw.TextStyle(
+                            fontSize: 6.5,
+                            color: PdfColors.grey800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+        ],
+      ),
     );
   }
 

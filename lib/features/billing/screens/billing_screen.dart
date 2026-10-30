@@ -7,6 +7,7 @@ import '../../customers/models/customer.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../parts/models/part.dart';
 import '../../parts/providers/part_provider.dart';
+import '../models/labour_entry.dart';
 import '../models/service_part.dart';
 import '../providers/billing_provider.dart';
 import 'invoice_overview_screen.dart';
@@ -22,19 +23,26 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   Customer? _selectedCustomer;
 
   final _problemController = TextEditingController();
-  final _labourController = TextEditingController();
+  final _serviceReportController = TextEditingController();
+
+  bool _includeLabour = false;
+  final List<_LabourInputItem> _labourItems = [];
 
   final List<_SelectedPart> _selectedParts = [];
 
   @override
   void dispose() {
     _problemController.dispose();
-    _labourController.dispose();
+    _serviceReportController.dispose();
+    for (final item in _labourItems) {
+      item.dispose();
+    }
     super.dispose();
   }
 
   double get _labourCharge {
-    return double.tryParse(_labourController.text.trim()) ?? 0;
+    if (!_includeLabour) return 0.0;
+    return _labourItems.fold(0.0, (sum, item) => sum + item.amount);
   }
 
   double get _partsTotal {
@@ -49,6 +57,31 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   double get _grandTotal {
     return _partsTotal + _labourCharge;
+  }
+
+  void _toggleIncludeLabour(bool value) {
+    setState(() {
+      _includeLabour = value;
+      if (_includeLabour && _labourItems.isEmpty) {
+        _labourItems.add(_LabourInputItem());
+      }
+    });
+  }
+
+  void _addLabourItem() {
+    setState(() {
+      _labourItems.add(_LabourInputItem());
+    });
+  }
+
+  void _removeLabourItem(int index) {
+    setState(() {
+      final removed = _labourItems.removeAt(index);
+      removed.dispose();
+      if (_labourItems.isEmpty) {
+        _includeLabour = false;
+      }
+    });
   }
 
   Future<void> _createCustomer() async {
@@ -267,8 +300,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Only ${item.part.currentStock} '
-            'units available.',
+            'Only ${item.part.currentStock} units available.',
           ),
         ),
       );
@@ -330,12 +362,26 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
     }
 
     try {
+      final List<LabourEntry> labourEntries = _includeLabour
+          ? _labourItems
+              .where((item) => item.description.isNotEmpty || item.amount > 0)
+              .map((item) => LabourEntry(
+                    description: item.description.isEmpty
+                        ? 'Labour / Service Charge'
+                        : item.description,
+                    charge: item.amount,
+                  ))
+              .toList()
+          : <LabourEntry>[];
+
       final invoice = await ref
           .read(billingControllerProvider.notifier)
           .billService(
             customerId: _selectedCustomer!.id,
             problemDesc: _problemController.text.trim(),
             labourCharge: _labourCharge,
+            labourEntries: labourEntries,
+            serviceReport: _serviceReportController.text.trim(),
             partsUsed: _selectedParts
                 .map(
                   (item) => ServicePartInput(
@@ -373,7 +419,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         _selectedCustomer = null;
         _selectedParts.clear();
         _problemController.clear();
-        _labourController.clear();
+        _serviceReportController.clear();
+        for (final item in _labourItems) {
+          item.dispose();
+        }
+        _labourItems.clear();
+        _includeLabour = false;
       });
 
       ref.invalidate(customersProvider);
@@ -410,6 +461,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
               _buildCustomerCard(),
               const SizedBox(height: 16),
               _buildJobDetailsCard(),
+              const SizedBox(height: 16),
+              _buildLabourChargesCard(),
               const SizedBox(height: 16),
               _buildPartsCard(),
               const SizedBox(height: 16),
@@ -493,31 +546,142 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Service Details',
+              'Service Details & Report',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _problemController,
-              maxLines: 3,
+              maxLines: 2,
               decoration: const InputDecoration(
-                labelText: 'Problem / Service Description',
+                labelText: 'Problem / Customer Issues',
+                hintText: 'Customer complaints or initial inspection notes',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
-              controller: _labourController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              onChanged: (_) => setState(() {}),
+              controller: _serviceReportController,
+              maxLines: 3,
               decoration: const InputDecoration(
-                labelText: 'Labour Charge',
-                prefixText: '₹ ',
+                labelText: 'Report (Summary of Service Performed)',
+                hintText:
+                    'Detailed report of service, repairs, and checks performed (printed on bill)',
                 border: OutlineInputBorder(),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabourChargesCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.engineering_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Labour Charges',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                Switch(
+                  value: _includeLabour,
+                  onChanged: _toggleIncludeLabour,
+                ),
+              ],
+            ),
+            if (!_includeLabour)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'No labour charges included. Turn on switch to add custom labour services.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 13,
+                  ),
+                ),
+              )
+            else ...[
+              const Divider(height: 20),
+              ..._labourItems.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: item.descriptionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Labour Service Description',
+                            hintText: 'e.g. Oil Change, Tuning, Brake Repair',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: item.chargeController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Charge',
+                            prefixText: '₹ ',
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _removeLabourItem(index),
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        tooltip: 'Remove',
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _addLabourItem,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add Another Labour Service'),
+                  ),
+                  Text(
+                    'Labour Total: ₹${_labourCharge.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -578,15 +742,13 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                           icon: const Icon(Icons.remove),
                         ),
                         Text(
-                          item.quantity.toString(),
+                          '${item.quantity}',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         IconButton(
-                          onPressed: item.quantity >= item.part.currentStock
-                              ? null
-                              : () {
-                                  _changeQuantity(index, item.quantity + 1);
-                                },
+                          onPressed: () {
+                            _changeQuantity(index, item.quantity + 1);
+                          },
                           icon: const Icon(Icons.add),
                         ),
                       ],
@@ -638,4 +800,21 @@ class _SelectedPart {
   final int quantity;
 
   const _SelectedPart({required this.part, required this.quantity});
+}
+
+class _LabourInputItem {
+  final TextEditingController descriptionController;
+  final TextEditingController chargeController;
+
+  _LabourInputItem({String description = '', String charge = ''})
+      : descriptionController = TextEditingController(text: description),
+        chargeController = TextEditingController(text: charge);
+
+  void dispose() {
+    descriptionController.dispose();
+    chargeController.dispose();
+  }
+
+  double get amount => double.tryParse(chargeController.text.trim()) ?? 0.0;
+  String get description => descriptionController.text.trim();
 }

@@ -51,6 +51,8 @@ class ServiceJobs extends Table {
   RealColumn get labourCharge => real().withDefault(const Constant(0))();
   TextColumn get serviceDate => text()();
   TextColumn get invoiceId => text().nullable()();
+  TextColumn get serviceReport => text().nullable()();
+  TextColumn get labourEntries => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -186,7 +188,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e) : super();
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -222,6 +224,10 @@ class AppDatabase extends _$AppDatabase {
           ),
           mode: InsertMode.insertOrIgnore,
         );
+      }
+      if (from < 4) {
+        await m.addColumn(serviceJobs, serviceJobs.serviceReport);
+        await m.addColumn(serviceJobs, serviceJobs.labourEntries);
       }
     },
   );

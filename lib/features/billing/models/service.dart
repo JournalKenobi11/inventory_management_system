@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'labour_entry.dart';
+
 class Service {
   final String id;
   final String customerId;
@@ -5,6 +8,8 @@ class Service {
   final double labourCharge;
   final String serviceDate;
   final String? invoiceId;
+  final String? serviceReport;
+  final String? labourEntriesJson;
 
   const Service({
     required this.id,
@@ -13,7 +18,29 @@ class Service {
     required this.labourCharge,
     required this.serviceDate,
     this.invoiceId,
+    this.serviceReport,
+    this.labourEntriesJson,
   });
+
+  List<LabourEntry> get labourEntries {
+    if (labourEntriesJson != null && labourEntriesJson!.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(labourEntriesJson!) as List;
+        return decoded
+            .map((e) => LabourEntry.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } catch (_) {}
+    }
+    if (labourCharge > 0) {
+      return [
+        LabourEntry(
+          description: 'Labour / Service Charges',
+          charge: labourCharge,
+        )
+      ];
+    }
+    return const [];
+  }
 
   Service copyWith({
     String? id,
@@ -22,6 +49,8 @@ class Service {
     double? labourCharge,
     String? serviceDate,
     String? invoiceId,
+    String? serviceReport,
+    String? labourEntriesJson,
   }) {
     return Service(
       id: id ?? this.id,
@@ -30,6 +59,8 @@ class Service {
       labourCharge: labourCharge ?? this.labourCharge,
       serviceDate: serviceDate ?? this.serviceDate,
       invoiceId: invoiceId ?? this.invoiceId,
+      serviceReport: serviceReport ?? this.serviceReport,
+      labourEntriesJson: labourEntriesJson ?? this.labourEntriesJson,
     );
   }
 
@@ -41,6 +72,8 @@ class Service {
       'labourCharge': labourCharge,
       'serviceDate': serviceDate,
       'invoiceId': invoiceId,
+      'serviceReport': serviceReport,
+      'labourEntriesJson': labourEntriesJson,
     };
   }
 
@@ -52,6 +85,8 @@ class Service {
       labourCharge: (json['labourCharge'] as num).toDouble(),
       serviceDate: json['serviceDate'] as String,
       invoiceId: json['invoiceId'] as String?,
+      serviceReport: json['serviceReport'] as String?,
+      labourEntriesJson: json['labourEntriesJson'] as String?,
     );
   }
 
@@ -65,7 +100,9 @@ class Service {
             problemDesc == other.problemDesc &&
             labourCharge == other.labourCharge &&
             serviceDate == other.serviceDate &&
-            invoiceId == other.invoiceId;
+            invoiceId == other.invoiceId &&
+            serviceReport == other.serviceReport &&
+            labourEntriesJson == other.labourEntriesJson;
   }
 
   @override
@@ -77,6 +114,8 @@ class Service {
       labourCharge,
       serviceDate,
       invoiceId,
+      serviceReport,
+      labourEntriesJson,
     );
   }
 
@@ -88,7 +127,9 @@ class Service {
         'problemDesc: $problemDesc, '
         'labourCharge: $labourCharge, '
         'serviceDate: $serviceDate, '
-        'invoiceId: $invoiceId'
+        'invoiceId: $invoiceId, '
+        'serviceReport: $serviceReport, '
+        'labourEntriesJson: $labourEntriesJson'
         ')';
   }
 }

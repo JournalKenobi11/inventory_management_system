@@ -89,7 +89,24 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
                     ),
                     itemCount: parts.length,
                     itemBuilder: (context, index) {
-                      return _PartCard(part: parts[index]);
+                      return _PartCard(
+                        part: parts[index],
+                        onEdit: () async {
+                          final updated =
+                              await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PartFormScreen(part: parts[index]),
+                            ),
+                          );
+
+                          if (updated == true && mounted) {
+                            await ref
+                                .read(partsProvider.notifier)
+                                .loadParts();
+                          }
+                        },
+                      );
                     },
                   ),
                 );
@@ -116,8 +133,9 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
 
 class _PartCard extends StatelessWidget {
   final Part part;
+  final VoidCallback? onEdit;
 
-  const _PartCard({required this.part});
+  const _PartCard({required this.part, this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -125,44 +143,64 @@ class _PartCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        title: Text(
-          part.partName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Column(
+      child: InkWell(
+        onTap: onEdit,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Part No: ${part.partNumber}'),
-              if (part.category != null) Text('Category: ${part.category}'),
-              const SizedBox(height: 4),
-              Text('Selling Price: ₹${part.sellingPrice.toStringAsFixed(2)}'),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      part.partName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text('Part No: ${part.partNumber}'),
+                    if (part.category != null) Text('Category: ${part.category}'),
+                    const SizedBox(height: 4),
+                    Text(
+                        'Selling Price: ₹${part.sellingPrice.toStringAsFixed(2)}'),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${part.currentStock}',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isLowStock
+                          ? Theme.of(context).colorScheme.error
+                          : null,
+                    ),
+                  ),
+                  Text(
+                    isLowStock ? 'LOW STOCK' : 'STOCK',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isLowStock
+                          ? Theme.of(context).colorScheme.error
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ],
+              ),
             ],
           ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${part.currentStock}',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isLowStock ? Theme.of(context).colorScheme.error : null,
-              ),
-            ),
-            Text(
-              isLowStock ? 'LOW STOCK' : 'STOCK',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: isLowStock ? Theme.of(context).colorScheme.error : null,
-              ),
-            ),
-          ],
         ),
       ),
     );
