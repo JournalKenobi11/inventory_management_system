@@ -1,3 +1,4 @@
+import '../../../core/config/establishment_config.dart';
 import '../../billing/billing.dart';
 import '../../customers/customers.dart';
 
@@ -27,8 +28,9 @@ class InvoicePdfData {
   final double labourCharge;
   final double totalAmount;
 
-  // Garage Profile & GST Settings
+  // Garage / Establishment Profile & GST Settings
   final String garageName;
+  final String? garageServices;
   final String? garagePhone;
   final String? garageAddress;
   final String? gstNumber;
@@ -42,9 +44,10 @@ class InvoicePdfData {
     required this.parts,
     required this.labourCharge,
     required this.totalAmount,
-    this.garageName = 'Auto Care Garage & Service Center',
-    this.garagePhone,
-    this.garageAddress,
+    this.garageName = EstablishmentConfig.name,
+    this.garageServices = EstablishmentConfig.services,
+    this.garagePhone = EstablishmentConfig.phone,
+    this.garageAddress = EstablishmentConfig.address,
     this.gstNumber,
     this.isGstRegistered = false,
     this.gstRatePercentage = 18.0,
@@ -52,9 +55,10 @@ class InvoicePdfData {
 
   factory InvoicePdfData.fromDetails(
     InvoiceDetails details, {
-    String garageName = 'Auto Care Garage & Service Center',
-    String? garagePhone,
-    String? garageAddress,
+    String garageName = EstablishmentConfig.name,
+    String? garageServices = EstablishmentConfig.services,
+    String? garagePhone = EstablishmentConfig.phone,
+    String? garageAddress = EstablishmentConfig.address,
     String? gstNumber,
     bool isGstRegistered = false,
     double gstRatePercentage = 18.0,
@@ -78,6 +82,7 @@ class InvoicePdfData {
       labourCharge: details.labourCharge,
       totalAmount: details.totalAmount,
       garageName: garageName,
+      garageServices: garageServices,
       garagePhone: garagePhone,
       garageAddress: garageAddress,
       gstNumber: gstNumber,

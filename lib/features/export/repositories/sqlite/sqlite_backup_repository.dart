@@ -428,4 +428,304 @@ class SqliteBackupRepository implements BackupRepository {
       }
     });
   }
+
+  @override
+  Future<int> deleteFakeData() async {
+    return await database.transaction(() async {
+      int count = 0;
+      count += await (database.delete(database.personalFinanceTransactions)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.attendances)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.salaryPayments)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.employees)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.invoices)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.serviceParts)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.serviceJobs)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.purchases)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.parts)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.customers)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      count += await (database.delete(database.expenses)
+            ..where((t) => t.id.like('fake_%')))
+          .go();
+      return count;
+    });
+  }
+
+  @override
+  Future<int> seedExtremeFakeData() async {
+    return await database.transaction(() async {
+      // First clean up any existing fake data
+      await deleteFakeData();
+
+      final now = DateTime.now();
+      final nowIso = now.toIso8601String();
+      final sixMonthsAgoIso =
+          now.subtract(const Duration(days: 185)).toIso8601String();
+      int insertedCount = 0;
+
+      // 1. Customers with extreme length names and vehicle names
+      await database.into(database.customers).insert(
+            CustomersCompanion.insert(
+              id: 'fake_cust_1',
+              name:
+                  '[FAKE] Dr. Shri Rameshchandra Venkatanarasimharajuvaripeta',
+              mobile: '+91 99999 00001',
+              vehicleName: const Value(
+                  '[FAKE] Mercedes-Benz AMG GT 4-Door Coupe 63 S E Performance 4MATIC+'),
+              createdDate: nowIso,
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.customers).insert(
+            CustomersCompanion.insert(
+              id: 'fake_cust_2',
+              name: '[FAKE] Smt. Padmavati Vijayalakshmi Radhakrishnan',
+              mobile: '+91 99999 00002',
+              vehicleName: const Value(
+                  '[FAKE] Royal Enfield Continental GT 650 Chrome Special Edition'),
+              createdDate: sixMonthsAgoIso,
+            ),
+          );
+      insertedCount++;
+
+      // 2. Parts with large numbers, long names, high prices
+      await database.into(database.parts).insert(
+            PartsCompanion.insert(
+              id: 'fake_part_1',
+              partNumber: 'FAKE-PART-999999',
+              partName:
+                  '[FAKE] Bosch High Performance Dual-Core Platinum Spark Plug Extra Long Edition',
+              category: const Value('[FAKE] Electrical & Ignition Systems'),
+              purchasePrice: 25000.0,
+              sellingPrice: 45000.0,
+              currentStock: const Value(9999),
+              lowStockThreshold: const Value(10),
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.parts).insert(
+            PartsCompanion.insert(
+              id: 'fake_part_2',
+              partNumber: 'FAKE-PART-888888',
+              partName:
+                  '[FAKE] Brembo Carbon-Ceramic Ultra-Braking Caliper & Rotor Assembly',
+              category: const Value('[FAKE] High-Performance Braking'),
+              purchasePrice: 75000.0,
+              sellingPrice: 125000.0,
+              currentStock: const Value(1),
+              lowStockThreshold: const Value(5),
+            ),
+          );
+      insertedCount++;
+
+      // 3. Purchase entry
+      await database.into(database.purchases).insert(
+            PurchasesCompanion.insert(
+              id: 'fake_purch_1',
+              partId: 'fake_part_1',
+              quantity: 500,
+              purchasePrice: 25000.0,
+              purchaseDate: nowIso,
+            ),
+          );
+      insertedCount++;
+
+      // 4. Service Jobs and Invoices
+      await database.into(database.serviceJobs).insert(
+            ServiceJobsCompanion.insert(
+              id: 'fake_job_1',
+              customerId: 'fake_cust_1',
+              problemDesc: const Value(
+                  '[FAKE] Comprehensive Powertrain Overhaul, Twin-Turbocharger Tuning, and Transmission Precision Diagnostics'),
+              labourCharge: const Value(150000.0),
+              serviceDate: nowIso,
+              invoiceId: const Value('fake_inv_1'),
+              serviceReport: const Value(
+                  '[FAKE] Complete multi-point mechanical inspection, hydraulic pressure test, and digital engine diagnostics verified with zero fault codes.'),
+              labourEntries: const Value(
+                  '[{"description":"[FAKE] Complete Powertrain Overhaul & Twin-Turbo Tuning","charge":100000.0},{"description":"[FAKE] Electronic Control Unit Sensor Calibration","charge":50000.0}]'),
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.serviceParts).insert(
+            ServicePartsCompanion.insert(
+              id: 'fake_sp_1',
+              serviceId: 'fake_job_1',
+              partId: 'fake_part_1',
+              quantity: 4,
+              priceEach: 45000.0,
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.serviceParts).insert(
+            ServicePartsCompanion.insert(
+              id: 'fake_sp_2',
+              serviceId: 'fake_job_1',
+              partId: 'fake_part_2',
+              quantity: 2,
+              priceEach: 125000.0,
+            ),
+          );
+      insertedCount++;
+
+      // Total: 4*45000 (180,000) + 2*125000 (250,000) + 150000 (labour) = 580,000.0
+      await database.into(database.invoices).insert(
+            InvoicesCompanion.insert(
+              id: 'fake_inv_1',
+              invoiceNumber: 999999,
+              serviceId: 'fake_job_1',
+              totalAmount: 580000.0,
+              createdDate: nowIso,
+            ),
+          );
+      insertedCount++;
+
+      // Second service job (6 months ago) for customer 2 so service reminder triggers
+      await database.into(database.serviceJobs).insert(
+            ServiceJobsCompanion.insert(
+              id: 'fake_job_2',
+              customerId: 'fake_cust_2',
+              problemDesc: const Value(
+                  '[FAKE] Periodic Scheduled Service & Oil Flush'),
+              labourCharge: const Value(25000.0),
+              serviceDate: sixMonthsAgoIso,
+              invoiceId: const Value('fake_inv_2'),
+              serviceReport: const Value(
+                  '[FAKE] Routine 90-day interval maintenance check.'),
+              labourEntries: const Value(
+                  '[{"description":"[FAKE] Routine Service & Oil Flush","charge":25000.0}]'),
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.invoices).insert(
+            InvoicesCompanion.insert(
+              id: 'fake_inv_2',
+              invoiceNumber: 999998,
+              serviceId: 'fake_job_2',
+              totalAmount: 25000.0,
+              createdDate: sixMonthsAgoIso,
+            ),
+          );
+      insertedCount++;
+
+      // 5. Expenses
+      await database.into(database.expenses).insert(
+            ExpensesCompanion.insert(
+              id: 'fake_exp_1',
+              category:
+                  '[FAKE] Commercial Showroom Heavy Equipment Lease & Annual Retrofitting Maintenance',
+              isPersonal: const Value(false),
+              amount: 950000.0,
+              note: const Value(
+                  '[FAKE] Annual facility lease and heavy precision machinery maintenance invoice #99988'),
+              entryDate: nowIso,
+            ),
+          );
+      insertedCount++;
+
+      // 6. Employees, Salary Payments, Attendances
+      await database.into(database.employees).insert(
+            EmployeesCompanion.insert(
+              id: 'fake_emp_1',
+              name:
+                  '[FAKE] Vikramaditya Chandrashekhar Surendranath Banerjee',
+              monthlySalary: 350000.0,
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.salaryPayments).insert(
+            SalaryPaymentsCompanion.insert(
+              id: 'fake_sal_1',
+              employeeId: 'fake_emp_1',
+              amount: 350000.0,
+              paymentDate: nowIso,
+              status: 'paid',
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.salaryPayments).insert(
+            SalaryPaymentsCompanion.insert(
+              id: 'fake_sal_2',
+              employeeId: 'fake_emp_1',
+              amount: 175000.0,
+              paymentDate: nowIso,
+              status: 'pending',
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.attendances).insert(
+            AttendancesCompanion.insert(
+              id: 'fake_att_1',
+              employeeId: 'fake_emp_1',
+              date: nowIso.substring(0, 10),
+              status: 'present',
+              reportingTime: const Value('09:45'),
+            ),
+          );
+      insertedCount++;
+
+      // 7. Personal Finance Transactions
+      await database.into(database.personalFinanceTransactions).insert(
+            PersonalFinanceTransactionsCompanion.insert(
+              id: 'fake_pftx_1',
+              accountId: 'default-owner-account',
+              type: 'credit',
+              amount: 5000000.0,
+              category:
+                  '[FAKE] Capital Injection & Strategic Partner Equity Disbursement',
+              payee: const Value(
+                  '[FAKE] Apex International Financial Holdings Group Corp'),
+              note: const Value('[FAKE] Strategic growth infusion tranche 1'),
+              transactionDate: nowIso,
+            ),
+          );
+      insertedCount++;
+
+      await database.into(database.personalFinanceTransactions).insert(
+            PersonalFinanceTransactionsCompanion.insert(
+              id: 'fake_pftx_2',
+              accountId: 'default-owner-account',
+              type: 'debit',
+              amount: 1500000.0,
+              category:
+                  '[FAKE] High-Yield Industrial Equipment Purchase & Import Duty',
+              payee: const Value(
+                  '[FAKE] Heavy Machinery Logistics Worldwide Pvt Ltd'),
+              note: const Value(
+                  '[FAKE] Industrial 5-Axis CNC Precision Milling System'),
+              transactionDate: nowIso,
+            ),
+          );
+      insertedCount++;
+
+      return insertedCount;
+    });
+  }
 }

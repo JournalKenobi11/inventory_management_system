@@ -39,6 +39,10 @@ class ReportDateRangeNotifier extends Notifier<ReportDateRange> {
     state = ReportDateRange.year(DateTime.now());
   }
 
+  void setSingleDay(DateTime date) {
+    state = ReportDateRange.singleDay(date);
+  }
+
   void setCustomRange(DateTime start, DateTime end) {
     state = ReportDateRange(start: start, end: end);
   }

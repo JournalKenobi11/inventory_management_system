@@ -30,6 +30,51 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     super.dispose();
   }
 
+  Future<void> _pickSingleDay() async {
+    final currentRange = ref.read(selectedReportRangeProvider);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: currentRange.start,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+    );
+
+    if (picked != null) {
+      ref.read(selectedReportRangeProvider.notifier).setSingleDay(picked);
+    }
+  }
+
+  Future<void> _showDateSelectionDialog() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.event_outlined),
+              title: const Text('Single Day'),
+              subtitle: const Text('Pick a single date to analyze'),
+              onTap: () => Navigator.pop(ctx, 'single'),
+            ),
+            ListTile(
+              leading: const Icon(Icons.date_range_outlined),
+              title: const Text('Date Range'),
+              subtitle: const Text('Pick a custom start and end date'),
+              onTap: () => Navigator.pop(ctx, 'range'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == 'single') {
+      await _pickSingleDay();
+    } else if (choice == 'range') {
+      await _pickCustomDateRange();
+    }
+  }
+
   Future<void> _pickCustomDateRange() async {
     final currentRange = ref.read(selectedReportRangeProvider);
     final selected = await showDateRangePicker(
@@ -177,7 +222,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         children: [
           // Dedicated Date Display Header
           InkWell(
-            onTap: _pickCustomDateRange,
+            onTap: _showDateSelectionDialog,
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(16)),
             child: Padding(
@@ -212,7 +257,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '$startDateStr  —  $endDateStr',
+                          selectedRange.start == selectedRange.end
+                              ? startDateStr
+                              : '$startDateStr  —  $endDateStr',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -242,35 +289,34 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
           const Divider(height: 1, thickness: 1),
           // Filter presets row
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
               children: [
-                Expanded(
-                  child: ActionChip(
-                    avatar: const Icon(Icons.today_outlined, size: 16),
-                    label: const Center(child: Text('This Month')),
-                    onPressed: () => ref
-                        .read(selectedReportRangeProvider.notifier)
-                        .setThisMonth(),
-                  ),
+                ActionChip(
+                  avatar: const Icon(Icons.today_outlined, size: 16),
+                  label: const Text('This Month'),
+                  onPressed: () => ref
+                      .read(selectedReportRangeProvider.notifier)
+                      .setThisMonth(),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ActionChip(
-                    avatar: const Icon(Icons.date_range_outlined, size: 16),
-                    label: const Center(child: Text('This Year')),
-                    onPressed: () => ref
-                        .read(selectedReportRangeProvider.notifier)
-                        .setThisYear(),
-                  ),
+                ActionChip(
+                  avatar: const Icon(Icons.date_range_outlined, size: 16),
+                  label: const Text('This Year'),
+                  onPressed: () => ref
+                      .read(selectedReportRangeProvider.notifier)
+                      .setThisYear(),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ActionChip(
-                    avatar: const Icon(Icons.tune_rounded, size: 16),
-                    label: const Center(child: Text('Custom')),
-                    onPressed: _pickCustomDateRange,
-                  ),
+                ActionChip(
+                  avatar: const Icon(Icons.event_outlined, size: 16),
+                  label: const Text('Single Day'),
+                  onPressed: _pickSingleDay,
+                ),
+                ActionChip(
+                  avatar: const Icon(Icons.tune_rounded, size: 16),
+                  label: const Text('Date Range'),
+                  onPressed: _pickCustomDateRange,
                 ),
               ],
             ),
@@ -372,11 +418,12 @@ class _FinancialOverviewTab extends StatelessWidget {
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY:
-                        report.sales.trends
-                            .map((t) => t.totalSales)
-                            .reduce((a, b) => a > b ? a : b) *
-                        1.2,
+                    maxY: (() {
+                      final maxSale = report.sales.trends
+                          .map((t) => t.totalSales)
+                          .reduce((a, b) => a > b ? a : b);
+                      return maxSale > 0 ? maxSale * 1.2 : 100.0;
+                    })(),
                     titlesData: FlTitlesData(
                       leftTitles: const AxisTitles(
                         sideTitles: SideTitles(showTitles: false),
@@ -941,18 +988,25 @@ class _TopCustomersTab extends StatelessWidget {
             ),
             title: Text(
               cust.customerName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
               '${cust.customerMobile}${cust.vehicleName != null ? ' • ${cust.vehicleName}' : ''}\n${cust.serviceCount} service(s)',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             isThreeLine: true,
-            trailing: Text(
-              '₹${cust.totalSpent.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.blue,
+            trailing: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '₹${cust.totalSpent.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.blue,
+                ),
               ),
             ),
           ),
@@ -986,18 +1040,25 @@ class _TopPartsTab extends StatelessWidget {
             leading: CircleAvatar(child: Text('${part.quantitySold}x')),
             title: Text(
               part.partName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             subtitle: Text(
               'Part #${part.partNumber}${part.category != null ? ' • ${part.category}' : ''}\nStock: ${part.currentStock}',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             isThreeLine: true,
-            trailing: Text(
-              '₹${part.totalRevenue.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.green,
+            trailing: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '₹${part.totalRevenue.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.green,
+                ),
               ),
             ),
           ),
@@ -1069,28 +1130,39 @@ class _SalarySummaryTab extends StatelessWidget {
                 ),
                 title: Text(
                   item.employeeName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
                   'Monthly: ₹${item.monthlySalary.toStringAsFixed(0)} • Payments: ${item.paymentCount}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 trailing: Column(
+                  mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      'Paid: ₹${item.paidAmount.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        'Paid: ₹${item.paidAmount.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
                       ),
                     ),
                     if (item.pendingAmount > 0)
-                      Text(
-                        'Pending: ₹${item.pendingAmount.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'Pending: ₹${item.pendingAmount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange,
+                          ),
                         ),
                       ),
                   ],
@@ -1145,12 +1217,16 @@ class _MetricCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ),
             const SizedBox(height: 4),
@@ -1177,12 +1253,15 @@ class _SummaryCol extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ),
         const SizedBox(height: 4),

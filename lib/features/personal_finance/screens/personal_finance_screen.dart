@@ -173,11 +173,15 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
                     ),
                     const SizedBox(height: 8),
                     balanceAsync.when(
-                      data: (balance) => Text(
-                        '₹${balance.toStringAsFixed(2)}',
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onPrimaryContainer,
+                      data: (balance) => FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '₹${balance.toStringAsFixed(2)}',
+                          style: theme.textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onPrimaryContainer,
+                          ),
                         ),
                       ),
                       loading: () => const SizedBox(
@@ -199,11 +203,13 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        Text(
-                          'Opening Balance: ₹${(accountAsync.value?.openingBalance ?? 0.0).toStringAsFixed(2)}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer
-                                .withAlpha(180),
+                        Expanded(
+                          child: Text(
+                            'Opening Balance: ₹${(accountAsync.value?.openingBalance ?? 0.0).toStringAsFixed(2)}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onPrimaryContainer
+                                  .withAlpha(180),
+                            ),
                           ),
                         ),
                       ],
@@ -251,12 +257,15 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
                               ],
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              '+₹${summary.totalCredits.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade700,
-                                fontSize: 14,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '+₹${summary.totalCredits.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -289,12 +298,15 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
                               ],
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              '-₹${summary.totalDebits.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red.shade700,
-                                fontSize: 14,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '-₹${summary.totalDebits.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.red.shade700,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -500,22 +512,29 @@ class _PersonalTransactionCard extends StatelessWidget {
         ),
         title: Text(
           transaction.category,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
         subtitle: Text(
           details.join(' • '),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: Colors.grey.shade600,
           ),
         ),
-        trailing: Text(
-          '${isCredit ? '+' : '-'}₹${transaction.amount.toStringAsFixed(2)}',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: color,
-            fontSize: 15,
+        trailing: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '${isCredit ? '+' : '-'}₹${transaction.amount.toStringAsFixed(2)}',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: color,
+              fontSize: 15,
+            ),
           ),
         ),
       ),

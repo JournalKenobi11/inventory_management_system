@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../core/config/establishment_config.dart';
 import '../../billing/billing.dart';
 import '../../reports/models/report_models.dart';
 import '../models/export_models.dart';
@@ -90,7 +91,7 @@ class PdfService {
 
   Future<Uint8List> generateReportPdf(
     ComprehensiveReport report, {
-    String garageName = 'Auto Care Garage & Service Center',
+    String garageName = EstablishmentConfig.name,
   }) async {
     final pdf = pw.Document();
 
@@ -283,43 +284,65 @@ class PdfService {
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Text(
-              data.garageName,
-              style: pw.TextStyle(
-                fontSize: 18,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.blueGrey900,
-              ),
-            ),
-            if (data.garageAddress != null)
+        pw.Expanded(
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
               pw.Text(
-                data.garageAddress!,
-                style: const pw.TextStyle(
-                  fontSize: 9,
-                  color: PdfColors.grey700,
-                ),
-              ),
-            if (data.garagePhone != null)
-              pw.Text(
-                'Phone: ${data.garagePhone!}',
-                style: const pw.TextStyle(
-                  fontSize: 9,
-                  color: PdfColors.grey700,
-                ),
-              ),
-            if (data.isGstRegistered && data.gstNumber != null)
-              pw.Text(
-                'GSTIN: ${data.gstNumber!}',
+                data.garageName,
                 style: pw.TextStyle(
-                  fontSize: 9,
+                  fontSize: 18,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blueGrey800,
+                  color: PdfColors.blueGrey900,
                 ),
               ),
-          ],
+              if (data.garageServices != null &&
+                  data.garageServices!.trim().isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  data.garageServices!.trim(),
+                  style: pw.TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey700,
+                  ),
+                ),
+              ],
+              if (data.garageAddress != null &&
+                  data.garageAddress!.trim().isNotEmpty) ...[
+                pw.SizedBox(height: 3),
+                pw.Text(
+                  data.garageAddress!.trim(),
+                  style: const pw.TextStyle(
+                    fontSize: 8.5,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+              ],
+              if (data.garagePhone != null &&
+                  data.garagePhone!.trim().isNotEmpty) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'Phone: ${data.garagePhone!.trim()}',
+                  style: const pw.TextStyle(
+                    fontSize: 8.5,
+                    color: PdfColors.grey700,
+                  ),
+                ),
+              ],
+              if (data.isGstRegistered && data.gstNumber != null) ...[
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'GSTIN: ${data.gstNumber!}',
+                  style: pw.TextStyle(
+                    fontSize: 8.5,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey800,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         pw.Container(
           padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),

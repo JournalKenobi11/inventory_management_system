@@ -10,6 +10,9 @@ class CustomerServiceReminder {
   final String? lastProblemDesc;
   final String? lastServiceReport;
 
+  /// Default interval for periodic service reminders (90 days).
+  static const int defaultReminderDays = 90;
+
   const CustomerServiceReminder({
     required this.customer,
     required this.lastServiceDate,
@@ -22,16 +25,17 @@ class CustomerServiceReminder {
   });
 
   /// Calculates a reminder based on the customer's last service date.
-  /// Exactly 6 months after the previous service date.
+  /// Exactly [reminderDays] (default 90 days) after the previous service date.
   factory CustomerServiceReminder.fromLastService({
     required Customer customer,
     required DateTime lastServiceDate,
     DateTime? referenceDate,
+    int reminderDays = defaultReminderDays,
     String? lastProblemDesc,
     String? lastServiceReport,
   }) {
     final now = referenceDate ?? DateTime.now();
-    final dueDate = calculateSixMonthsLater(lastServiceDate);
+    final dueDate = calculateReminderDueDate(lastServiceDate, days: reminderDays);
     final isDue = !now.isBefore(dueDate);
     final diffDays = now.difference(dueDate).inDays;
 
@@ -47,6 +51,15 @@ class CustomerServiceReminder {
     );
   }
 
+  /// Calculates due date by adding [days] (default 90 days).
+  static DateTime calculateReminderDueDate(
+    DateTime date, {
+    int days = defaultReminderDays,
+  }) {
+    return date.add(Duration(days: days));
+  }
+
+  /// Legacy helper for 6-month calculation retained for backwards compatibility.
   static DateTime calculateSixMonthsLater(DateTime date) {
     var newYear = date.year;
     var newMonth = date.month + 6;

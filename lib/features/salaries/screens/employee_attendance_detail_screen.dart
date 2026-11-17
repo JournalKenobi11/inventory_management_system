@@ -344,23 +344,32 @@ class _EmployeeAttendanceDetailScreenState
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _buildStatusChip(rec, config),
+                          Flexible(child: _buildStatusChip(rec, config)),
                         ],
                       ),
                       subtitle: Text(
                         isAbsent
                             ? 'Marked Absent'
                             : 'Reporting Time: ${rec.reportingTime?.toDisplayString() ?? "-"}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                             icon: const Icon(Icons.edit_outlined, size: 20),
                             tooltip: 'Edit Record',
                             onPressed: () => _editRecord(rec),
                           ),
+                          const SizedBox(width: 4),
                           IconButton(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
                             icon: const Icon(Icons.delete_outline, size: 20),
                             tooltip: 'Delete Record',
                             onPressed: () => _deleteRecord(rec),

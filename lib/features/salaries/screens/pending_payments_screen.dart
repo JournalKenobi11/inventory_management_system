@@ -128,7 +128,11 @@ class _PendingPaymentCard extends StatelessWidget {
 
     return Card(
       child: ListTile(
-        title: Text(employeeName),
+        title: Text(
+          employeeName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Text(
           paymentDate == null
               ? payment.paymentDate
@@ -140,15 +144,25 @@ class _PendingPaymentCard extends StatelessWidget {
           Icons.pending_actions,
         ),
         trailing: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              '₹${payment.amount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                '₹${payment.amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             TextButton(
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: onMarkPaid,
               child: const Text('Mark paid'),
             ),

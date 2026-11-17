@@ -9,7 +9,15 @@ class ReportDateRange {
     String? label,
   })  : start = _dateOnly(start),
         end = _dateOnly(end),
-        label = label ?? '${_formatDate(start)} - ${_formatDate(end)}';
+        label = label ??
+            (start == end
+                ? _formatDate(start)
+                : '${_formatDate(start)} - ${_formatDate(end)}');
+
+  ReportDateRange.singleDay(DateTime date)
+      : start = _dateOnly(date),
+        end = _dateOnly(date),
+        label = _formatDate(date);
 
   ReportDateRange.month(DateTime date)
       : start = DateTime(date.year, date.month, 1),

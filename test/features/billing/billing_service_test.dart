@@ -1,6 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:inventory_management_system/database/app_database.dart';
+import 'package:inventory_management_system/database/app_database.dart' hide Customer;
 import 'package:inventory_management_system/features/billing/billing.dart';
 import 'package:inventory_management_system/features/billing/repositories/sqlite/sqlite_invoice_repository.dart';
 import 'package:inventory_management_system/features/billing/repositories/sqlite/sqlite_service_part_repository.dart';
@@ -206,7 +206,7 @@ void main() {
     expect(reminder1.isDue, isTrue);
     expect(reminder1.daysOverdue, greaterThan(0));
 
-    // For reference date tomorrow: customer 1 should NOT be due yet
+    // For reference date tomorrow: customer 1 should NOT be due yet (90-day cycle)
     final tomorrow = DateTime.now().add(const Duration(days: 1));
     final reminderTomorrow = await billingService.getCustomerReminder(
       customer1.id,
@@ -214,7 +214,7 @@ void main() {
     );
     expect(reminderTomorrow, isNotNull);
     expect(reminderTomorrow!.isDue, isFalse);
-    expect(reminderTomorrow.daysRemaining, greaterThan(150));
+    expect(reminderTomorrow.daysRemaining, greaterThan(80));
 
     // Customer 2 has never had a service -> should be null
     final reminderCustomer2 =
@@ -243,6 +243,49 @@ void main() {
     expect(r3.year, equals(2027));
     expect(r3.month, equals(4));
     expect(r3.day, equals(10));
+  });
+
+  test('CustomerServiceReminder defaults to 90 days interval', () {
+    final baseDate = DateTime(2026, 1, 1);
+    final dueDate = CustomerServiceReminder.calculateReminderDueDate(baseDate);
+    expect(dueDate.difference(baseDate).inDays, equals(90));
+
+    final customer = Customer(
+      id: 'cust-90',
+      name: 'Amit Kumar',
+      mobile: '9876543210',
+      createdDate: '2026-01-01T00:00:00.000Z',
+    );
+
+    // On day 89: not due yet
+    final rBefore = CustomerServiceReminder.fromLastService(
+      customer: customer,
+      lastServiceDate: baseDate,
+      referenceDate: baseDate.add(const Duration(days: 89)),
+    );
+    expect(rBefore.isDue, isFalse);
+    expect(rBefore.daysRemaining, equals(1));
+    expect(rBefore.daysOverdue, equals(0));
+
+    // On day 90: due
+    final rDue = CustomerServiceReminder.fromLastService(
+      customer: customer,
+      lastServiceDate: baseDate,
+      referenceDate: baseDate.add(const Duration(days: 90)),
+    );
+    expect(rDue.isDue, isTrue);
+    expect(rDue.daysRemaining, equals(0));
+    expect(rDue.daysOverdue, equals(0));
+
+    // On day 95: overdue by 5 days
+    final rOverdue = CustomerServiceReminder.fromLastService(
+      customer: customer,
+      lastServiceDate: baseDate,
+      referenceDate: baseDate.add(const Duration(days: 95)),
+    );
+    expect(rOverdue.isDue, isTrue);
+    expect(rOverdue.daysRemaining, equals(0));
+    expect(rOverdue.daysOverdue, equals(5));
   });
 }
 

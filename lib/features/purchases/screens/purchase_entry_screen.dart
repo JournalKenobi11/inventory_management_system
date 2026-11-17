@@ -198,9 +198,11 @@ class _PurchaseEntryScreenState
                         size: 20,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Catalog Worth: ₹${_selectedPart!.purchasePrice.toStringAsFixed(2)} per unit',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      Expanded(
+                        child: Text(
+                          'Catalog Worth: ₹${_selectedPart!.purchasePrice.toStringAsFixed(2)} per unit',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
                       ),
                     ],
                   ),

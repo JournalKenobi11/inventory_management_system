@@ -88,26 +88,29 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              children: [
-                FilterChip(
-                  label: const Text('All Customers'),
-                  selected: !_filterOnlyServiceDue,
-                  onSelected: (_) {
-                    setState(() => _filterOnlyServiceDue = false);
-                  },
-                ),
-                const SizedBox(width: 8),
-                FilterChip(
-                  avatar: const Icon(Icons.alarm, size: 16),
-                  label: Text('Service Due (${dueReminderByCustomerId.length})'),
-                  selected: _filterOnlyServiceDue,
-                  selectedColor: Theme.of(context).colorScheme.errorContainer,
-                  onSelected: (_) {
-                    setState(() => _filterOnlyServiceDue = true);
-                  },
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  FilterChip(
+                    label: const Text('All Customers'),
+                    selected: !_filterOnlyServiceDue,
+                    onSelected: (_) {
+                      setState(() => _filterOnlyServiceDue = false);
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    avatar: const Icon(Icons.alarm, size: 16),
+                    label: Text('Service Due (${dueReminderByCustomerId.length})'),
+                    selected: _filterOnlyServiceDue,
+                    selectedColor: Theme.of(context).colorScheme.errorContainer,
+                    onSelected: (_) {
+                      setState(() => _filterOnlyServiceDue = true);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 4),
@@ -188,6 +191,8 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                             if (customer.vehicleName != null)
                               customer.vehicleName!,
                           ].join(' • '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         onTap: () {
                           Navigator.push(

@@ -199,6 +199,58 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
     }
   }
 
+  Future<void> _handleSeedFakeData() async {
+    setState(() => _isProcessing = true);
+    try {
+      final count = await ref
+          .read(backupControllerProvider.notifier)
+          .seedExtremeFakeData();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully seeded $count extreme fake records!'),
+          backgroundColor: Colors.deepPurple,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to seed fake data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  Future<void> _handleDeleteFakeData() async {
+    setState(() => _isProcessing = true);
+    try {
+      final count = await ref
+          .read(backupControllerProvider.notifier)
+          .deleteFakeData();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleanly deleted $count fake records. Real data intact.'),
+          backgroundColor: Colors.green.shade800,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete fake data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final backupSummary = ref.watch(backupControllerProvider).value;
@@ -369,6 +421,47 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
                       ),
                       onPressed: _handleRestoreFromJsonDialog,
                       child: const Text('Restore'),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'QA & Stress Testing (Tracked Fake Data)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Populate the app with extreme long names, huge currency values, and large quantities (all prefixed with [FAKE] and ID fake_*) to stress-test UI formatting and overflow boundaries. Delete whenever satisfied.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            FilledButton.tonalIcon(
+                              icon: const Icon(Icons.playlist_add_rounded),
+                              label: const Text('Fill Extreme Fake Data'),
+                              onPressed: _handleSeedFakeData,
+                            ),
+                            OutlinedButton.icon(
+                              icon: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+                              label: const Text('Delete All Fake Data', style: TextStyle(color: Colors.red)),
+                              onPressed: _handleDeleteFakeData,
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),

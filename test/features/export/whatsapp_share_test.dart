@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inventory_management_system/core/config/establishment_config.dart';
 import 'package:inventory_management_system/features/billing/billing.dart';
 import 'package:inventory_management_system/features/customers/customers.dart';
 import 'package:inventory_management_system/features/export/export.dart';
@@ -106,6 +107,23 @@ void main() {
       expect(message, isNot(contains('Parts:')));
     });
 
+    test('formats message using EstablishmentConfig defaults when unspecified', () {
+      final message = shareService.formatInvoiceWhatsAppMessage(
+        details: sampleDetails,
+      );
+
+      expect(message, contains('*Mestry Motors*'));
+      expect(message, contains('_E-BIKE sales and services_'));
+      expect(
+        message,
+        contains(
+          'Gala No. 1, Siddhi Sagar Apartments, Entry Gate Road, Dahanu East, Dist- Palghar',
+        ),
+      );
+      expect(message, contains('Contact: 9359664276'));
+      expect(message, contains('*INVOICE #123*'));
+    });
+
     test('returns invalidRecipient error when customer phone cannot be normalized', () async {
       final result = await shareService.shareInvoiceToWhatsApp(
         customerPhone: 'invalid-number',
@@ -135,6 +153,15 @@ void main() {
       expect(pdfData.partsTotal, equals(2150.0));
       expect(pdfData.labourCharge, equals(500.0));
       expect(pdfData.grandTotal, equals(2650.0));
+    });
+
+    test('fromDetails defaults to EstablishmentConfig values', () {
+      final pdfData = InvoicePdfData.fromDetails(sampleDetails);
+
+      expect(pdfData.garageName, equals(EstablishmentConfig.name));
+      expect(pdfData.garageServices, equals(EstablishmentConfig.services));
+      expect(pdfData.garagePhone, equals(EstablishmentConfig.phone));
+      expect(pdfData.garageAddress, equals(EstablishmentConfig.address));
     });
   });
 }

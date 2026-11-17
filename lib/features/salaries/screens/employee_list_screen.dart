@@ -149,39 +149,50 @@ class EmployeeListScreen extends ConsumerWidget {
                       horizontal: 14,
                       vertical: 10,
                     ),
-                    child: Row(
+                    child: Wrap(
+                      alignment: WrapAlignment.spaceBetween,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        const Icon(Icons.date_range_rounded, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Period:',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.date_range_rounded, size: 18),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Period:',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
-                        ),
-                        const SizedBox(width: 8),
-                        DropdownButton<AttendancePeriod>(
-                          value: selectedPeriod,
-                          isDense: true,
-                          underline: const SizedBox(),
-                          items: AttendancePeriod.values.map((p) {
-                            return DropdownMenuItem(
-                              value: p,
-                              child: Text(
-                                p.label,
-                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              const SizedBox(width: 6),
+                              DropdownButton<AttendancePeriod>(
+                                value: selectedPeriod,
+                                isDense: true,
+                                underline: const SizedBox(),
+                                items: AttendancePeriod.values.map((p) {
+                                  return DropdownMenuItem(
+                                    value: p,
+                                    child: Text(
+                                      p.label,
+                                      style: const TextStyle(fontWeight: FontWeight.w600),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    ref
+                                        .read(selectedAttendancePeriodProvider.notifier)
+                                        .setPeriod(val);
+                                  }
+                                },
                               ),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              ref
-                                  .read(selectedAttendancePeriodProvider.notifier)
-                                  .setPeriod(val);
-                            }
-                          },
+                            ],
+                          ),
                         ),
-                        const Spacer(),
                         FilledButton.tonalIcon(
                           icon: const Icon(Icons.check_circle_outline, size: 16),
                           label: const Text('Mark Today'),
@@ -250,17 +261,23 @@ class EmployeeListScreen extends ConsumerWidget {
                                     children: [
                                       Text(
                                         employee.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        'Monthly salary: ₹${employee.monthlySalary.toStringAsFixed(2)}',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey.shade700,
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Monthly salary: ₹${employee.monthlySalary.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey.shade700,
+                                          ),
                                         ),
                                       ),
                                     ],

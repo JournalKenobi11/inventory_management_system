@@ -29,14 +29,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _selectedRange = DashboardDateRange.month(now);
   }
 
+  Future<void> _selectSingleDay() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedRange.start,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedRange = DashboardDateRange.singleDay(picked);
+    });
+  }
+
   Future<void> _selectDateRange() async {
+    final first = DateTime(2000);
+    final last = DateTime(2100);
+    final start = _selectedRange.start.isBefore(first)
+        ? first
+        : (_selectedRange.start.isAfter(last) ? last : _selectedRange.start);
+    final end = _selectedRange.end.isBefore(start)
+        ? start
+        : (_selectedRange.end.isAfter(last) ? last : _selectedRange.end);
+
     final selected = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now(),
+      firstDate: first,
+      lastDate: last,
       initialDateRange: DateTimeRange(
-        start: _selectedRange.start,
-        end: _selectedRange.end,
+        start: start,
+        end: end,
       ),
     );
 
@@ -189,7 +215,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             subtitle: const Text(
-              'Periodic 6-month service reminder. Tap to review customer list.',
+              'Periodic 90-day service reminder. Tap to review customer list.',
             ),
             trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
             onTap: () {
@@ -262,16 +288,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   child: const Text('This Year'),
                 ),
                 FilledButton.tonal(
+                  onPressed: _selectSingleDay,
+                  child: const Text('Single Day'),
+                ),
+                OutlinedButton(
                   onPressed: _selectDateRange,
-                  child: const Text('Custom Range'),
+                  child: const Text('Date Range'),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             Text(
-              '${_formatDate(_selectedRange.start)}'
-              ' - '
-              '${_formatDate(_selectedRange.end)}',
+              _selectedRange.start == _selectedRange.end
+                  ? _formatDate(_selectedRange.start)
+                  : '${_formatDate(_selectedRange.start)} - ${_formatDate(_selectedRange.end)}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
@@ -297,7 +327,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           physics: const NeverScrollableScrollPhysics(),
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 1.65,
+          childAspectRatio: width < 380 ? 1.45 : 1.65,
           children: [
             _SummaryCard(
               title: 'Sales',
@@ -354,8 +384,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.warning_amber),
-                  title: Text(part.partName),
-                  subtitle: Text('Part No: ${part.partNumber}'),
+                  title: Text(
+                    part.partName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    'Part No: ${part.partNumber}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: Text(
                     '${part.currentStock} / '
                     '${part.lowStockThreshold}',
@@ -390,9 +428,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(child: Text('${index + 1}')),
-                  title: Text(part.partName),
+                  title: Text(
+                    part.partName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   subtitle: Text('${part.quantitySold} units sold'),
-                  trailing: Text(_formatAmount(part.revenue)),
+                  trailing: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(_formatAmount(part.revenue)),
+                  ),
                 );
               }),
           ],
@@ -434,11 +479,13 @@ class _SummaryCard extends StatelessWidget {
           children: [
             Icon(icon),
             Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),

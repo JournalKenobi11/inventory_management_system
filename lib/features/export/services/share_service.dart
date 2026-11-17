@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/establishment_config.dart';
 import '../../../core/utils/phone_number_utils.dart';
 import '../../billing/billing.dart';
 import '../../customers/customers.dart';
@@ -64,7 +65,7 @@ class ShareService {
     required int invoiceNumber,
     String? customerName,
     String? customerMobile,
-    String garageName = 'Auto Care Garage',
+    String garageName = EstablishmentConfig.name,
   }) async {
     final customerInfo = customerName != null ? ' for $customerName' : '';
     final message =
@@ -82,11 +83,19 @@ class ShareService {
   /// Formats a complete, readable text invoice for WhatsApp messaging.
   String formatInvoiceWhatsAppMessage({
     required InvoiceDetails details,
-    String garageName = 'Auto Care Garage & Service Center',
-    String? garagePhone,
+    String garageName = EstablishmentConfig.name,
+    String? garageServices = EstablishmentConfig.services,
+    String? garageAddress = EstablishmentConfig.address,
+    String? garagePhone = EstablishmentConfig.phone,
   }) {
     final buffer = StringBuffer();
     buffer.writeln('*$garageName*');
+    if (garageServices != null && garageServices.trim().isNotEmpty) {
+      buffer.writeln('_${garageServices.trim()}_');
+    }
+    if (garageAddress != null && garageAddress.trim().isNotEmpty) {
+      buffer.writeln(garageAddress.trim());
+    }
     if (garagePhone != null && garagePhone.trim().isNotEmpty) {
       buffer.writeln('Contact: ${garagePhone.trim()}');
     }
@@ -214,11 +223,19 @@ class ShareService {
     required List<ServicePart> serviceParts,
     required double labourCharge,
     Map<String, String>? partNamesById,
-    String garageName = 'Auto Care Garage & Service Center',
-    String? garagePhone,
+    String garageName = EstablishmentConfig.name,
+    String? garageServices = EstablishmentConfig.services,
+    String? garageAddress = EstablishmentConfig.address,
+    String? garagePhone = EstablishmentConfig.phone,
   }) async {
     final buffer = StringBuffer();
     buffer.writeln('*$garageName*');
+    if (garageServices != null && garageServices.trim().isNotEmpty) {
+      buffer.writeln('_${garageServices.trim()}_');
+    }
+    if (garageAddress != null && garageAddress.trim().isNotEmpty) {
+      buffer.writeln(garageAddress.trim());
+    }
     if (garagePhone != null && garagePhone.isNotEmpty) {
       buffer.writeln('Contact: $garagePhone');
     }

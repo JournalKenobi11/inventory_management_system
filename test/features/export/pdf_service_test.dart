@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:inventory_management_system/core/config/establishment_config.dart';
 import 'package:inventory_management_system/features/billing/billing.dart';
 import 'package:inventory_management_system/features/customers/customers.dart';
 import 'package:inventory_management_system/features/export/export.dart';
@@ -187,5 +188,54 @@ void main() {
     expect(bytes, isNotEmpty);
     final header = utf8.decode(bytes.sublist(0, 5));
     expect(header, equals('%PDF-'));
+  });
+
+  test('InvoicePdfData defaults to EstablishmentConfig constants', () async {
+    final customer = Customer(
+      id: 'cust-est',
+      name: 'Rohan Mehra',
+      mobile: '9359664276',
+      createdDate: '2026-11-17T10:00:00.000Z',
+    );
+    final service = Service(
+      id: 'srv-est',
+      customerId: 'cust-est',
+      labourCharge: 250.0,
+      serviceDate: '2026-11-17T10:00:00.000Z',
+    );
+    final invoice = Invoice(
+      id: 'inv-est',
+      invoiceNumber: 1042,
+      serviceId: 'srv-est',
+      totalAmount: 250.0,
+      createdDate: '2026-11-17T10:00:00.000Z',
+    );
+
+    final pdfData = InvoicePdfData(
+      invoice: invoice,
+      service: service,
+      customer: customer,
+      parts: const [],
+      labourCharge: 250.0,
+      totalAmount: 250.0,
+    );
+
+    expect(pdfData.garageName, equals(EstablishmentConfig.name));
+    expect(pdfData.garageName, equals('Mestry Motors'));
+    expect(pdfData.garageServices, equals(EstablishmentConfig.services));
+    expect(pdfData.garageServices, equals('E-BIKE sales and services'));
+    expect(pdfData.garagePhone, equals(EstablishmentConfig.phone));
+    expect(pdfData.garagePhone, equals('9359664276'));
+    expect(pdfData.garageAddress, equals(EstablishmentConfig.address));
+    expect(
+      pdfData.garageAddress,
+      equals(
+        'Gala No. 1, Siddhi Sagar Apartments, Entry Gate Road, Dahanu East, Dist- Palghar',
+      ),
+    );
+
+    final bytes = await pdfService.generateInvoicePdf(pdfData);
+    expect(bytes, isNotEmpty);
+    expect(utf8.decode(bytes.sublist(0, 5)), equals('%PDF-'));
   });
 }

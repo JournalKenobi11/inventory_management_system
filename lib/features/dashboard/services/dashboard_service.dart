@@ -21,6 +21,10 @@ class DashboardDateRange {
   })  : start = _dateOnly(start),
         end = _dateOnly(end);
 
+  DashboardDateRange.singleDay(DateTime date)
+      : start = _dateOnly(date),
+        end = _dateOnly(date);
+
   DashboardDateRange.month(DateTime date)
       : start = DateTime(date.year, date.month, 1),
         end = DateTime(date.year, date.month + 1, 0);

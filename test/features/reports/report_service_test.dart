@@ -322,5 +322,28 @@ void main() {
     // Cash Profit = 1300 - 200 - 1500 = -400 (Net cash outflow due to stock investment)
     expect(profitReport.cashProfit, equals(-400.0));
   });
+
+  test('ReportDateRange.singleDay correctly isolates a single day',
+      () async {
+    final today = DateTime.now();
+    final singleDay = ReportDateRange.singleDay(today);
+
+    expect(singleDay.start.year, equals(today.year));
+    expect(singleDay.start.month, equals(today.month));
+    expect(singleDay.start.day, equals(today.day));
+    expect(singleDay.end, equals(singleDay.start));
+    expect(singleDay.contains(today), isTrue);
+    expect(
+      singleDay.contains(today.subtract(const Duration(days: 1))),
+      isFalse,
+    );
+    expect(
+      singleDay.contains(today.add(const Duration(days: 1))),
+      isFalse,
+    );
+
+    final report = await reportService.getSalesReport(singleDay);
+    expect(report.totalSales, equals(0.0));
+  });
 }
 

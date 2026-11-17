@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../core/config/establishment_config.dart';
 import '../../billing/billing.dart';
 import '../models/customer.dart';
 
@@ -204,11 +205,15 @@ class CustomerDetailScreen extends ConsumerWidget {
                               color: theme.colorScheme.primary,
                             ),
                             const SizedBox(width: 6),
-                            Text(
-                              customer.vehicleName!.trim(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.primary,
+                            Expanded(
+                              child: Text(
+                                customer.vehicleName!.trim(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.primary,
+                                ),
                               ),
                             ),
                           ],
@@ -267,7 +272,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
-                      'No previous service recorded. The 6-month reminder activates after the first billed service.',
+                      'No previous service recorded. The 90-day reminder activates after the first billed service.',
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
@@ -320,7 +325,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                         children: [
                           Text(
                             isDue
-                                ? 'SERVICE DUE (6-Month Reminder)'
+                                ? 'SERVICE DUE (90-Day Reminder)'
                                 : 'Next Service Reminder',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
@@ -368,8 +373,10 @@ class CustomerDetailScreen extends ConsumerWidget {
                   ],
                 ),
                 const Divider(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     Text(
                       'Previous Service: $lastDateFormatted',
@@ -401,7 +408,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                           onPressed: () async {
                             final vehicle = customer.vehicleName ?? 'your vehicle';
                             final text = Uri.encodeComponent(
-                              'Hello ${customer.name}, your $vehicle is due for its 6-month periodic service at our garage. Please visit us to keep your vehicle in top running condition!',
+                              'Hello ${customer.name}, your $vehicle is due for its 90-day periodic service at ${EstablishmentConfig.name}. Please visit us to keep your vehicle in top running condition!',
                             );
                             final cleanPhone =
                                 customer.mobile.replaceAll(RegExp(r'\D'), '');
@@ -450,22 +457,30 @@ class CustomerDetailScreen extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Icon(
-              Icons.history_rounded,
-              size: 22,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Service History',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+        Expanded(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.history_rounded,
+                size: 22,
+                color: theme.colorScheme.primary,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Service History',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         if (count != null)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -515,24 +530,29 @@ class CustomerDetailScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      'Invoice #${details.invoice.invoiceNumber}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: theme.colorScheme.onPrimaryContainer,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Invoice #${details.invoice.invoiceNumber}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -605,6 +625,7 @@ class CustomerDetailScreen extends ConsumerWidget {
                             style: const TextStyle(fontSize: 13),
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Text(
                           '₹${item.lineTotal.toStringAsFixed(2)}',
                           style: const TextStyle(
@@ -643,24 +664,33 @@ class CustomerDetailScreen extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Total: ',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Total: ',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '₹${details.totalAmount.toStringAsFixed(2)}',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '₹${details.totalAmount.toStringAsFixed(2)}',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

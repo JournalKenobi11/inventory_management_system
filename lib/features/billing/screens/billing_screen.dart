@@ -594,19 +594,25 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 );
               }),
               const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   OutlinedButton.icon(
                     onPressed: _addLabourItem,
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add Another Labour Service'),
                   ),
-                  Text(
-                    'Labour Total: ₹${_labourCharge.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'Labour Total: ₹${_labourCharge.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -651,10 +657,16 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    title: Text(item.part.partName),
+                    title: Text(
+                      item.part.partName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     subtitle: Text(
                       '₹${item.part.sellingPrice.toStringAsFixed(2)} × ${item.quantity} = '
                       '₹${(item.part.sellingPrice * item.quantity).toStringAsFixed(2)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     leading: IconButton(
                       onPressed: () => _removePart(index),
@@ -664,6 +676,9 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                           onPressed: item.quantity <= 1
                               ? null
                               : () {
@@ -671,11 +686,17 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                                 },
                           icon: const Icon(Icons.remove),
                         ),
-                        Text(
-                          '${item.quantity}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          child: Text(
+                            '${item.quantity}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
                         IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                           onPressed: () {
                             _changeQuantity(index, item.quantity + 1);
                           },
@@ -719,7 +740,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: style),
-        Text('₹${amount.toStringAsFixed(2)}', style: style),
+        const SizedBox(width: 8),
+        Flexible(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text('₹${amount.toStringAsFixed(2)}', style: style),
+          ),
+        ),
       ],
     );
   }

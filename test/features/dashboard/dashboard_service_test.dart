@@ -139,4 +139,27 @@ void main() {
     // Inventory value: 18 remaining @ 100 = 1800
     expect(summary.inventoryValue, equals(1800.0));
   });
+
+  test('DashboardDateRange.singleDay filters exact day and isolates sales',
+      () async {
+    final today = DateTime.now();
+    final singleDayRange = DashboardDateRange.singleDay(today);
+
+    expect(singleDayRange.start.year, equals(today.year));
+    expect(singleDayRange.start.month, equals(today.month));
+    expect(singleDayRange.start.day, equals(today.day));
+    expect(singleDayRange.end, equals(singleDayRange.start));
+    expect(singleDayRange.contains(today), isTrue);
+    expect(
+      singleDayRange.contains(today.subtract(const Duration(days: 1))),
+      isFalse,
+    );
+    expect(
+      singleDayRange.contains(today.add(const Duration(days: 1))),
+      isFalse,
+    );
+
+    final summary = await dashboardService.getSummary(singleDayRange);
+    expect(summary.totalSales, equals(0.0));
+  });
 }

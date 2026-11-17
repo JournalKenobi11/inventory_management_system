@@ -168,17 +168,21 @@ class _PartCard extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    '${part.currentStock}',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: isLowStock
-                          ? Theme.of(context).colorScheme.error
-                          : null,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      '${part.currentStock}',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isLowStock
+                            ? Theme.of(context).colorScheme.error
+                            : null,
+                      ),
                     ),
                   ),
                   Text(

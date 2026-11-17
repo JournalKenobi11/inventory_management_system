@@ -112,31 +112,34 @@ class _ManualExpensesTab extends ConsumerWidget {
             horizontal: 16,
             vertical: 8,
           ),
-          child: Row(
-            children: [
-              const Text(
-                'Filter: ',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: const Text('All'),
-                selected: filter == 'all',
-                onSelected: (_) => onFilterChanged('all'),
-              ),
-              const SizedBox(width: 6),
-              ChoiceChip(
-                label: const Text('Business'),
-                selected: filter == 'business',
-                onSelected: (_) => onFilterChanged('business'),
-              ),
-              const SizedBox(width: 6),
-              ChoiceChip(
-                label: const Text('Personal'),
-                selected: filter == 'personal',
-                onSelected: (_) => onFilterChanged('personal'),
-              ),
-            ],
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Text(
+                  'Filter: ',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('All'),
+                  selected: filter == 'all',
+                  onSelected: (_) => onFilterChanged('all'),
+                ),
+                const SizedBox(width: 6),
+                ChoiceChip(
+                  label: const Text('Business'),
+                  selected: filter == 'business',
+                  onSelected: (_) => onFilterChanged('business'),
+                ),
+                const SizedBox(width: 6),
+                ChoiceChip(
+                  label: const Text('Personal'),
+                  selected: filter == 'personal',
+                  onSelected: (_) => onFilterChanged('personal'),
+                ),
+              ],
+            ),
           ),
         ),
         Expanded(
@@ -417,12 +420,16 @@ class _SummaryBanner extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '₹${amount.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '₹${amount.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
                   ),
                 ),
               ],
@@ -457,18 +464,27 @@ class _ExpenseCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
-        title: Text(expense.category),
+        title: Text(
+          expense.category,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         subtitle: Text(
           [
             expense.isPersonal ? 'Personal' : 'Business',
             if (expense.note != null) expense.note!,
             dateText,
           ].join(' • '),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-        trailing: Text(
-          '₹${expense.amount.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+        trailing: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '₹${expense.amount.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),
@@ -511,13 +527,22 @@ class _UnifiedExpenseCard extends StatelessWidget {
         ),
         title: Text(
           item.note ?? item.category,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
-        subtitle: Text(dateText),
-        trailing: Text(
-          '₹${item.amount.toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
+        subtitle: Text(
+          dateText,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            '₹${item.amount.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

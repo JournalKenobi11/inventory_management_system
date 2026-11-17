@@ -78,4 +78,29 @@ class BackupController extends AsyncNotifier<BackupSummary?> {
       rethrow;
     }
   }
+
+  Future<int> seedExtremeFakeData() async {
+    state = const AsyncLoading();
+    try {
+      final count =
+          await ref.read(backupServiceProvider).seedExtremeFakeData();
+      state = const AsyncData(null);
+      return count;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
+  Future<int> deleteFakeData() async {
+    state = const AsyncLoading();
+    try {
+      final count = await ref.read(backupServiceProvider).deleteFakeData();
+      state = const AsyncData(null);
+      return count;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
 }

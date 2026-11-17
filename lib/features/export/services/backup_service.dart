@@ -154,5 +154,13 @@ class BackupService {
     return sourceDb.copy(targetFile.path);
   }
 
+  Future<int> seedExtremeFakeData() async {
+    return await backupRepository.seedExtremeFakeData();
+  }
+
+  Future<int> deleteFakeData() async {
+    return await backupRepository.deleteFakeData();
+  }
+
   static String _two(int val) => val.toString().padLeft(2, '0');
 }
