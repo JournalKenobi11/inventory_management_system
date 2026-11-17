@@ -8,6 +8,7 @@ import '../models/employee.dart';
 import '../providers/salary_provider.dart';
 import 'employee_attendance_detail_screen.dart';
 import 'employee_form_screen.dart';
+import 'pending_payments_screen.dart';
 import 'record_attendance_dialog.dart';
 import 'salary_payment_entry_screen.dart';
 
@@ -88,6 +89,17 @@ class EmployeeListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Employees'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.pending_actions_rounded),
+            tooltip: 'Pending Salaries',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PendingPaymentsScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.how_to_reg_rounded),
             tooltip: "Record Today's Attendance",
@@ -254,6 +266,33 @@ class EmployeeListScreen extends ConsumerWidget {
                                     ],
                                   ),
                                 ),
+                                FilledButton.tonalIcon(
+                                  style: FilledButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.payments_outlined,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    'Pay Salary',
+                                    style: TextStyle(fontSize: 12),
+                                  ),
+                                  onPressed: () async {
+                                    await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => SalaryPaymentEntryScreen(
+                                          employee: employee,
+                                        ),
+                                      ),
+                                    );
+                                    ref.invalidate(salaryPaymentsProvider);
+                                    ref.invalidate(employeesProvider);
+                                  },
+                                ),
                                 PopupMenuButton<String>(
                                   onSelected: (value) async {
                                     if (value == 'attendance') {
@@ -379,7 +418,7 @@ class EmployeeListScreen extends ConsumerWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(
@@ -388,7 +427,8 @@ class EmployeeListScreen extends ConsumerWidget {
           );
           ref.invalidate(employeesProvider);
         },
-        child: const Icon(Icons.add),
+        icon: const Icon(Icons.person_add_rounded),
+        label: const Text('Add Employee'),
       ),
     );
   }

@@ -137,7 +137,7 @@ The **Dashboard** is the financial cockpit of your garage. It automatically calc
 
 ```text
 ┌────────────────────────────────────────────────────────┐
-│ [  🧾  Billing                                       ] │
+│ [  🧾  Billing  ]          [  👥  Salaries  ]         │
 ├────────────────────────────────────────────────────────┤
 │ Date Range: [ This Month ] [ This Year ] [ Custom Range]│
 │ Period: 01/10/2026 - 31/10/2026                        │
@@ -157,8 +157,10 @@ The **Dashboard** is the financial cockpit of your garage. It automatically calc
 └────────────────────────────────────────────────────────┘
 ```
 
-### Quick Billing Action
-At the very top of the dashboard is a large **Billing** button. Tapping it opens the billing screen instantly so you can bill a customer without delay during busy shop hours.
+### Quick Action Buttons
+At the very top of the dashboard are two large, high-priority buttons for quick daily access:
+- **🧾 Billing:** Opens the billing screen immediately so you can bill a customer without delay during busy shop hours.
+- **👥 Salaries:** Directly opens Staff & Salaries management, allowing you to quickly check attendance, view pending wage dues, or record a salary payment in one tap.
 
 ### Date Range Controls
 Choose which time period you want the dashboard cards to calculate:
@@ -172,7 +174,7 @@ Choose which time period you want the dashboard cards to calculate:
 |---|---|---|---|
 | **Sales** | Total money billed to customers. | Sum of all completed invoices in the selected date range. | Shows your gross garage turnover for the period. |
 | **Expenses** | Total business money spent operating the shop. | Sum of all shop expenses (excluding personal expenses) plus all **paid** employee salaries in that period. | Shows what it cost you to run the business. |
-| **Profit** | Net profit earned by the garage. | Calculated as: $\text{Sales} - \text{Expenses}$. | Shows true take-home business earnings before personal withdrawals. |
+| **Profit** | Proper profit earned by the garage. | Calculated as: $\text{Gross Profit} = \text{Sales} - \text{Cost of Sold Parts (COGS)}$. | Shows proper workshop profit based on parts markup and labour charges, accurately deducting the purchase cost of parts used in jobs so that sales are never mistaken for profit. |
 | **Services Completed** | Number of repair jobs finished. | Total count of customer service job cards completed during the period. | Indicates workshop workload and customer volume. |
 | **Inventory Value** | Total retail value of stock on your shelves. | Sum of $(\text{Current Stock} \times \text{Selling Price})$ across all parts in your catalog. | Shows how much working capital is sitting on your shelves. |
 | **Low Stock** | Count of parts that need reordering. | Number of parts where current stock is at or below the part's low-stock alert threshold. | Warning indicator telling you it is time to order stock from suppliers. |
@@ -203,7 +205,7 @@ The **Billing** screen is your digital counter for generating itemized job cards
 │ [ 450.00                                             ] │
 │                                                        │
 │ Parts Used                                             │
-│ [ + Add Part ]                                         │
+│ [ + Add Part (Instant Search) ]                        │
 │ • Engine Oil 15W50 (1 Ltr)      Qty: [- 2 +]  ₹700.00  │
 │ • Oil Filter                    Qty: [- 1 +]  ₹120.00  │
 │                                                        │
@@ -219,14 +221,20 @@ The **Billing** screen is your digital counter for generating itemized job cards
 
 1. **Open Billing:** Tap **Billing** in the bottom navigation bar or tap the **Billing** button on the Dashboard.
 2. **Choose the Customer:**
-   - **Existing Customer:** Tap **Select Customer**, scroll or search the list, and tap their name.
+   - **Existing Customer:** Tap **Select Customer**. A searchable modal opens with a live search bar. Type the customer's **Name**, **Phone Number**, or **Vehicle Plate** to filter instantly, then tap their card.
    - **New Customer:** Tap **New Customer**, enter their **Name**, **Mobile Number**, and **Vehicle Details** (e.g., `Royal Enfield Classic 350`), then tap **Create**. They are selected automatically.
 3. **Enter the Job / Problem Description (Optional):** Type a brief summary of the repair work done (e.g., `Brake pad replacement and chain lubrication`).
 4. **Enter Labour / Service Charge:** Type your service or labour fees in rupees (e.g., `350.00`). If no labour is being charged, leave it as `0`.
-5. **Add Spare Parts Used:**
+5. **Add Spare Parts Used (With Instant Search & Category Filters):**
    - Tap **+ Add Part**.
-   - A list of all parts in your catalog appears showing their current shelf stock and selling price.
-   - Tap the part you installed. *(Note: Parts with 0 stock cannot be selected).*
+   - A **Searchable Parts Dialog** opens immediately.
+   - **Search Box:** Type any part of the **Part Name** (e.g. `Filter`), **Part Number / SKU** (e.g. `P-OIL`), or **Category** (e.g. `Fluids`) to filter the list in real time.
+   - **Category Filter Chips:** Tap on category chips (e.g., `All`, `Fluids`, `Brakes`, `Engine`) across the top of the dialog to narrow down parts instantly.
+   - **Stock Availability Badges:** Each part clearly displays its status:
+     - 🟢 **In Stock (X pcs)**: Readily available for billing.
+     - 🟠 **Low Stock (X pcs)**: Running low; billing will consume remaining stock.
+     - 🔴 **Out of Stock**: Disabled automatically to prevent negative inventory.
+   - Tap the part you installed.
    - Adjust the quantity using the **+** and **-** buttons. You cannot increase the quantity beyond what is physically available in your inventory.
    - Repeat for any other parts used on the vehicle.
 6. **Review the Cost Breakdown:** Check the subtotal for parts, the labour charge, and the final grand total.
@@ -472,12 +480,42 @@ Use the quick chips at the top to change dates:
 
 ### Report Tabs
 
-#### 1. Financials Tab
-Gives an executive profit-and-loss breakdown:
-- **Gross Revenue:** Total customer billing separated into **Parts Revenue** and **Labour Fees**.
-- **Cost of Goods Sold (COGS):** What the parts installed in customer vehicles originally cost you from suppliers.
-- **Gross Profit:** Earnings directly from parts markup and labour.
-- **Net Profit:** Your true bottom-line earnings after subtracting shop expenses and paid employee wages.
+#### 1. Financials Tab (Complete Profit & Loss and Cashflow Tally)
+Provides an itemized, mathematically reconciled Profit & Loss and Cashflow statement, presented across two distinct, non-overlapping cards:
+
+```text
+┌────────────────────────────────────────────────────────┐
+│ 📊 Workshop Profit (Gross Profit)                      │
+├────────────────────────────────────────────────────────┤
+│ 1. Gross Customer Billing (Sales)              ₹68,500 │
+│    • Parts Billed                              ₹46,200 │
+│    • Labour Charges                            ₹22,300 │
+│ 2. Cost of Parts Used in Services (COGS)      -₹31,000 │
+├────────────────────────────────────────────────────────┤
+│ 🟢 Proper Profit (Gross Markup + Labour):      ₹37,500 │
+└────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────┐
+│ 💵 Cash Drawer Flow (In vs Out)                        │
+├────────────────────────────────────────────────────────┤
+│ • Total Cash In (Customer Billings)           +₹68,500 │
+│ • Total Cash Out (Purchases & Overhead)       -₹29,200 │
+│    - Supplier Stock Restocking                -₹15,000 │
+│    - Shop Expenses & Salaries                 -₹14,200 │
+├────────────────────────────────────────────────────────┤
+│ 📦 Net Cash Balance in Drawer:                 ₹39,300 │
+└────────────────────────────────────────────────────────┘
+```
+
+##### Understanding Why Profit Tallies Perfectly & Eliminating Number Overflow:
+1. **Parts Markup vs. Gross Sales:** When you buy a part for ₹100 and sell it for ₹110, only the **₹10 markup** is profit. The system correctly deducts the ₹100 part cost (COGS) so that sales revenue is never mistaken for pure profit.
+2. **Proper Profit (Gross Profit):** Shows the actual gross earnings generated directly by workshop jobs: $(\text{Parts Markup} + \text{Labour Charges})$. Overhead and expenses are kept separate so workshop job profitability is always clearly understood.
+3. **Cash Drawer Flow:** Separately tracks physical cash movements (customer receipts minus supplier purchases and overhead), preventing part costs from ever being deducted twice.
+4. **Responsive Layout:** All numbers are formatted with flexible, right-aligned text so that currency values stay neatly inside their boxes on any device without clipping or overflowing.
+
+##### Mathematical Formulas:
+$$\text{Proper Profit (Gross Profit)} = \text{Sales} - \text{COGS} = (\text{Parts Revenue} - \text{COGS}) + \text{Labour Charges}$$
+$$\text{Net Cash Flow} = \text{Total Cash In} - (\text{Stock Restocking Purchases} + \text{Operating Expenses})$$
 
 #### 2. Expenses Tab
 Shows where workshop money is going. Displays a colorful category pie chart and an itemized breakdown of costs (Rent, Electricity, Tools, Consumables, etc.).
@@ -493,7 +531,7 @@ Shows total payroll expenses disbursed to staff, pending wage dues, and a breakd
 
 ---
 
-## 12. Expenses
+## 12. Expenses & Expense Hub
 
 Track day-to-day operational workshop overhead in the **Expenses** screen.
 
@@ -501,7 +539,7 @@ Track day-to-day operational workshop overhead in the **Expenses** screen.
 ┌────────────────────────────────────────────────────────┐
 │  ←   Expenses                                      [⋮] │
 ├────────────────────────────────────────────────────────┤
-│ Filter: [ All | Business | Personal ]                  │
+│ [ General Expenses ]  [ Purchases ]  [ Salaries ]      │
 ├────────────────────────────────────────────────────────┤
 │ • Workshop Rent                           ₹15,000.00   │
 │   Rent • 01/10/2026 • Monthly garage rent              │
@@ -515,6 +553,14 @@ Track day-to-day operational workshop overhead in the **Expenses** screen.
 │                                                   [ + ]│
 └────────────────────────────────────────────────────────┘
 ```
+
+### Expense Tabs
+The Expenses screen acts as a complete cash-outflow command center with three distinct tabs:
+1. **General Expenses:** Day-to-day overhead costs (Rent, Electricity, Fuel, Tea, Consumables).
+2. **Purchases (Stock-In):** Complete audit trail of all spare parts purchased from suppliers.
+3. **Salaries:** View all staff wage disbursements with convenient quick-action buttons:
+   - **Record Salary Payment:** Tap to immediately open the salary payment modal.
+   - **Manage Staff & Salaries:** Tap to open the full Staff Roster, Pending Dues, and Attendance tracker.
 
 ### Recording an Expense
 1. Open the sidebar (☰) and tap **Expenses**.
@@ -593,7 +639,7 @@ Manage your workshop mechanics, technicians, salary disbursements, and daily att
 
 ```text
 ┌────────────────────────────────────────────────────────┐
-│  ←   Employees                                     📋  │  <-- Record Today's Attendance
+│  ←   Employees                          [Pending]  📋  │  <-- [Pending Salaries] & [Attendance]
 ├────────────────────────────────────────────────────────┤
 │ 👤 Vikram Singh (Head Mechanic)                        │
 │    Monthly Salary: ₹18,000.00                          │
@@ -601,15 +647,21 @@ Manage your workshop mechanics, technicians, salary disbursements, and daily att
 │    Today: 🟢 Present (On Time - 10:15 AM)              │
 │    Month: 22 Present (95% On Time) | 1 Late | 0 Absent │
 │                                                        │
-│    [ 💵 Pay Salary ]  [ 📅 Attendance History ]  [ ⋮ ] │
+│    [ 💵 Pay Salary ]  [ 📅 Attendance History ]  [ ⋮ ] │  <-- Direct One-Tap Action
 ├────────────────────────────────────────────────────────┤
-│                                                   [ + ]│
+│                                         [ + Add Staff ]│
 └────────────────────────────────────────────────────────┘
 ```
 
+### Fast Ways to Access Salary Management
+Managing staff wages is quick and accessible from multiple places in the app:
+1. **From Dashboard:** Tap the **👥 Salaries** button at the top of the home screen.
+2. **From Expenses:** Open **Expenses**, switch to the **Salaries** tab, and tap **Record Salary Payment** or **Manage Staff & Salaries**.
+3. **From Drawer Menu:** Tap **☰** and select **Staff & Salaries**.
+
 ### Adding an Employee
-1. Tap **☰** in the top-left and select **Staff & Salaries**.
-2. Tap the **+** button at the bottom-right.
+1. Open **Staff & Salaries**.
+2. Tap the **+ Add Staff** button at the bottom-right.
 3. Enter the employee's **Full Name** (e.g., `Vikram Singh`).
 4. Enter their agreed **Monthly Salary (₹)** (e.g., `18000.00`).
 5. Tap **Save Employee**.
@@ -626,14 +678,41 @@ Manage your workshop mechanics, technicians, salary disbursements, and daily att
 > [!NOTE]
 > **Punctuality Rule (10:30 AM):** The standard workshop starting time is **10:30 AM**. If an employee checks in at or before 10:30 AM, their status is marked as **On Time**. If they check in at 10:31 AM or later, they are flagged as **Late**. The app tracks attendance percentages automatically.
 
-### Paying Employee Salaries
-1. On the employee card, tap **Pay Salary**.
-2. The form displays the salary balance owed for the current month.
-3. Enter the **Amount Paid** (e.g., a ₹5,000 advance or the full ₹18,000).
-4. Select the **Status**:
-   - **Paid:** Money has been handed over. It immediately reduces the balance owed to the employee and is recorded as a payroll expense in your Dashboard and Reports.
-   - **Pending:** Logs a promised payment without reducing the owed amount until marked paid.
-5. Tap **Save Payment**.
+### Paying Employee Salaries & Managing Advances
+
+```text
+┌────────────────────────────────────────────────────────┐
+│  ←   Record Salary Payment                             │
+├────────────────────────────────────────────────────────┤
+│ Employee: [ Vikram Singh (₹18,000/mo)                ▼]│
+│ ℹ️ Current Month Balance Owed: ₹6,000.00               │
+├────────────────────────────────────────────────────────┤
+│ Quick Fill: [ ₹6,000 Owed ]  [ ₹18,000 Full ]  [ 50% ] │
+├────────────────────────────────────────────────────────┤
+│ Amount to Pay (₹): [ 6000.00                         ] │
+│ Payment Date:      [ 05/10/2026                      ] │
+│ Payment Status:    [ Paid (Disbursed now)            ▼]│
+│ Notes (Optional):  [ October final salary            ] │
+│                                                        │
+│ [ 💾 Record Payment                                  ] │
+└────────────────────────────────────────────────────────┘
+```
+
+1. **Open Payment Form:**
+   - Tap **Pay Salary** directly on any employee's card in the roster, OR
+   - Open the standalone payment form from the **Dashboard** or **Expenses** screen and pick the employee from the dropdown.
+2. **Automatic Owed Balance Calculation:** The screen automatically looks up the employee's base salary and calculates how much they are still owed for the current month.
+3. **Quick-Fill Amount Chips:** Tap a preset chip to fill the payment amount with zero typing:
+   - **₹ Owed (Remaining Balance):** Immediately sets the amount to their remaining monthly dues.
+   - **₹ Full (Monthly Salary):** Sets the full monthly agreed wage.
+   - **50%:** Calculates an exact half-month salary advance.
+4. **Select Payment Status:**
+   - **Paid (Disbursed now):** Money has been handed over. It immediately reduces the balance owed to the employee and is recorded as a payroll expense in your Dashboard and Reports.
+   - **Pending (Unpaid Promise):** Logs a scheduled or promised payment without reducing the owed amount until disbursed.
+5. Tap **Record Payment**.
+
+### Pending Salaries Tracker
+Tap the **Pending Salaries (⏳)** button in the top bar of the Employees screen to view an itemized list of all pending salary records. You can tap **Mark as Paid** on any record to confirm the cash has been disbursed, automatically updating your accounts and reports.
 
 ---
 

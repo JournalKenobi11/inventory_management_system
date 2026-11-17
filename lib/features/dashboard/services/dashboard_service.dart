@@ -95,16 +95,38 @@ class DashboardService {
     final parts = await partRepository.getAll();
     final lowStockParts = await partRepository.getLowStock();
 
-    final totalSales = invoices
+    final inRangeInvoices = invoices
         .where(
           (invoice) =>
               _isDateInRange(invoice.createdDate, range),
         )
-        .fold<double>(
-          0,
-          (total, invoice) =>
-              total + invoice.totalAmount,
-        );
+        .toList();
+
+    final totalSales = inRangeInvoices.fold<double>(
+      0,
+      (total, invoice) => total + invoice.totalAmount,
+    );
+
+    final partById = <String, Part>{
+      for (final part in parts) part.id: part,
+    };
+    final serviceById = <String, Service>{
+      for (final s in services) s.id: s,
+    };
+
+    double cogs = 0.0;
+    for (final inv in inRangeInvoices) {
+      final service = serviceById[inv.serviceId];
+      if (service != null) {
+        final serviceParts =
+            await servicePartRepository.getByServiceId(service.id);
+        for (final sp in serviceParts) {
+          final part = partById[sp.partId];
+          final unitCost = part?.purchasePrice ?? 0.0;
+          cogs += sp.quantity * unitCost;
+        }
+      }
+    }
 
     final businessExpenses = expenses
         .where(
@@ -133,7 +155,8 @@ class DashboardService {
     final totalExpenses =
         businessExpenses + salaryExpenses;
 
-    final profit = totalSales - totalExpenses;
+    // Gross profit as proper profit for now (Parts Markup + Labour)
+    final profit = totalSales - cogs;
 
     final servicesCompleted = services
         .where(
@@ -160,6 +183,7 @@ class DashboardService {
       totalSales: totalSales,
       totalExpenses: totalExpenses,
       profit: profit,
+      cogs: cogs,
       servicesCompleted: servicesCompleted,
       inventoryValue: inventoryValue,
       lowStockParts: List<Part>.unmodifiable(

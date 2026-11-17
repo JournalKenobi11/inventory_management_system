@@ -39,6 +39,7 @@ class DashboardSummary {
   final double totalSales;
   final double totalExpenses;
   final double profit;
+  final double cogs;
   final int servicesCompleted;
   final double inventoryValue;
   final List<Part> lowStockParts;
@@ -48,6 +49,7 @@ class DashboardSummary {
     required this.totalSales,
     required this.totalExpenses,
     required this.profit,
+    this.cogs = 0.0,
     required this.servicesCompleted,
     required this.inventoryValue,
     required this.lowStockParts,
@@ -58,6 +60,7 @@ class DashboardSummary {
       : totalSales = 0,
         totalExpenses = 0,
         profit = 0,
+        cogs = 0,
         servicesCompleted = 0,
         inventoryValue = 0,
         lowStockParts = const [],

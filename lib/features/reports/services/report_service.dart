@@ -2,6 +2,7 @@ import '../../billing/billing.dart';
 import '../../customers/customers.dart';
 import '../../expenses/expenses.dart';
 import '../../parts/parts.dart';
+import '../../purchases/purchases.dart';
 import '../../salaries/salaries.dart';
 import '../models/report_models.dart';
 
@@ -11,6 +12,7 @@ class ReportService {
   final PartService partService;
   final ExpenseService expenseService;
   final SalaryService salaryService;
+  final PurchaseService? purchaseService;
 
   ReportService({
     required this.billingService,
@@ -18,6 +20,7 @@ class ReportService {
     required this.partService,
     required this.expenseService,
     required this.salaryService,
+    this.purchaseService,
   });
 
   Future<ComprehensiveReport> getComprehensiveReport(
@@ -167,14 +170,73 @@ class ReportService {
 
     final totalRevenue = salesReport.totalSales;
     final totalExpenses = expenseReport.totalExpenses;
-    final netProfit = totalRevenue - totalExpenses;
-    final margin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0.0;
+
+    // Detailed breakdown for complete profit and loss tallying
+    final allInvoices = await billingService.getAllInvoices();
+    final allServices = await billingService.getAllServices();
+    final allParts = await partService.getAllParts();
+    final partById = {for (final p in allParts) p.id: p};
+    final serviceById = {for (final s in allServices) s.id: s};
+
+    final inRangeInvoices = allInvoices
+        .where((inv) => _isDateInRange(inv.createdDate, range))
+        .toList();
+
+    double partsRevenue = 0.0;
+    double labourRevenue = 0.0;
+    double cogs = 0.0;
+
+    for (final inv in inRangeInvoices) {
+      final service = serviceById[inv.serviceId];
+      if (service != null) {
+        labourRevenue += service.labourCharge;
+        final serviceParts =
+            await billingService.getServiceParts(service.id);
+        for (final sp in serviceParts) {
+          partsRevenue += sp.quantity * sp.priceEach;
+          final part = partById[sp.partId];
+          final unitCost = part?.purchasePrice ?? 0.0;
+          cogs += sp.quantity * unitCost;
+        }
+      }
+    }
+
+    if (partsRevenue == 0.0 && totalRevenue > labourRevenue) {
+      partsRevenue = totalRevenue - labourRevenue;
+    }
+
+    final grossProfit = totalRevenue - cogs;
+    final operatingNetProfit = grossProfit - totalExpenses;
+    // Keep gross profit as proper profit for now
+    final netProfit = grossProfit;
+    final margin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0.0;
+
+    double stockPurchases = 0.0;
+    if (purchaseService != null) {
+      final allPurchases = await purchaseService!.getAllPurchases();
+      final inRangePurchases = allPurchases.where(
+        (p) => _isDateInRange(p.purchaseDate, range),
+      );
+      stockPurchases = inRangePurchases.fold<double>(
+        0.0,
+        (sum, p) => sum + (p.quantity * p.purchasePrice),
+      );
+    }
+
+    final cashProfit = totalRevenue - (totalExpenses + stockPurchases);
 
     return ProfitReportData(
       totalRevenue: totalRevenue,
       totalExpenses: totalExpenses,
       netProfit: netProfit,
       profitMarginPercentage: margin,
+      partsRevenue: partsRevenue,
+      labourRevenue: labourRevenue,
+      cogs: cogs,
+      grossProfit: grossProfit,
+      stockPurchases: stockPurchases,
+      operatingNetProfit: operatingNetProfit,
+      cashProfit: cashProfit,
     );
   }
 
@@ -375,6 +437,7 @@ class ReportService {
       23,
       59,
       59,
+      999,
       999,
     );
   }

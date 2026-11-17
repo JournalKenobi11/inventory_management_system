@@ -128,12 +128,26 @@ class ProfitReportData {
   final double totalExpenses;
   final double netProfit;
   final double profitMarginPercentage;
+  final double partsRevenue;
+  final double labourRevenue;
+  final double cogs;
+  final double grossProfit;
+  final double stockPurchases;
+  final double operatingNetProfit;
+  final double cashProfit;
 
   const ProfitReportData({
     required this.totalRevenue,
     required this.totalExpenses,
     required this.netProfit,
     required this.profitMarginPercentage,
+    this.partsRevenue = 0.0,
+    this.labourRevenue = 0.0,
+    this.cogs = 0.0,
+    this.grossProfit = 0.0,
+    this.stockPurchases = 0.0,
+    this.operatingNetProfit = 0.0,
+    this.cashProfit = 0.0,
   });
 }
 

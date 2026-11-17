@@ -12,6 +12,8 @@ import 'package:inventory_management_system/features/expenses/expenses.dart';
 import 'package:inventory_management_system/features/expenses/repositories/sqlite/sqlite_expense_repository.dart';
 import 'package:inventory_management_system/features/parts/parts.dart';
 import 'package:inventory_management_system/features/parts/repositories/sqlite/sqlite_part_repository.dart';
+import 'package:inventory_management_system/features/purchases/purchases.dart';
+import 'package:inventory_management_system/features/purchases/repositories/sqlite/sqlite_purchase_repository.dart';
 import 'package:inventory_management_system/features/reports/reports.dart';
 import 'package:inventory_management_system/features/salaries/salaries.dart';
 import 'package:inventory_management_system/features/salaries/repositories/sqlite/sqlite_employee_repository.dart';
@@ -24,6 +26,7 @@ void main() {
   late BillingService billingService;
   late ExpenseService expenseService;
   late SalaryService salaryService;
+  late PurchaseService purchaseService;
   late ReportService reportService;
 
   setUp(() async {
@@ -37,6 +40,7 @@ void main() {
     final expenseRepo = SqliteExpenseRepository(database);
     final employeeRepo = SqliteEmployeeRepository(database);
     final salaryPaymentRepo = SqliteSalaryPaymentRepository(database);
+    final purchaseRepo = SqlitePurchaseRepository(database);
 
     customerService = CustomerService(customerRepo);
     partService = PartService(partRepo);
@@ -50,6 +54,7 @@ void main() {
     );
     expenseService = ExpenseService(expenseRepo);
     salaryService = SalaryService(employeeRepo, salaryPaymentRepo);
+    purchaseService = PurchaseService(purchaseRepo, partService, database);
 
     reportService = ReportService(
       billingService: billingService,
@@ -57,6 +62,7 @@ void main() {
       partService: partService,
       expenseService: expenseService,
       salaryService: salaryService,
+      purchaseService: purchaseService,
     );
   });
 
@@ -173,11 +179,25 @@ void main() {
     expect(report.expenses.categories.length, equals(1));
     expect(report.expenses.categories.first.category, equals('Rent'));
 
-    // Verify Profit: 1900 - 900 = 1000
+    // Verify Profit Breakdown:
+    // Revenue = 1900 (Parts: 1400, Labour: 500)
+    // COGS = 800 (Oil: 2 * 300 = 600, Brake: 1 * 200 = 200)
+    // Gross Profit = 1900 - 800 = 1100
+    // Operating Expenses = 500 rent + 400 salary = 900
+    // Operating Net Profit = 1100 - 900 = 200
+    // Stock Purchases = 0
+    // Cash Profit = 1900 - 900 = 1000
     expect(report.profit.totalRevenue, equals(1900.0));
+    expect(report.profit.partsRevenue, equals(1400.0));
+    expect(report.profit.labourRevenue, equals(500.0));
+    expect(report.profit.cogs, equals(800.0));
+    expect(report.profit.grossProfit, equals(1100.0));
     expect(report.profit.totalExpenses, equals(900.0));
-    expect(report.profit.netProfit, equals(1000.0));
-    expect(report.profit.profitMarginPercentage, closeTo((1000 / 1900) * 100, 0.01));
+    expect(report.profit.operatingNetProfit, equals(200.0));
+    expect(report.profit.stockPurchases, equals(0.0));
+    expect(report.profit.cashProfit, equals(1000.0));
+    expect(report.profit.netProfit, equals(1100.0));
+    expect(report.profit.profitMarginPercentage, closeTo((1100 / 1900) * 100, 0.01));
 
     // Verify Operations
     expect(report.servicesCompleted, equals(2));
@@ -232,4 +252,75 @@ void main() {
     expect(report.topParts, isEmpty);
     expect(report.servicesCompleted, equals(0));
   });
+
+  test('correctly tallies profit with stock purchases, COGS, operating and cash profit',
+      () async {
+    final now = DateTime.now();
+    final range = ReportDateRange.month(now);
+
+    final cust = await customerService.createCustomer(
+      name: 'Anil Kumar',
+      mobile: '9988776655',
+    );
+    final part = await partService.createPart(
+      partNumber: 'P-PLUG-1',
+      partName: 'Spark Plug',
+      category: 'Ignition',
+      purchasePrice: 150.0,
+      sellingPrice: 250.0,
+      currentStock: 10,
+      lowStockThreshold: 3,
+    );
+
+    // 1. Purchase new stock: 10 units @ 150 = 1500 cash outflow
+    await purchaseService.recordPurchase(
+      partId: part.id,
+      quantity: 10,
+      price: 150.0,
+    );
+
+    // 2. Bill service: 4 units @ 250 = 1000 + 300 labour = 1300 revenue
+    // COGS = 4 * 150 = 600
+    await billingService.billService(
+      customerId: cust.id,
+      problemDesc: 'Tune up',
+      labourCharge: 300.0,
+      partsUsed: [ServicePartInput(partId: part.id, quantity: 4)],
+    );
+
+    // 3. Operating expense: 200 electricity
+    await expenseService.createExpense(
+      category: 'Electricity',
+      isPersonal: false,
+      amount: 200.0,
+    );
+
+    final profitReport = await reportService.getProfitReport(range);
+
+    // Revenue = 1300 (Parts: 1000, Labour: 300)
+    expect(profitReport.totalRevenue, equals(1300.0));
+    expect(profitReport.partsRevenue, equals(1000.0));
+    expect(profitReport.labourRevenue, equals(300.0));
+
+    // COGS = 4 * 150 = 600
+    expect(profitReport.cogs, equals(600.0));
+
+    // Gross Profit = 1300 - 600 = 700
+    expect(profitReport.grossProfit, equals(700.0));
+
+    // Operating expenses = 200
+    expect(profitReport.totalExpenses, equals(200.0));
+
+    // Operating Net Profit = 700 - 200 = 500
+    expect(profitReport.operatingNetProfit, equals(500.0));
+    // Proper profit = Gross profit = 700
+    expect(profitReport.netProfit, equals(700.0));
+
+    // Stock Purchases = 1500
+    expect(profitReport.stockPurchases, equals(1500.0));
+
+    // Cash Profit = 1300 - 200 - 1500 = -400 (Net cash outflow due to stock investment)
+    expect(profitReport.cashProfit, equals(-400.0));
+  });
 }
+

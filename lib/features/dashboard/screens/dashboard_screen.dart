@@ -5,6 +5,7 @@ import '../../../core/widgets/app_drawer_button.dart';
 
 import '../../billing/billing.dart';
 import '../../customers/customers.dart';
+import '../../salaries/salaries.dart';
 import '../models/dashboard_summary.dart';
 import '../providers/dashboard_provider.dart';
 import '../services/dashboard_service.dart';
@@ -73,6 +74,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ).push(MaterialPageRoute(builder: (_) => const BillingScreen()));
   }
 
+  void _openSalaries() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const EmployeeListScreen()));
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardAsync = ref.watch(dashboardProvider(_selectedRange));
@@ -131,7 +138,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildBillingButton(),
+        _buildQuickActionButtons(),
         const SizedBox(height: 16),
         _buildDateControls(context),
         const SizedBox(height: 16),
@@ -197,18 +204,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildBillingButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: FilledButton.icon(
-        onPressed: _openBilling,
-        icon: const Icon(Icons.receipt_long, size: 26),
-        label: const Text(
-          'Billing',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  Widget _buildQuickActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: SizedBox(
+            height: 56,
+            child: FilledButton.icon(
+              onPressed: _openBilling,
+              icon: const Icon(Icons.receipt_long, size: 24),
+              label: const Text(
+                'New Bill',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          flex: 2,
+          child: SizedBox(
+            height: 56,
+            child: FilledButton.tonalIcon(
+              onPressed: _openSalaries,
+              icon: const Icon(Icons.badge_rounded, size: 22),
+              label: const Text(
+                'Salaries',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

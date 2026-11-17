@@ -20,20 +20,52 @@ class SalaryPaymentEntryScreen extends ConsumerStatefulWidget {
 class _SalaryPaymentEntryScreenState
     extends ConsumerState<SalaryPaymentEntryScreen> {
   final _formKey = GlobalKey<FormState>();
-
   final _amountController = TextEditingController();
 
+  Employee? _selectedEmployee;
+  double? _owedThisMonth;
+  bool _loadingOwed = false;
   String _status = 'paid';
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    _selectedEmployee = widget.employee;
 
-    if (widget.employee != null) {
+    if (_selectedEmployee != null) {
       _amountController.text =
-          widget.employee!.monthlySalary.toStringAsFixed(2);
+          _selectedEmployee!.monthlySalary.toStringAsFixed(2);
+      _fetchOwed(_selectedEmployee!);
     }
+  }
+
+  Future<void> _fetchOwed(Employee emp) async {
+    setState(() => _loadingOwed = true);
+    try {
+      final owed = await ref
+          .read(salaryServiceProvider)
+          .getTotalOwedThisMonth(emp.id);
+      if (mounted) {
+        setState(() {
+          _owedThisMonth = owed;
+          _loadingOwed = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loadingOwed = false);
+      }
+    }
+  }
+
+  void _onEmployeeChanged(Employee? emp) {
+    if (emp == null) return;
+    setState(() {
+      _selectedEmployee = emp;
+      _amountController.text = emp.monthlySalary.toStringAsFixed(2);
+    });
+    _fetchOwed(emp);
   }
 
   @override
@@ -43,7 +75,11 @@ class _SalaryPaymentEntryScreenState
   }
 
   Future<void> _save() async {
-    if (widget.employee == null) {
+    final emp = _selectedEmployee;
+    if (emp == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an employee.')),
+      );
       return;
     }
 
@@ -56,13 +92,10 @@ class _SalaryPaymentEntryScreenState
     });
 
     try {
-      final amount =
-          double.parse(_amountController.text.trim());
+      final amount = double.parse(_amountController.text.trim());
 
-      await ref
-          .read(salaryPaymentsProvider.notifier)
-          .recordPayment(
-            employeeId: widget.employee!.id,
+      await ref.read(salaryPaymentsProvider.notifier).recordPayment(
+            employeeId: emp.id,
             amount: amount,
             status: _status,
           );
@@ -78,9 +111,9 @@ class _SalaryPaymentEntryScreenState
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Salary payment recorded successfully.',
+            'Salary payment of ₹${amount.toStringAsFixed(2)} recorded for ${emp.name}.',
           ),
         ),
       );
@@ -107,15 +140,8 @@ class _SalaryPaymentEntryScreenState
 
   @override
   Widget build(BuildContext context) {
-    if (widget.employee == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            'Employee is required.',
-          ),
-        ),
-      );
-    }
+    final employeesAsync = ref.watch(employeesProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -126,17 +152,199 @@ class _SalaryPaymentEntryScreenState
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            Text(
-              widget.employee!.name,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Monthly salary: ₹${widget.employee!.monthlySalary.toStringAsFixed(2)}',
-            ),
-            const SizedBox(height: 24),
+            // Employee Picker / Header
+            if (widget.employee != null) ...[
+              Card(
+                elevation: 0,
+                color: theme.colorScheme.primaryContainer.withAlpha(80),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: theme.colorScheme.primary.withAlpha(60),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: theme.colorScheme.primary,
+                        child: Text(
+                          widget.employee!.name.isNotEmpty
+                              ? widget.employee!.name[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.employee!.name,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Monthly Salary: ₹${widget.employee!.monthlySalary.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                            if (_owedThisMonth != null)
+                              Text(
+                                'Owed This Month: ₹${_owedThisMonth!.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _owedThisMonth! > 0
+                                      ? Colors.orange.shade800
+                                      : Colors.green.shade800,
+                                ),
+                              )
+                            else if (_loadingOwed)
+                              const Padding(
+                                padding: EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'Calculating balance owed...',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ] else ...[
+              employeesAsync.when(
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('Error loading employees: $e'),
+                data: (employees) {
+                  if (employees.isEmpty) {
+                    return const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('No employees found. Add an employee first.'),
+                      ),
+                    );
+                  }
+
+                  return DropdownButtonFormField<Employee>(
+                    key: ValueKey(_selectedEmployee?.id),
+                    initialValue: _selectedEmployee,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Employee',
+                      prefixIcon: Icon(Icons.badge_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: employees.map((emp) {
+                      return DropdownMenuItem<Employee>(
+                        value: emp,
+                        child: Text(
+                          '${emp.name} (₹${emp.monthlySalary.toStringAsFixed(0)}/mo)',
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: _saving ? null : _onEmployeeChanged,
+                    validator: (val) =>
+                        val == null ? 'Please select an employee' : null,
+                  );
+                },
+              ),
+              if (_selectedEmployee != null && _owedThisMonth != null) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Monthly: ₹${_selectedEmployee!.monthlySalary.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade700,
+                        ),
+                      ),
+                      Text(
+                        'Owed This Month: ₹${_owedThisMonth!.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: _owedThisMonth! > 0
+                              ? Colors.orange.shade800
+                              : Colors.green.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+
+            const SizedBox(height: 16),
+
+            // Quick Fill Amount Chips
+            if (_selectedEmployee != null) ...[
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  if (_owedThisMonth != null && _owedThisMonth! > 0)
+                    ActionChip(
+                      avatar: const Icon(Icons.bolt, size: 16),
+                      label: Text(
+                        'Owed (₹${_owedThisMonth!.toStringAsFixed(0)})',
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _amountController.text =
+                              _owedThisMonth!.toStringAsFixed(2);
+                        });
+                      },
+                    ),
+                  ActionChip(
+                    avatar: const Icon(Icons.calendar_month, size: 16),
+                    label: Text(
+                      'Full (₹${_selectedEmployee!.monthlySalary.toStringAsFixed(0)})',
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _amountController.text = _selectedEmployee!.monthlySalary
+                            .toStringAsFixed(2);
+                      });
+                    },
+                  ),
+                  ActionChip(
+                    avatar: const Icon(Icons.pie_chart_outline, size: 16),
+                    label: Text(
+                      '50% (₹${(_selectedEmployee!.monthlySalary / 2).toStringAsFixed(0)})',
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _amountController.text =
+                            (_selectedEmployee!.monthlySalary / 2)
+                                .toStringAsFixed(2);
+                      });
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // Amount field
             TextFormField(
               controller: _amountController,
               enabled: !_saving,
@@ -145,18 +353,13 @@ class _SalaryPaymentEntryScreenState
                 prefixText: '₹ ',
                 border: OutlineInputBorder(),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               validator: (value) {
-                if (value == null ||
-                    value.trim().isEmpty) {
+                if (value == null || value.trim().isEmpty) {
                   return 'Enter payment amount';
                 }
 
-                final amount =
-                    double.tryParse(value.trim());
+                final amount = double.tryParse(value.trim());
 
                 if (amount == null) {
                   return 'Enter a valid amount';
@@ -170,20 +373,34 @@ class _SalaryPaymentEntryScreenState
               },
             ),
             const SizedBox(height: 16),
+
+            // Status Dropdown
             DropdownButtonFormField<String>(
               initialValue: _status,
               decoration: const InputDecoration(
-                labelText: 'Status',
+                labelText: 'Payment Status',
                 border: OutlineInputBorder(),
               ),
               items: const [
                 DropdownMenuItem(
                   value: 'paid',
-                  child: Text('Paid'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 18),
+                      SizedBox(width: 8),
+                      Text('Paid (Disbursed now)'),
+                    ],
+                  ),
                 ),
                 DropdownMenuItem(
                   value: 'pending',
-                  child: Text('Pending'),
+                  child: Row(
+                    children: [
+                      Icon(Icons.pending, color: Colors.orange, size: 18),
+                      SizedBox(width: 8),
+                      Text('Pending (Record as accrued/due)'),
+                    ],
+                  ),
                 ),
               ],
               onChanged: _saving
@@ -197,19 +414,27 @@ class _SalaryPaymentEntryScreenState
                     },
             ),
             const SizedBox(height: 24),
+
+            // Save button
             SizedBox(
               height: 50,
-              child: FilledButton(
+              child: FilledButton.icon(
                 onPressed: _saving ? null : _save,
-                child: _saving
+                icon: _saving
+                    ? const SizedBox.shrink()
+                    : const Icon(Icons.payment_rounded),
+                label: _saving
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child:
-                            CircularProgressIndicator(),
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : const Text(
-                        'Record Payment',
+                        'Record Salary Payment',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
               ),
             ),

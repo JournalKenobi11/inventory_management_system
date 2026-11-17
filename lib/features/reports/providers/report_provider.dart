@@ -4,6 +4,7 @@ import '../../billing/billing.dart';
 import '../../customers/customers.dart';
 import '../../expenses/expenses.dart';
 import '../../parts/parts.dart';
+import '../../purchases/purchases.dart';
 import '../../salaries/salaries.dart';
 import '../models/report_models.dart';
 import '../services/report_service.dart';
@@ -15,6 +16,7 @@ final reportServiceProvider = Provider<ReportService>((ref) {
     partService: ref.watch(partServiceProvider),
     expenseService: ref.watch(expenseServiceProvider),
     salaryService: ref.watch(salaryServiceProvider),
+    purchaseService: ref.watch(purchaseServiceProvider),
   );
 });
 

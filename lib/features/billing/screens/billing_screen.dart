@@ -175,40 +175,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
     final selected = await showDialog<Customer>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Customer'),
-          content: SizedBox(
-            width: 500,
-            height: 450,
-            child: customers.isEmpty
-                ? const Center(child: Text('No customers found.'))
-                : ListView.builder(
-                    itemCount: customers.length,
-                    itemBuilder: (context, index) {
-                      final customer = customers[index];
-
-                      return ListTile(
-                        title: Text(customer.name),
-                        subtitle: Text(
-                          '${customer.mobile}'
-                          '${customer.vehicleName == null ? '' : ' • ${customer.vehicleName}'}',
-                        ),
-                        onTap: () {
-                          Navigator.pop(context, customer);
-                        },
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
+      builder: (context) => _SearchableCustomerDialog(customers: customers),
     );
 
     if (selected != null) {
@@ -227,44 +194,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
     final selected = await showDialog<Part>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Select Part'),
-          content: SizedBox(
-            width: 550,
-            height: 500,
-            child: parts.isEmpty
-                ? const Center(child: Text('No parts available.'))
-                : ListView.builder(
-                    itemCount: parts.length,
-                    itemBuilder: (context, index) {
-                      final part = parts[index];
-
-                      return ListTile(
-                        title: Text(part.partName),
-                        subtitle: Text(
-                          '${part.partNumber} • '
-                          '₹${part.sellingPrice.toStringAsFixed(2)}',
-                        ),
-                        trailing: Text('Stock: ${part.currentStock}'),
-                        enabled: part.currentStock > 0,
-                        onTap: part.currentStock <= 0
-                            ? null
-                            : () {
-                                Navigator.pop(context, part);
-                              },
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
+      builder: (context) => _SearchablePartDialog(parts: parts),
     );
 
     if (selected == null) {
@@ -817,4 +747,311 @@ class _LabourInputItem {
 
   double get amount => double.tryParse(chargeController.text.trim()) ?? 0.0;
   String get description => descriptionController.text.trim();
+}
+
+class _SearchablePartDialog extends StatefulWidget {
+  final List<Part> parts;
+
+  const _SearchablePartDialog({required this.parts});
+
+  @override
+  State<_SearchablePartDialog> createState() => _SearchablePartDialogState();
+}
+
+class _SearchablePartDialogState extends State<_SearchablePartDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+  String? _selectedCategory;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final categories = widget.parts
+        .map((p) => p.category?.trim())
+        .where((c) => c != null && c.isNotEmpty)
+        .cast<String>()
+        .toSet()
+        .toList()
+      ..sort();
+
+    final filtered = widget.parts.where((part) {
+      if (_selectedCategory != null &&
+          part.category?.trim() != _selectedCategory) {
+        return false;
+      }
+      if (_query.isEmpty) return true;
+      final q = _query.toLowerCase();
+      final nameMatches = part.partName.toLowerCase().contains(q);
+      final numMatches = part.partNumber.toLowerCase().contains(q);
+      final catMatches = part.category?.toLowerCase().contains(q) ?? false;
+      return nameMatches || numMatches || catMatches;
+    }).toList();
+
+    return AlertDialog(
+      title: const Text('Select Part'),
+      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      content: SizedBox(
+        width: 550,
+        height: 520,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search by part name or part number...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onChanged: (val) {
+                setState(() => _query = val.trim());
+              },
+            ),
+            const SizedBox(height: 8),
+            if (categories.isNotEmpty) ...[
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('All'),
+                      selected: _selectedCategory == null,
+                      onSelected: (sel) {
+                        if (sel) setState(() => _selectedCategory = null);
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    ...categories.map((cat) {
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ChoiceChip(
+                          label: Text(cat),
+                          selected: _selectedCategory == cat,
+                          onSelected: (sel) {
+                            setState(() {
+                              _selectedCategory = sel ? cat : null;
+                            });
+                          },
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        widget.parts.isEmpty
+                            ? 'No parts available.'
+                            : 'No parts match "$_query"',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final part = filtered[index];
+                        final inStock = part.currentStock > 0;
+                        final isLowStock =
+                            inStock && part.currentStock <= part.lowStockThreshold;
+
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          title: Text(
+                            part.partName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            '${part.partNumber}'
+                            '${part.category != null ? ' • ${part.category}' : ''}'
+                            '\n₹${part.sellingPrice.toStringAsFixed(2)}',
+                          ),
+                          trailing: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: !inStock
+                                  ? Colors.red.shade50
+                                  : isLowStock
+                                      ? Colors.amber.shade50
+                                      : Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: !inStock
+                                    ? Colors.red.shade300
+                                    : isLowStock
+                                        ? Colors.amber.shade300
+                                        : Colors.green.shade300,
+                              ),
+                            ),
+                            child: Text(
+                              !inStock
+                                  ? 'Out of Stock'
+                                  : 'Stock: ${part.currentStock}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: !inStock
+                                    ? Colors.red.shade900
+                                    : isLowStock
+                                        ? Colors.amber.shade900
+                                        : Colors.green.shade900,
+                              ),
+                            ),
+                          ),
+                          enabled: inStock,
+                          onTap: inStock
+                              ? () => Navigator.pop(context, part)
+                              : null,
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
+}
+
+class _SearchableCustomerDialog extends StatefulWidget {
+  final List<Customer> customers;
+
+  const _SearchableCustomerDialog({required this.customers});
+
+  @override
+  State<_SearchableCustomerDialog> createState() =>
+      _SearchableCustomerDialogState();
+}
+
+class _SearchableCustomerDialogState extends State<_SearchableCustomerDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.customers.where((c) {
+      if (_query.isEmpty) return true;
+      final q = _query.toLowerCase();
+      final nameMatches = c.name.toLowerCase().contains(q);
+      final phoneMatches = c.mobile.contains(q);
+      final vehicleMatches = c.vehicleName?.toLowerCase().contains(q) ?? false;
+      return nameMatches || phoneMatches || vehicleMatches;
+    }).toList();
+
+    return AlertDialog(
+      title: const Text('Select Customer'),
+      contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      content: SizedBox(
+        width: 500,
+        height: 480,
+        child: Column(
+          children: [
+            TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search by name, mobile, or vehicle...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onChanged: (val) {
+                setState(() => _query = val.trim());
+              },
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        widget.customers.isEmpty
+                            ? 'No customers found.'
+                            : 'No customer matches "$_query"',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final customer = filtered[index];
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          title: Text(
+                            customer.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            '${customer.mobile}'
+                            '${customer.vehicleName == null ? '' : ' • ${customer.vehicleName}'}',
+                          ),
+                          onTap: () => Navigator.pop(context, customer),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
 }

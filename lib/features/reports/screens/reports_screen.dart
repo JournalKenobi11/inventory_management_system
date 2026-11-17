@@ -346,6 +346,8 @@ class _FinancialOverviewTab extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 20),
+        _buildProfitTallyCard(context, report),
         const SizedBox(height: 24),
         const Text(
           'Sales Trend',
@@ -465,6 +467,310 @@ class _FinancialOverviewTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildProfitTallyCard(
+    BuildContext context,
+    ComprehensiveReport report,
+  ) {
+    final profit = report.profit;
+    final isGrossProfitable = profit.grossProfit >= 0;
+    final isCashProfitable = profit.cashProfit >= 0;
+    final totalCashOutflows =
+        report.expenses.totalExpenses + profit.stockPurchases;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Card 1: Operating Profit (Gross Profit)
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade300),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.analytics_outlined,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Workshop Profit (Gross Profit)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _buildTallyRow(
+                  '1. Gross Customer Billing (Sales)',
+                  '₹${profit.totalRevenue.toStringAsFixed(2)}',
+                  isBold: true,
+                ),
+                _buildTallySubRow(
+                  '• Parts Billed',
+                  '₹${profit.partsRevenue.toStringAsFixed(2)}',
+                ),
+                _buildTallySubRow(
+                  '• Labour Charges',
+                  '₹${profit.labourRevenue.toStringAsFixed(2)}',
+                ),
+                const SizedBox(height: 4),
+                _buildTallyRow(
+                  '2. Cost of Parts Used (COGS)',
+                  '- ₹${profit.cogs.toStringAsFixed(2)}',
+                  color: Colors.red.shade700,
+                ),
+                const Divider(height: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isGrossProfitable
+                        ? Colors.green.shade50
+                        : Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isGrossProfitable
+                          ? Colors.green.shade300
+                          : Colors.red.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Proper Profit (Gross Markup + Labour)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: Text(
+                          '₹${profit.grossProfit.toStringAsFixed(2)}',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: isGrossProfitable
+                                ? Colors.green.shade800
+                                : Colors.red.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Card 2: Cash Drawer Flow
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.shade300),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.point_of_sale_outlined,
+                        color: Colors.blue.shade900,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Cash Drawer Flow (In vs Out)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                _buildTallyRow(
+                  '• Total Cash In (Customer Billings)',
+                  '+ ₹${profit.totalRevenue.toStringAsFixed(2)}',
+                  color: Colors.green.shade700,
+                  isBold: true,
+                ),
+                _buildTallyRow(
+                  '• Total Cash Out (Purchases & Overhead)',
+                  '- ₹${totalCashOutflows.toStringAsFixed(2)}',
+                  color: Colors.red.shade700,
+                  isBold: true,
+                ),
+                _buildTallySubRow(
+                  '• Supplier Stock Restocking',
+                  '₹${profit.stockPurchases.toStringAsFixed(2)}',
+                ),
+                _buildTallySubRow(
+                  '• Shop Expenses & Salaries',
+                  '₹${report.expenses.totalExpenses.toStringAsFixed(2)}',
+                ),
+                const Divider(height: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isCashProfitable
+                        ? Colors.blue.shade50
+                        : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isCashProfitable
+                          ? Colors.blue.shade300
+                          : Colors.orange.shade300,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Net Cash Flow in Drawer',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        fit: FlexFit.loose,
+                        child: Text(
+                          '₹${profit.cashProfit.toStringAsFixed(2)}',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: isCashProfitable
+                                ? Colors.blue.shade800
+                                : Colors.orange.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '💡 Note: Workshop Profit shows gross earnings on completed jobs (Parts Markup + Labour). Cash Flow reflects physical cash remaining in drawer after stocking parts.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTallyRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            fit: FlexFit.loose,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+                fontSize: 13,
+                color: color,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTallySubRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 14, top: 1, bottom: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            fit: FlexFit.loose,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

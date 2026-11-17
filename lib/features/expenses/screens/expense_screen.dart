@@ -5,6 +5,7 @@ import '../models/expense.dart';
 import '../models/unified_expense_item.dart';
 import '../providers/expense_provider.dart';
 import '../providers/unified_expense_provider.dart';
+import '../../salaries/salaries.dart';
 import 'expense_entry_screen.dart';
 
 class ExpensesScreen extends ConsumerStatefulWidget {
@@ -182,6 +183,24 @@ class _ManualExpensesTab extends ConsumerWidget {
 class _SalaryExpensesTab extends ConsumerWidget {
   const _SalaryExpensesTab();
 
+  Future<void> _recordPayment(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SalaryPaymentEntryScreen(),
+      ),
+    );
+    ref.invalidate(salaryExpensesProvider);
+  }
+
+  Future<void> _openStaffRoster(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const EmployeeListScreen(),
+      ),
+    );
+    ref.invalidate(salaryExpensesProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final salaryExpensesAsync = ref.watch(salaryExpensesProvider);
@@ -198,8 +217,43 @@ class _SalaryExpensesTab extends ConsumerWidget {
       ),
       data: (items) {
         if (items.isEmpty) {
-          return const Center(
-            child: Text('No salary payments recorded.'),
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.badge_outlined,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No salary payments recorded yet.',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Record a disbursement to staff or view the employee roster.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.payments_outlined),
+                    label: const Text('Record Salary Payment'),
+                    onPressed: () => _recordPayment(context, ref),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.people_alt_outlined),
+                    label: const Text('Manage Staff & Salaries'),
+                    onPressed: () => _openStaffRoster(context, ref),
+                  ),
+                ],
+              ),
+            ),
           );
         }
 
@@ -215,6 +269,28 @@ class _SalaryExpensesTab extends ConsumerWidget {
               amount: totalSalary,
               icon: Icons.badge,
               color: Colors.orange,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.payment_rounded, size: 16),
+                      label: const Text('Pay Salary'),
+                      onPressed: () => _recordPayment(context, ref),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.badge_outlined, size: 16),
+                      label: const Text('Staff Roster'),
+                      onPressed: () => _openStaffRoster(context, ref),
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: RefreshIndicator(
