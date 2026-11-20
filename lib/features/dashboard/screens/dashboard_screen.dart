@@ -5,6 +5,7 @@ import '../../../core/widgets/app_drawer_button.dart';
 
 import '../../billing/billing.dart';
 import '../../customers/customers.dart';
+import '../../purchases/purchases.dart';
 import '../../salaries/salaries.dart';
 import '../models/dashboard_summary.dart';
 import '../providers/dashboard_provider.dart';
@@ -18,21 +19,100 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  String _periodMode = 'day';
+  DateTime _anchorDate = DateTime.now();
   late DashboardDateRange _selectedRange;
+
+  static const _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   @override
   void initState() {
     super.initState();
-
-    final now = DateTime.now();
-
-    _selectedRange = DashboardDateRange.month(now);
+    _anchorDate = DateTime.now();
+    _periodMode = 'day';
+    _selectedRange = DashboardDateRange.singleDay(_anchorDate);
   }
 
-  Future<void> _selectSingleDay() async {
+  void _changePeriodMode(String mode) {
+    setState(() {
+      _periodMode = mode;
+      switch (mode) {
+        case 'day':
+          _selectedRange = DashboardDateRange.singleDay(_anchorDate);
+          break;
+        case 'week':
+          _selectedRange = DashboardDateRange.week(_anchorDate);
+          break;
+        case 'month':
+          _selectedRange = DashboardDateRange.month(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  void _goToPrevious() {
+    setState(() {
+      switch (_periodMode) {
+        case 'day':
+          _anchorDate = _anchorDate.subtract(const Duration(days: 1));
+          _selectedRange = DashboardDateRange.singleDay(_anchorDate);
+          break;
+        case 'week':
+          _anchorDate = _anchorDate.subtract(const Duration(days: 7));
+          _selectedRange = DashboardDateRange.week(_anchorDate);
+          break;
+        case 'month':
+          _anchorDate = DateTime(_anchorDate.year, _anchorDate.month - 1, 1);
+          _selectedRange = DashboardDateRange.month(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  void _goToNext() {
+    setState(() {
+      switch (_periodMode) {
+        case 'day':
+          _anchorDate = _anchorDate.add(const Duration(days: 1));
+          _selectedRange = DashboardDateRange.singleDay(_anchorDate);
+          break;
+        case 'week':
+          _anchorDate = _anchorDate.add(const Duration(days: 7));
+          _selectedRange = DashboardDateRange.week(_anchorDate);
+          break;
+        case 'month':
+          _anchorDate = DateTime(_anchorDate.year, _anchorDate.month + 1, 1);
+          _selectedRange = DashboardDateRange.month(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  void _jumpToToday() {
+    setState(() {
+      _anchorDate = DateTime.now();
+      switch (_periodMode) {
+        case 'day':
+          _selectedRange = DashboardDateRange.singleDay(_anchorDate);
+          break;
+        case 'week':
+          _selectedRange = DashboardDateRange.week(_anchorDate);
+          break;
+        case 'month':
+          _selectedRange = DashboardDateRange.month(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  Future<void> _pickCustomDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedRange.start,
+      initialDate: _anchorDate,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -42,68 +122,103 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     setState(() {
-      _selectedRange = DashboardDateRange.singleDay(picked);
+      _anchorDate = picked;
+      switch (_periodMode) {
+        case 'day':
+          _selectedRange = DashboardDateRange.singleDay(picked);
+          break;
+        case 'week':
+          _selectedRange = DashboardDateRange.week(picked);
+          break;
+        case 'month':
+          _selectedRange = DashboardDateRange.month(picked);
+          break;
+      }
     });
   }
 
-  Future<void> _selectDateRange() async {
-    final first = DateTime(2000);
-    final last = DateTime(2100);
-    final start = _selectedRange.start.isBefore(first)
-        ? first
-        : (_selectedRange.start.isAfter(last) ? last : _selectedRange.start);
-    final end = _selectedRange.end.isBefore(start)
-        ? start
-        : (_selectedRange.end.isAfter(last) ? last : _selectedRange.end);
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
-    final selected = await showDateRangePicker(
-      context: context,
-      firstDate: first,
-      lastDate: last,
-      initialDateRange: DateTimeRange(
-        start: start,
-        end: end,
-      ),
-    );
-
-    if (selected == null) {
-      return;
+  bool _isCurrentPeriod() {
+    final now = DateTime.now();
+    switch (_periodMode) {
+      case 'day':
+        return _isSameDay(_anchorDate, now);
+      case 'week':
+        return DashboardDateRange.week(_anchorDate) == DashboardDateRange.week(now);
+      case 'month':
+        return _anchorDate.year == now.year && _anchorDate.month == now.month;
+      default:
+        return false;
     }
-
-    setState(() {
-      _selectedRange = DashboardDateRange(
-        start: selected.start,
-        end: selected.end,
-      );
-    });
   }
 
-  void _selectThisMonth() {
-    setState(() {
-      _selectedRange = DashboardDateRange.month(DateTime.now());
-    });
-  }
+  String _getPeriodTitle() {
+    final now = DateTime.now();
+    switch (_periodMode) {
+      case 'day':
+        if (_isSameDay(_anchorDate, now)) {
+          return 'Today, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}';
+        }
+        final yesterday = now.subtract(const Duration(days: 1));
+        if (_isSameDay(_anchorDate, yesterday)) {
+          return 'Yesterday, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}';
+        }
+        final tomorrow = now.add(const Duration(days: 1));
+        if (_isSameDay(_anchorDate, tomorrow)) {
+          return 'Tomorrow, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}';
+        }
+        final dayName = _weekdays[_anchorDate.weekday - 1];
+        final yearStr = _anchorDate.year != now.year ? ' ${_anchorDate.year}' : '';
+        return '$dayName, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}$yearStr';
 
-  void _selectThisYear() {
-    setState(() {
-      _selectedRange = DashboardDateRange.year(DateTime.now());
-    });
+      case 'week':
+        final isThisWeek = DashboardDateRange.week(_anchorDate) == DashboardDateRange.week(now);
+        final s = _selectedRange.start;
+        final e = _selectedRange.end;
+        final prefix = isThisWeek ? 'This Week: ' : '';
+        final yearStr = e.year != now.year ? ' ${e.year}' : '';
+        if (s.month == e.month) {
+          return '$prefix${s.day}–${e.day} ${_months[s.month - 1]}$yearStr';
+        } else {
+          return '$prefix${s.day} ${_months[s.month - 1]} – ${e.day} ${_months[e.month - 1]}$yearStr';
+        }
+
+      case 'month':
+        final isThisMonth = _anchorDate.year == now.year && _anchorDate.month == now.month;
+        final prefix = isThisMonth ? 'This Month: ' : '';
+        return '$prefix${_months[_anchorDate.month - 1]} ${_anchorDate.year}';
+
+      default:
+        return '';
+    }
   }
 
   void _refresh() {
     ref.invalidate(dashboardProvider(_selectedRange));
   }
 
-  void _openBilling() {
-    Navigator.of(
+  Future<void> _openBilling() async {
+    await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const BillingScreen()));
+    _refresh();
   }
 
-  void _openSalaries() {
-    Navigator.of(
+  Future<void> _openAddStock() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const PurchaseEntryScreen()));
+    _refresh();
+  }
+
+  Future<void> _openSalaries() async {
+    await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const EmployeeListScreen()));
+    _refresh();
   }
 
   @override
@@ -259,10 +374,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
+            constraints: const BoxConstraints(minHeight: 46),
             child: FilledButton.icon(
               onPressed: _openBilling,
-              icon: const Icon(Icons.receipt_long, size: 22),
+              icon: const Icon(Icons.receipt_long, size: 20),
               label: const Text(
                 'New Bill',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
@@ -271,7 +386,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           const SizedBox(height: 8),
           ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
+            constraints: const BoxConstraints(minHeight: 46),
+            child: FilledButton.tonalIcon(
+              onPressed: _openAddStock,
+              icon: const Icon(Icons.add_box_rounded, size: 20),
+              label: const Text(
+                'Add Stock',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 46),
             child: FilledButton.tonalIcon(
               onPressed: _openSalaries,
               icon: const Icon(Icons.badge_rounded, size: 20),
@@ -288,35 +415,59 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Row(
       children: [
         Expanded(
-          flex: 3,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 52),
+            constraints: const BoxConstraints(minHeight: 48),
             child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
               onPressed: _openBilling,
-              icon: const Icon(Icons.receipt_long, size: 24),
+              icon: const Icon(Icons.receipt_long, size: 20),
               label: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'New Bill',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
-          flex: 2,
           child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 52),
+            constraints: const BoxConstraints(minHeight: 48),
             child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              onPressed: _openAddStock,
+              icon: const Icon(Icons.add_box_rounded, size: 20),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Add Stock',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
               onPressed: _openSalaries,
-              icon: const Icon(Icons.badge_rounded, size: 22),
+              icon: const Icon(Icons.badge_rounded, size: 20),
               label: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'Salaries',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -328,41 +479,122 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildDateControls(BuildContext context) {
     return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(120),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withAlpha(80),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Date Range', style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment<String>(
+                    value: 'day',
+                    label: Text('Day'),
+                    icon: Icon(Icons.today, size: 16),
+                  ),
+                  ButtonSegment<String>(
+                    value: 'week',
+                    label: Text('Week'),
+                    icon: Icon(Icons.view_week, size: 16),
+                  ),
+                  ButtonSegment<String>(
+                    value: 'month',
+                    label: Text('Month'),
+                    icon: Icon(Icons.calendar_month, size: 16),
+                  ),
+                ],
+                selected: {_periodMode},
+                onSelectionChanged: (newSelection) {
+                  _changePeriodMode(newSelection.first);
+                },
+                showSelectedIcon: false,
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                OutlinedButton(
-                  onPressed: _selectThisMonth,
-                  child: const Text('This Month'),
+                IconButton(
+                  icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                  onPressed: _goToPrevious,
+                  tooltip: 'Previous $_periodMode',
                 ),
-                OutlinedButton(
-                  onPressed: _selectThisYear,
-                  child: const Text('This Year'),
+                Expanded(
+                  child: InkWell(
+                    onTap: _pickCustomDate,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _getPeriodTitle(),
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 15,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ],
+                          ),
+                          if (!_isCurrentPeriod()) ...[
+                            const SizedBox(height: 4),
+                            InkWell(
+                              onTap: _jumpToToday,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  'Jump to Today',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                FilledButton.tonal(
-                  onPressed: _selectSingleDay,
-                  child: const Text('Single Day'),
-                ),
-                OutlinedButton(
-                  onPressed: _selectDateRange,
-                  child: const Text('Date Range'),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                  onPressed: _goToNext,
+                  tooltip: 'Next $_periodMode',
                 ),
               ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              _selectedRange.start == _selectedRange.end
-                  ? _formatDate(_selectedRange.start)
-                  : '${_formatDate(_selectedRange.start)} - ${_formatDate(_selectedRange.end)}',
-              style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
         ),
@@ -398,16 +630,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           title: 'Sales',
           value: _formatAmount(summary.totalSales),
           icon: Icons.point_of_sale,
+          color: Theme.of(context).colorScheme.primaryContainer.withAlpha(50),
         ),
         _SummaryCard(
           title: 'Expenses',
           value: _formatAmount(summary.totalExpenses),
           icon: Icons.money_off,
+          subtitle: summary.stockPurchases > 0
+              ? 'Stock: ${_formatAmount(summary.stockPurchases)}'
+              : null,
         ),
         _SummaryCard(
           title: 'Profit',
           value: _formatAmount(summary.profit),
-          icon: Icons.trending_up,
+          icon: summary.profit >= 0 ? Icons.trending_up : Icons.trending_down,
+          color: summary.profit >= 0
+              ? Colors.green.withAlpha(25)
+              : Colors.red.withAlpha(25),
         ),
         _SummaryCard(
           title: 'Services Completed',
@@ -423,6 +662,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           title: 'Low Stock',
           value: summary.lowStockParts.length.toString(),
           icon: Icons.warning_amber,
+          color: summary.lowStockParts.isNotEmpty
+              ? Theme.of(context).colorScheme.errorContainer.withAlpha(50)
+              : null,
         ),
       ],
     );
@@ -509,12 +751,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/'
-        '${date.year}';
-  }
-
   String _formatAmount(double amount) {
     return '₹${amount.toStringAsFixed(2)}';
   }
@@ -524,23 +760,49 @@ class _SummaryCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
+  final Color? color;
+  final String? subtitle;
 
   const _SummaryCard({
     required this.title,
     required this.value,
     required this.icon,
+    this.color,
+    this.subtitle,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: color,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(icon),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(icon, size: 22),
+                if (subtitle != null)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        subtitle!,
+                        textAlign: TextAlign.end,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
             FittedBox(
               fit: BoxFit.scaleDown,

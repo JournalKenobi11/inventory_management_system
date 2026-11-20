@@ -20,6 +20,8 @@ void main() {
         overrides: [
           customerBillingHistoryProvider('cust-1')
               .overrideWith((ref) => Future.value([])),
+          customerReminderProvider('cust-1')
+              .overrideWith((ref) => Future.value(null)),
         ],
         child: const MaterialApp(
           home: CustomerDetailScreen(customer: testCustomer),
@@ -84,6 +86,8 @@ void main() {
         overrides: [
           customerBillingHistoryProvider('cust-1')
               .overrideWith((ref) => Future.value([mockDetails])),
+          customerReminderProvider('cust-1')
+              .overrideWith((ref) => Future.value(null)),
         ],
         child: const MaterialApp(
           home: CustomerDetailScreen(customer: testCustomer),
@@ -103,5 +107,27 @@ void main() {
     expect(find.text('₹500.00'), findsOneWidget);
     expect(find.text('₹2650.00'), findsOneWidget);
     expect(find.text('View Bill'), findsOneWidget);
+  });
+
+  testWidgets('CustomerDetailScreen displays Edit Customer button in AppBar (BUG-010)',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          customerBillingHistoryProvider('cust-1')
+              .overrideWith((ref) => Future.value([])),
+          customerReminderProvider('cust-1')
+              .overrideWith((ref) => Future.value(null)),
+        ],
+        child: const MaterialApp(
+          home: CustomerDetailScreen(customer: testCustomer),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    expect(find.byTooltip('Edit Customer'), findsOneWidget);
   });
 }

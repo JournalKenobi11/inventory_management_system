@@ -40,6 +40,9 @@ class DashboardSummary {
   final double totalExpenses;
   final double profit;
   final double cogs;
+  final double stockPurchases;
+  final double salaryExpenses;
+  final double operatingExpenses;
   final int servicesCompleted;
   final double inventoryValue;
   final List<Part> lowStockParts;
@@ -50,6 +53,9 @@ class DashboardSummary {
     required this.totalExpenses,
     required this.profit,
     this.cogs = 0.0,
+    this.stockPurchases = 0.0,
+    this.salaryExpenses = 0.0,
+    this.operatingExpenses = 0.0,
     required this.servicesCompleted,
     required this.inventoryValue,
     required this.lowStockParts,
@@ -61,6 +67,9 @@ class DashboardSummary {
         totalExpenses = 0,
         profit = 0,
         cogs = 0,
+        stockPurchases = 0,
+        salaryExpenses = 0,
+        operatingExpenses = 0,
         servicesCompleted = 0,
         inventoryValue = 0,
         lowStockParts = const [],
@@ -74,6 +83,9 @@ class DashboardSummary {
             totalSales == other.totalSales &&
             totalExpenses == other.totalExpenses &&
             profit == other.profit &&
+            stockPurchases == other.stockPurchases &&
+            salaryExpenses == other.salaryExpenses &&
+            operatingExpenses == other.operatingExpenses &&
             servicesCompleted == other.servicesCompleted &&
             inventoryValue == other.inventoryValue &&
             _listEquals(
@@ -92,6 +104,9 @@ class DashboardSummary {
       totalSales,
       totalExpenses,
       profit,
+      stockPurchases,
+      salaryExpenses,
+      operatingExpenses,
       servicesCompleted,
       inventoryValue,
       Object.hashAll(lowStockParts),

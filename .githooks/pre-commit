@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# .githooks/pre-commit
+#
+# Automatically runs architecture check, flutter analyze, and flutter test
+# before allowing a git commit. Prevents pushing broken builds to CI.
+
+set -e
+
+echo "=== [PRE-COMMIT HOOK] Enforcing AGENTS.md Architecture Rules ==="
+if [ -f scripts/check_architecture.sh ]; then
+  chmod +x scripts/check_architecture.sh
+  ./scripts/check_architecture.sh
+fi
+
+echo "=== [PRE-COMMIT HOOK] Running Flutter Analyze ==="
+flutter analyze --fatal-warnings
+
+echo "=== [PRE-COMMIT HOOK] Running Flutter Test Suite ==="
+flutter test
+
+echo "=== [PRE-COMMIT HOOK] All checks passed successfully! ==="

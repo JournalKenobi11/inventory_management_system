@@ -6,6 +6,7 @@ import '../../../core/widgets/app_drawer_button.dart';
 import '../models/part.dart';
 import '../providers/part_provider.dart';
 import 'part_form_screen.dart';
+import '../../purchases/purchases.dart';
 
 class PartListScreen extends ConsumerStatefulWidget {
   const PartListScreen({super.key});
@@ -89,7 +90,7 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
                     padding: const EdgeInsets.only(
                       left: 16,
                       right: 16,
-                      bottom: 16,
+                      bottom: 88,
                     ),
                     itemCount: parts.length,
                     itemBuilder: (context, index) {
@@ -105,6 +106,22 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
                           );
 
                           if (updated == true && mounted) {
+                            await ref
+                                .read(partsProvider.notifier)
+                                .loadParts();
+                          }
+                        },
+                        onAddStock: () async {
+                          final added =
+                              await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => PurchaseEntryScreen(
+                                preselectedPart: parts[index],
+                              ),
+                            ),
+                          );
+
+                          if (added == true && mounted) {
                             await ref
                                 .read(partsProvider.notifier)
                                 .loadParts();
@@ -141,8 +158,13 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
 class _PartCard extends StatelessWidget {
   final Part part;
   final VoidCallback? onEdit;
+  final VoidCallback? onAddStock;
 
-  const _PartCard({required this.part, this.onEdit});
+  const _PartCard({
+    required this.part,
+    this.onEdit,
+    this.onAddStock,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -155,58 +177,95 @@ class _PartCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      part.partName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Part No: ${part.partNumber}'),
-                    if (part.category != null) Text('Category: ${part.category}'),
-                    const SizedBox(height: 4),
-                    Text(
-                        'Selling Price: ₹${part.sellingPrice.toStringAsFixed(2)}'),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '${part.currentStock}',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isLowStock
-                            ? Theme.of(context).colorScheme.error
-                            : null,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          part.partName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Part No: ${part.partNumber}'),
+                        if (part.category != null)
+                          Text('Category: ${part.category}'),
+                        const SizedBox(height: 4),
+                        Text(
+                            'Selling Price: ₹${part.sellingPrice.toStringAsFixed(2)}'),
+                        Text(
+                            'Purchase Price: ₹${part.purchasePrice.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context).colorScheme.outline,
+                            )),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${part.currentStock}',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isLowStock
+                                ? Theme.of(context).colorScheme.error
+                                : null,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        isLowStock ? 'LOW STOCK' : 'IN STOCK',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isLowStock
+                              ? Theme.of(context).colorScheme.error
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const Divider(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
                       ),
                     ),
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 16),
+                    label: const Text('Edit Part'),
                   ),
-                  Text(
-                    isLowStock ? 'LOW STOCK' : 'STOCK',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: isLowStock
-                          ? Theme.of(context).colorScheme.error
-                          : null,
+                  const SizedBox(width: 8),
+                  FilledButton.tonalIcon(
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
+                    onPressed: onAddStock,
+                    icon: const Icon(Icons.add_shopping_cart, size: 16),
+                    label: const Text('+ Add Stock'),
                   ),
                 ],
               ),

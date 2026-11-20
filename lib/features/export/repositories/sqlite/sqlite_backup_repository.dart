@@ -31,6 +31,7 @@ class SqliteBackupRepository implements BackupRepository {
     final salaryPaymentRows = await database
         .select(database.salaryPayments)
         .get();
+    final attendanceRows = await database.select(database.attendances).get();
     final counterRows = await database.select(database.counters).get();
     final personalFinanceAccountRows = await database
         .select(database.personalFinanceAccounts)
@@ -85,6 +86,8 @@ class SqliteBackupRepository implements BackupRepository {
               'labourCharge': s.labourCharge,
               'serviceDate': s.serviceDate,
               'invoiceId': s.invoiceId,
+              'serviceReport': s.serviceReport,
+              'labourEntries': s.labourEntries,
             },
           )
           .toList(),
@@ -139,6 +142,17 @@ class SqliteBackupRepository implements BackupRepository {
               'amount': sp.amount,
               'paymentDate': sp.paymentDate,
               'status': sp.status,
+            },
+          )
+          .toList(),
+      'attendances': attendanceRows
+          .map(
+            (a) => {
+              'id': a.id,
+              'employeeId': a.employeeId,
+              'date': a.date,
+              'status': a.status,
+              'reportingTime': a.reportingTime,
             },
           )
           .toList(),
@@ -260,6 +274,8 @@ class SqliteBackupRepository implements BackupRepository {
                 ),
                 serviceDate: s['serviceDate'] as String,
                 invoiceId: Value(s['invoiceId'] as String?),
+                serviceReport: Value(s['serviceReport'] as String?),
+                labourEntries: Value(s['labourEntries'] as String?),
               ),
             );
       }
@@ -339,6 +355,22 @@ class SqliteBackupRepository implements BackupRepository {
                 amount: (sp['amount'] as num).toDouble(),
                 paymentDate: sp['paymentDate'] as String,
                 status: sp['status'] as String,
+              ),
+            );
+      }
+
+      // 10b. Insert attendances
+      final rawAttendances = tablesData['attendances'] ?? [];
+      for (final a in rawAttendances) {
+        await database
+            .into(database.attendances)
+            .insert(
+              AttendancesCompanion.insert(
+                id: a['id'] as String,
+                employeeId: a['employeeId'] as String,
+                date: a['date'] as String,
+                status: a['status'] as String,
+                reportingTime: Value(a['reportingTime'] as String?),
               ),
             );
       }

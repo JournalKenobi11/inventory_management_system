@@ -36,6 +36,28 @@ class SqliteServiceRepository implements ServiceRepository {
   }
 
   @override
+  Future<Service> update(Service service) async {
+    await (database.update(database.serviceJobs)
+          ..where((tbl) => tbl.id.equals(service.id)))
+        .write(
+      db.ServiceJobsCompanion(
+        customerId: Value(service.customerId),
+        problemDesc: service.problemDesc == null
+            ? const Value.absent()
+            : Value(service.problemDesc!),
+        labourCharge: Value(service.labourCharge),
+        serviceReport: service.serviceReport == null
+            ? const Value.absent()
+            : Value(service.serviceReport!),
+        labourEntries: service.labourEntriesJson == null
+            ? const Value.absent()
+            : Value(service.labourEntriesJson!),
+      ),
+    );
+    return service;
+  }
+
+  @override
   Future<Service?> getById(String id) async {
     final query = database.select(database.serviceJobs)
       ..where(

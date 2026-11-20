@@ -287,5 +287,82 @@ void main() {
     expect(rOverdue.daysRemaining, equals(0));
     expect(rOverdue.daysOverdue, equals(5));
   });
+
+  test('editBill updates customer, labour, parts, and manages stock restoration atomically', () async {
+    final cust1 = await customerService.createCustomer(
+      name: 'Sunil Rao',
+      mobile: '9888877771',
+      vehicleName: 'Honda City',
+    );
+    final cust2 = await customerService.createCustomer(
+      name: 'Rohan Sharma',
+      mobile: '9888877772',
+      vehicleName: 'Maruti Swift',
+    );
+
+    final part1 = await partService.createPart(
+      partName: 'Brake Disc',
+      partNumber: 'BD-01',
+      purchasePrice: 500.0,
+      sellingPrice: 800.0,
+      currentStock: 10,
+      lowStockThreshold: 2,
+    );
+    final part2 = await partService.createPart(
+      partName: 'Brake Fluid',
+      partNumber: 'BF-02',
+      purchasePrice: 150.0,
+      sellingPrice: 300.0,
+      currentStock: 10,
+      lowStockThreshold: 2,
+    );
+
+    // Initial bill: 4x Brake Disc (leaves 6) + 2x Brake Fluid (leaves 8) + 200 labour
+    final invoice = await billingService.billService(
+      customerId: cust1.id,
+      problemDesc: 'Brake inspection',
+      labourCharge: 200.0,
+      partsUsed: [
+        ServicePartInput(partId: part1.id, quantity: 4),
+        ServicePartInput(partId: part2.id, quantity: 2),
+      ],
+    );
+
+    var p1 = await partService.getPartById(part1.id);
+    var p2 = await partService.getPartById(part2.id);
+    expect(p1!.currentStock, equals(6));
+    expect(p2!.currentStock, equals(8));
+    expect(invoice.totalAmount, equals(4 * 800.0 + 2 * 300.0 + 200.0)); // 3200 + 600 + 200 = 4000
+
+    // Edit bill: change to cust2, part1 qty 2 (should restore 4, deduct 2 -> 8 in stock),
+    // part2 qty 5 (should restore 2, deduct 5 -> 5 in stock), labour 350
+    final updatedInvoice = await billingService.editBill(
+      invoiceId: invoice.id,
+      customerId: cust2.id,
+      problemDesc: 'Full brake overhaul',
+      labourCharge: 350.0,
+      partsUsed: [
+        ServicePartInput(partId: part1.id, quantity: 2),
+        ServicePartInput(partId: part2.id, quantity: 5),
+      ],
+      serviceReport: 'Replaced discs and fluid flush',
+    );
+
+    // Expected total: 2 * 800 + 5 * 300 + 350 = 1600 + 1500 + 350 = 3450
+    expect(updatedInvoice.totalAmount, equals(3450.0));
+
+    p1 = await partService.getPartById(part1.id);
+    p2 = await partService.getPartById(part2.id);
+    expect(p1!.currentStock, equals(8));
+    expect(p2!.currentStock, equals(5));
+
+    final details = await billingService.getInvoiceDetails(invoice.id);
+    expect(details.customer.id, equals(cust2.id));
+    expect(details.service.problemDesc, equals('Full brake overhaul'));
+    expect(details.service.serviceReport, equals('Replaced discs and fluid flush'));
+    expect(details.labourCharge, equals(350.0));
+    expect(details.totalAmount, equals(3450.0));
+    expect(details.items.length, equals(2));
+  });
 }
 

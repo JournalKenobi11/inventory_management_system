@@ -5,6 +5,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../core/config/establishment_config.dart';
 import '../../billing/billing.dart';
 import '../models/customer.dart';
+import '../providers/customer_provider.dart';
+import 'customer_form_screen.dart';
 
 class CustomerDetailScreen extends ConsumerWidget {
   final Customer customer;
@@ -25,6 +27,23 @@ class CustomerDetailScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Customer Details'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Edit Customer',
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CustomerFormScreen(customer: customer),
+                ),
+              );
+              ref.invalidate(customersProvider);
+              ref.invalidate(customerBillingHistoryProvider(customer.id));
+              ref.invalidate(customerReminderProvider(customer.id));
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(

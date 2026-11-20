@@ -16,6 +16,7 @@ import '../../expenses/repositories/sqlite/sqlite_expense_repository.dart';
 import '../../parts/repositories/interfaces/part_repository.dart';
 import '../../parts/repositories/sqlite/sqlite_part_repository.dart';
 
+import '../../purchases/purchases.dart';
 import '../../salaries/repositories/interfaces/salary_payment_repository.dart';
 import '../../salaries/repositories/sqlite/sqlite_salary_payment_repository.dart';
 
@@ -83,6 +84,8 @@ final dashboardServiceProvider =
         ),
     partRepository:
         ref.read(dashboardPartRepositoryProvider),
+    purchaseService:
+        ref.watch(purchaseServiceProvider),
   );
 });
 

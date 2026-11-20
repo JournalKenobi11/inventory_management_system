@@ -7,13 +7,19 @@ import '../../customers/models/customer.dart';
 import '../../customers/providers/customer_provider.dart';
 import '../../parts/models/part.dart';
 import '../../parts/providers/part_provider.dart';
+import '../models/invoice_details.dart';
 import '../models/labour_entry.dart';
 import '../models/service_part.dart';
 import '../providers/billing_provider.dart';
 import 'invoice_overview_screen.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
-  const BillingScreen({super.key});
+  final InvoiceDetails? existingInvoiceDetails;
+
+  const BillingScreen({
+    super.key,
+    this.existingInvoiceDetails,
+  });
 
   @override
   ConsumerState<BillingScreen> createState() => _BillingScreenState();
@@ -29,6 +35,82 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   final List<_LabourInputItem> _labourItems = [];
 
   final List<_SelectedPart> _selectedParts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingInvoiceDetails != null) {
+      _initExistingInvoice(widget.existingInvoiceDetails!);
+    }
+  }
+
+  void _initExistingInvoice(InvoiceDetails details) {
+    _selectedCustomer = details.customer;
+    _problemController.text = details.service.problemDesc ?? '';
+    _serviceReportController.text = details.service.serviceReport ?? '';
+
+    final entries = details.service.labourEntries;
+    if (entries.isNotEmpty || details.labourCharge > 0) {
+      _includeLabour = true;
+      if (entries.isNotEmpty) {
+        for (final entry in entries) {
+          _labourItems.add(_LabourInputItem(
+            description: entry.description,
+            charge: entry.charge.toStringAsFixed(2),
+          ));
+        }
+      } else if (details.labourCharge > 0) {
+        _labourItems.add(_LabourInputItem(
+          description: 'Labour / Service Charge',
+          charge: details.labourCharge.toStringAsFixed(2),
+        ));
+      }
+    }
+
+    for (final item in details.items) {
+      final part = Part(
+        id: item.partId,
+        partNumber: item.partNumber ?? '',
+        partName: item.partName,
+        category: null,
+        purchasePrice: 0.0,
+        sellingPrice: item.priceEach,
+        currentStock: item.quantity,
+        lowStockThreshold: 5,
+      );
+      _selectedParts.add(_SelectedPart(part: part, quantity: item.quantity));
+    }
+
+    _loadRealStockForEditing();
+  }
+
+  Future<void> _loadRealStockForEditing() async {
+    try {
+      final partService = ref.read(partServiceProvider);
+      final updatedList = <_SelectedPart>[];
+      for (final sp in _selectedParts) {
+        final realPart = await partService.getPartById(sp.part.id);
+        if (realPart != null) {
+          final availableStock = realPart.currentStock + sp.quantity;
+          updatedList.add(_SelectedPart(
+            part: realPart.copyWith(
+              sellingPrice: sp.part.sellingPrice,
+              currentStock: availableStock,
+            ),
+            quantity: sp.quantity,
+          ));
+        } else {
+          updatedList.add(sp);
+        }
+      }
+      if (mounted) {
+        setState(() {
+          _selectedParts.clear();
+          _selectedParts.addAll(updatedList);
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -262,11 +344,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
       return;
     }
 
+    final isEditing = widget.existingInvoiceDetails != null;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Generate Invoice?'),
+          title: Text(isEditing ? 'Update Bill?' : 'Generate Invoice?'),
           content: Text(
             'Customer: ${_selectedCustomer!.name}\n'
             'Parts: ₹${_partsTotal.toStringAsFixed(2)}\n'
@@ -280,7 +363,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Generate'),
+              child: Text(isEditing ? 'Update' : 'Generate'),
             ),
           ],
         );
@@ -303,6 +386,37 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   ))
               .toList()
           : <LabourEntry>[];
+
+      if (isEditing) {
+        final updatedDetails = await ref.read(billingServiceProvider).editBill(
+              invoiceId: widget.existingInvoiceDetails!.invoice.id,
+              customerId: _selectedCustomer!.id,
+              problemDesc: _problemController.text.trim(),
+              labourCharge: _labourCharge,
+              labourEntries: labourEntries,
+              serviceReport: _serviceReportController.text.trim(),
+              partsUsed: _selectedParts
+                  .map(
+                    (item) => ServicePartInput(
+                      partId: item.part.id,
+                      quantity: item.quantity,
+                    ),
+                  )
+                  .toList(),
+            );
+
+        ref.invalidate(customersProvider);
+        ref.invalidate(partsProvider);
+        ref.invalidate(invoicesListProvider);
+        ref.invalidate(customerServiceRemindersProvider);
+
+        if (!mounted) {
+          return;
+        }
+
+        Navigator.pop(context, updatedDetails);
+        return;
+      }
 
       final invoice = await ref
           .read(billingControllerProvider.notifier)
@@ -359,6 +473,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
       ref.invalidate(customersProvider);
       ref.invalidate(partsProvider);
+      ref.invalidate(invoicesListProvider);
+      ref.invalidate(customerServiceRemindersProvider);
     } catch (error) {
       if (!mounted) {
         return;
@@ -398,15 +514,30 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 height: 18,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Icon(Icons.receipt_long),
-        label: Text(isLoading ? 'Generating...' : 'Generate Invoice'),
+            : Icon(widget.existingInvoiceDetails != null
+                ? Icons.save_rounded
+                : Icons.receipt_long),
+        label: Text(isLoading
+            ? (widget.existingInvoiceDetails != null
+                ? 'Updating...'
+                : 'Generating...')
+            : (widget.existingInvoiceDetails != null
+                ? 'Update Bill'
+                : 'Generate Invoice')),
       ),
     ];
 
     return Scaffold(
       appBar: AppBar(
-        leading: appDrawerLeading(context),
-        title: const Text('Billing'),
+        leading: widget.existingInvoiceDetails != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              )
+            : appDrawerLeading(context),
+        title: Text(widget.existingInvoiceDetails != null
+            ? 'Edit Bill #${widget.existingInvoiceDetails!.invoice.invoiceNumber}'
+            : 'Billing'),
       ),
       body: SafeArea(
         child: AbsorbPointer(

@@ -6,8 +6,13 @@ import '../../parts/providers/part_provider.dart';
 import '../providers/purchase_provider.dart';
 
 class PurchaseEntryScreen extends ConsumerStatefulWidget {
+  final Part? preselectedPart;
+  final String? preselectedPartId;
+
   const PurchaseEntryScreen({
     super.key,
+    this.preselectedPart,
+    this.preselectedPartId,
   });
 
   @override
@@ -24,6 +29,16 @@ class _PurchaseEntryScreenState
 
   Part? _selectedPart;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.preselectedPart != null) {
+      _selectedPart = widget.preselectedPart;
+      _purchasePriceController.text =
+          widget.preselectedPart!.purchasePrice.toStringAsFixed(2);
+    }
+  }
 
   @override
   void dispose() {
@@ -111,7 +126,9 @@ class _PurchaseEntryScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Purchase Stock'),
+        title: Text(widget.preselectedPart != null
+            ? 'Add Stock: ${widget.preselectedPart!.partName}'
+            : 'Add Stock / Purchase'),
       ),
       body: SafeArea(
         child: Center(
@@ -139,16 +156,29 @@ class _PurchaseEntryScreenState
                         );
                       }
 
-                      return DropdownButtonFormField<Part>(
+                      final activePartId =
+                          _selectedPart?.id ?? widget.preselectedPartId;
+                      final effectivePart = parts
+                          .where((p) => p.id == activePartId)
+                          .firstOrNull;
+                      if (_selectedPart == null && effectivePart != null) {
+                        _selectedPart = effectivePart;
+                        if (_purchasePriceController.text.isEmpty) {
+                          _purchasePriceController.text =
+                              effectivePart.purchasePrice.toStringAsFixed(2);
+                        }
+                      }
+
+                      return DropdownButtonFormField<String>(
                         isExpanded: true,
-                        initialValue: _selectedPart,
+                        initialValue: effectivePart?.id,
                         decoration: const InputDecoration(
                           labelText: 'Part',
                           border: OutlineInputBorder(),
                         ),
                         items: parts.map((part) {
-                          return DropdownMenuItem<Part>(
-                            value: part,
+                          return DropdownMenuItem<String>(
+                            value: part.id,
                             child: Text(
                               '${part.partNumber} - ${part.partName}',
                               overflow: TextOverflow.ellipsis,
@@ -157,21 +187,22 @@ class _PurchaseEntryScreenState
                         }).toList(),
                         onChanged: _saving
                             ? null
-                            : (part) {
+                            : (partId) {
+                                final matched = parts
+                                    .where((p) => p.id == partId)
+                                    .firstOrNull;
                                 setState(() {
-                                  _selectedPart = part;
-
-                                  if (part != null) {
+                                  _selectedPart = matched;
+                                  if (matched != null) {
                                     _purchasePriceController.text =
-                                        part.purchasePrice.toString();
+                                        matched.purchasePrice.toStringAsFixed(2);
                                   }
                                 });
                               },
                         validator: (value) {
-                          if (value == null) {
+                          if (value == null || value.isEmpty) {
                             return 'Select a part';
                           }
-
                           return null;
                         },
                       );

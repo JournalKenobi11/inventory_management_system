@@ -8,8 +8,16 @@ class AppException implements Exception {
 }
 
 class InsufficientStockException extends AppException {
-  InsufficientStockException(String partName)
-      : super('Insufficient stock for part: $partName');
+  final String? partId;
+  final int? requested;
+  final int? available;
+
+  InsufficientStockException(
+    String partName, {
+    this.partId,
+    this.requested,
+    this.available,
+  }) : super('Insufficient stock for part: $partName');
 }
 
 class DuplicatePartNumberException extends AppException {

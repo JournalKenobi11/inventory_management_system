@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/app_drawer_button.dart';
 
 import '../../billing/billing.dart';
+import '../models/customer.dart';
 import 'customer_detail_screen.dart';
 import 'customer_form_screen.dart';
+import 'customer_quick_service_sheet.dart';
 import '../providers/customer_provider.dart';
 
 class CustomerListScreen extends ConsumerStatefulWidget {
@@ -37,9 +39,38 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
     }
   }
 
-  Future<void> _deleteCustomer(BuildContext context, String id) async {
+  Future<void> _deleteCustomer(BuildContext context, Customer customer) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Customer'),
+        content: Text('Are you sure you want to delete ${customer.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
     try {
-      await ref.read(customersProvider.notifier).deleteCustomer(id);
+      await ref.read(customersProvider.notifier).deleteCustomer(customer.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Customer ${customer.name} deleted successfully.'),
+          ),
+        );
+      }
     } catch (error) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -140,6 +171,12 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                 }
 
                 return ListView.builder(
+                  padding: const EdgeInsets.only(
+                    left: 4,
+                    right: 4,
+                    top: 4,
+                    bottom: 88,
+                  ),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final customer = items[index];
@@ -207,34 +244,31 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
                             ),
                           );
                         },
-                        trailing: PopupMenuButton(
+                        onLongPress: () {
+                          CustomerQuickServiceSheet.show(context, customer);
+                        },
+                        trailing: PopupMenuButton<String>(
                           itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Edit'),
-                            ),
-                            const PopupMenuItem(
+                            const PopupMenuItem<String>(
                               value: 'delete',
-                              child: Text('Delete'),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                           onSelected: (value) async {
-                            if (value == 'edit') {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      CustomerFormScreen(customer: customer),
-                                ),
-                              );
-
-                              ref
-                                  .read(customersProvider.notifier)
-                                  .loadCustomers();
-                            }
-
                             if (value == 'delete') {
-                              await _deleteCustomer(context, customer.id);
+                              await _deleteCustomer(context, customer);
                             }
                           },
                         ),

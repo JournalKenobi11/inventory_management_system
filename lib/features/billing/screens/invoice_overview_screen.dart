@@ -6,6 +6,7 @@ import '../../export/export.dart';
 import '../models/bill_terms.dart';
 import '../models/invoice_details.dart';
 import '../providers/billing_provider.dart';
+import 'billing_screen.dart';
 
 class InvoiceOverviewScreen extends ConsumerStatefulWidget {
   final InvoiceDetails? invoiceDetails;
@@ -24,8 +25,27 @@ class InvoiceOverviewScreen extends ConsumerStatefulWidget {
 }
 
 class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
+  InvoiceDetails? _overrideDetails;
   bool _isSharingWhatsAppPdf = false;
   bool _isDownloadingPdf = false;
+
+  Future<void> _editBill(InvoiceDetails details) async {
+    final updated = await Navigator.push<InvoiceDetails>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BillingScreen(existingInvoiceDetails: details),
+      ),
+    );
+
+    if (updated != null && mounted) {
+      setState(() {
+        _overrideDetails = updated;
+      });
+      ref.invalidate(invoiceDetailsProvider(updated.invoice.id));
+      ref.invalidate(invoicesListProvider);
+      ref.invalidate(customerBillingHistoryProvider(updated.customer.id));
+    }
+  }
 
   Future<void> _sharePdfOnWhatsApp(InvoiceDetails details) async {
     setState(() => _isSharingWhatsAppPdf = true);
@@ -105,8 +125,9 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.invoiceDetails != null) {
-      return _buildOverviewContent(widget.invoiceDetails!);
+    final activeDetails = _overrideDetails ?? widget.invoiceDetails;
+    if (activeDetails != null) {
+      return _buildOverviewContent(activeDetails);
     }
 
     final detailsAsync =
@@ -138,7 +159,7 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
           ),
         ),
       ),
-      data: (details) => _buildOverviewContent(details),
+      data: (details) => _buildOverviewContent(_overrideDetails ?? details),
     );
   }
 
@@ -152,6 +173,11 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
         title: Text('Invoice #${details.invoice.invoiceNumber}'),
         centerTitle: false,
         actions: [
+          IconButton(
+            tooltip: 'Edit Bill',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: () => _editBill(details),
+          ),
           IconButton(
             tooltip: 'Done',
             icon: const Icon(Icons.check),
@@ -841,7 +867,27 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
         ),
         const SizedBox(height: 10),
 
-        // 3. Done button
+        // 3. Edit Bill Details button
+        FilledButton.tonalIcon(
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: () => _editBill(details),
+          icon: const Icon(Icons.edit_note_rounded),
+          label: const Text(
+            'Edit Bill Details',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // 4. Done button
         OutlinedButton(
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),

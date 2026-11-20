@@ -26,6 +26,18 @@ class SqliteInvoiceRepository
   }
 
   @override
+  Future<Invoice> update(Invoice invoice) async {
+    await (database.update(database.invoices)
+          ..where((tbl) => tbl.id.equals(invoice.id)))
+        .write(
+      db.InvoicesCompanion(
+        totalAmount: Value(invoice.totalAmount),
+      ),
+    );
+    return invoice;
+  }
+
+  @override
   Future<Invoice?> getById(String id) async {
     final query = database.select(database.invoices)
       ..where((tbl) => tbl.id.equals(id));

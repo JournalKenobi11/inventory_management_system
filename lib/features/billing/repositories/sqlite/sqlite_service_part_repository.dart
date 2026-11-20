@@ -41,6 +41,13 @@ class SqliteServicePartRepository
     return rows.map(_toModel).toList();
   }
 
+  @override
+  Future<void> deleteByServiceId(String serviceId) async {
+    await (database.delete(database.serviceParts)
+          ..where((tbl) => tbl.serviceId.equals(serviceId)))
+        .go();
+  }
+
   ServicePart _toModel(db.ServicePart row) {
     return ServicePart(
       id: row.id,

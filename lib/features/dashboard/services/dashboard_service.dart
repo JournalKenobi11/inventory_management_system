@@ -8,6 +8,7 @@ import '../../expenses/repositories/interfaces/expense_repository.dart';
 import '../../parts/models/part.dart';
 import '../../parts/repositories/interfaces/part_repository.dart';
 
+import '../../purchases/purchases.dart';
 import '../../salaries/repositories/interfaces/salary_payment_repository.dart';
 import '../models/dashboard_summary.dart';
 
@@ -25,6 +26,10 @@ class DashboardDateRange {
       : start = _dateOnly(date),
         end = _dateOnly(date);
 
+  DashboardDateRange.week(DateTime date)
+      : start = _dateOnly(date.subtract(Duration(days: date.weekday - 1))),
+        end = _dateOnly(date.add(Duration(days: 7 - date.weekday)));
+
   DashboardDateRange.month(DateTime date)
       : start = DateTime(date.year, date.month, 1),
         end = DateTime(date.year, date.month + 1, 0);
@@ -32,6 +37,17 @@ class DashboardDateRange {
   DashboardDateRange.year(DateTime date)
       : start = DateTime(date.year, 1, 1),
         end = DateTime(date.year, 12, 31);
+
+  bool get isSingleDay =>
+      start.year == end.year && start.month == end.month && start.day == end.day;
+
+  bool get isWeek =>
+      !isSingleDay && end.difference(start).inDays == 6;
+
+  bool get isMonth =>
+      !isSingleDay &&
+      start.day == 1 &&
+      end.day == DateTime(start.year, start.month + 1, 0).day;
 
   bool contains(DateTime date) {
     final value = _dateOnly(date);
@@ -69,6 +85,7 @@ class DashboardService {
   final ExpenseRepository expenseRepository;
   final SalaryPaymentRepository salaryPaymentRepository;
   final PartRepository partRepository;
+  final PurchaseService? purchaseService;
 
   DashboardService({
     required this.invoiceRepository,
@@ -77,6 +94,7 @@ class DashboardService {
     required this.expenseRepository,
     required this.salaryPaymentRepository,
     required this.partRepository,
+    this.purchaseService,
   });
 
   Future<DashboardSummary> getSummary(
@@ -156,8 +174,20 @@ class DashboardService {
               total + payment.amount,
         );
 
-    final totalExpenses =
-        businessExpenses + salaryExpenses;
+    double stockPurchases = 0.0;
+    if (purchaseService != null) {
+      final allPurchases = await purchaseService!.getAllPurchases();
+      final inRangePurchases = allPurchases.where(
+        (p) => _isDateInRange(p.purchaseDate, range),
+      );
+      stockPurchases = inRangePurchases.fold<double>(
+        0.0,
+        (sum, p) => sum + (p.quantity * p.purchasePrice),
+      );
+    }
+
+    final operatingExpenses = businessExpenses + salaryExpenses;
+    final totalExpenses = businessExpenses + salaryExpenses;
 
     // Gross profit as proper profit for now (Parts Markup + Labour)
     final profit = totalSales - cogs;
@@ -188,6 +218,9 @@ class DashboardService {
       totalExpenses: totalExpenses,
       profit: profit,
       cogs: cogs,
+      stockPurchases: stockPurchases,
+      salaryExpenses: salaryExpenses,
+      operatingExpenses: operatingExpenses,
       servicesCompleted: servicesCompleted,
       inventoryValue: inventoryValue,
       lowStockParts: List<Part>.unmodifiable(

@@ -3,6 +3,8 @@ import '../../models/service.dart';
 abstract class ServiceRepository {
   Future<Service> create(Service service);
 
+  Future<Service> update(Service service);
+
   Future<Service?> getById(String id);
 
   Future<List<Service>> getAll();

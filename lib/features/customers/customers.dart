@@ -6,3 +6,4 @@ export 'providers/customer_provider.dart';
 export 'screens/customer_list_screen.dart';
 export 'screens/customer_form_screen.dart';
 export 'screens/customer_detail_screen.dart';
+export 'screens/customer_quick_service_sheet.dart';

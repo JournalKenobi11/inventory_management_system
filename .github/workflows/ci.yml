@@ -1,0 +1,89 @@
+name: Automated CI
+
+on:
+  push:
+    branches:
+      - main
+      - billing-export
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+      - billing-export
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-and-tests:
+    name: Architecture, Quality & Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+          cache-key: 'flutter-:os:-:channel:-:version:-:arch:-:hash:'
+
+      - name: Print Flutter & Dart Environment
+        run: |
+          flutter --version
+          dart --version
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Enforce Architecture Layering Rules (AGENTS.md)
+        run: |
+          chmod +x scripts/check_architecture.sh
+          ./scripts/check_architecture.sh
+
+      - name: Run Static Code Analysis
+        run: flutter analyze --fatal-warnings
+
+      - name: Run Test Suite & Generate Coverage
+        run: flutter test --coverage
+
+      - name: Upload Test Coverage Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  build-validation:
+    name: Build Verification (Android Debug APK)
+    runs-on: ubuntu-latest
+    needs: quality-and-tests
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Project Dependencies
+        run: flutter pub get
+
+      - name: Build Android Debug APK
+        run: flutter build apk --debug

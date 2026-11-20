@@ -227,6 +227,159 @@ class BillingService {
     });
   }
 
+  Future<InvoiceDetails> editBill({
+    required String invoiceId,
+    required String customerId,
+    required String problemDesc,
+    double? labourCharge,
+    List<LabourEntry>? labourEntries,
+    String? serviceReport,
+    required List<ServicePartInput> partsUsed,
+  }) async {
+    final cleanCustomerId = customerId.trim();
+    final cleanProblemDesc = problemDesc.trim();
+    final cleanServiceReport = serviceReport?.trim();
+
+    double effectiveLabourCharge = labourCharge ?? 0.0;
+    if (labourEntries != null && labourEntries.isNotEmpty) {
+      effectiveLabourCharge = labourEntries.fold<double>(
+        0.0,
+        (sum, entry) => sum + entry.charge,
+      );
+    }
+
+    if (cleanCustomerId.isEmpty) {
+      throw ValidationException('Customer ID cannot be empty.');
+    }
+
+    if (effectiveLabourCharge < 0) {
+      throw ValidationException('Labour charge cannot be negative.');
+    }
+
+    if (labourEntries != null) {
+      for (final entry in labourEntries) {
+        if (entry.charge < 0) {
+          throw ValidationException(
+            'Labour service charge cannot be negative.',
+          );
+        }
+      }
+    }
+
+    final invoice = await invoiceRepository.getById(invoiceId);
+    if (invoice == null) {
+      throw NotFoundException('Invoice', invoiceId);
+    }
+
+    final service = await serviceRepository.getById(invoice.serviceId);
+    if (service == null) {
+      throw NotFoundException('Service', invoice.serviceId);
+    }
+
+    final Customer? customer =
+        await customerService.getCustomer(cleanCustomerId);
+    if (customer == null) {
+      throw NotFoundException('Customer', cleanCustomerId);
+    }
+
+    final normalizedNewParts = _normalizeParts(partsUsed);
+
+    return database.transaction(() async {
+      // 1. Restore previous stock for existing parts on this bill
+      final oldServiceParts =
+          await servicePartRepository.getByServiceId(service.id);
+      for (final sp in oldServiceParts) {
+        await partService.adjustStock(sp.partId, sp.quantity);
+      }
+
+      // 2. Validate all new parts against restored stock
+      final resolvedParts = <_ResolvedPart>[];
+      for (final input in normalizedNewParts) {
+        final Part? part = await partService.getPartById(input.partId);
+        if (part == null) {
+          throw NotFoundException('Part', input.partId);
+        }
+        if (part.currentStock < input.quantity) {
+          throw InsufficientStockException(
+            part.partName,
+            partId: input.partId,
+            requested: input.quantity,
+            available: part.currentStock,
+          );
+        }
+        resolvedParts.add(_ResolvedPart(input: input, part: part));
+      }
+
+      // 3. Deduct stock for new parts
+      for (final resolved in resolvedParts) {
+        await partService.adjustStock(
+          resolved.part.id,
+          -resolved.input.quantity,
+        );
+      }
+
+      // 4. Delete old service parts and insert new ones
+      await servicePartRepository.deleteByServiceId(service.id);
+
+      double partsTotal = 0.0;
+      final lineItems = <InvoiceLineItem>[];
+
+      for (final resolved in resolvedParts) {
+        final lineTotal =
+            resolved.input.quantity * resolved.part.sellingPrice;
+        final servicePart = ServicePart(
+          id: IdGenerator.generate(),
+          serviceId: service.id,
+          partId: resolved.part.id,
+          quantity: resolved.input.quantity,
+          priceEach: resolved.part.sellingPrice,
+        );
+        await servicePartRepository.create(servicePart);
+        partsTotal += lineTotal;
+        lineItems.add(
+          InvoiceLineItem(
+            partId: resolved.part.id,
+            partName: resolved.part.partName,
+            partNumber: resolved.part.partNumber,
+            quantity: resolved.input.quantity,
+            priceEach: resolved.part.sellingPrice,
+            lineTotal: lineTotal,
+          ),
+        );
+      }
+
+      // 5. Update service job
+      final updatedService = service.copyWith(
+        customerId: cleanCustomerId,
+        problemDesc: cleanProblemDesc.isEmpty ? null : cleanProblemDesc,
+        labourCharge: effectiveLabourCharge,
+        serviceReport: cleanServiceReport == null || cleanServiceReport.isEmpty
+            ? null
+            : cleanServiceReport,
+        labourEntriesJson: labourEntries != null && labourEntries.isNotEmpty
+            ? jsonEncode(labourEntries.map((e) => e.toJson()).toList())
+            : null,
+      );
+      await serviceRepository.update(updatedService);
+
+      // 6. Recalculate invoice total and update invoice
+      final newTotalAmount = partsTotal + effectiveLabourCharge;
+      final updatedInvoice = invoice.copyWith(
+        totalAmount: newTotalAmount,
+      );
+      await invoiceRepository.update(updatedInvoice);
+
+      return InvoiceDetails(
+        invoice: updatedInvoice,
+        service: updatedService,
+        customer: customer,
+        items: lineItems,
+        labourCharge: effectiveLabourCharge,
+        totalAmount: newTotalAmount,
+      );
+    });
+  }
+
   Future<Service?> getServiceById(
     String id,
   ) {

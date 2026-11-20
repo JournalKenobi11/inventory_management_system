@@ -4,4 +4,6 @@ abstract class ServicePartRepository {
   Future<ServicePart> create(ServicePart servicePart);
 
   Future<List<ServicePart>> getByServiceId(String serviceId);
+
+  Future<void> deleteByServiceId(String serviceId);
 }
