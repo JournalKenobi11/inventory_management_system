@@ -132,81 +132,88 @@ class _EmployeeFormScreenState
               : 'Add Employee',
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              enabled: !_saving,
-              decoration: const InputDecoration(
-                labelText: 'Employee Name',
-                border: OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null ||
-                    value.trim().isEmpty) {
-                  return 'Enter employee name';
-                }
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    enabled: !_saving,
+                    decoration: const InputDecoration(
+                      labelText: 'Employee Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null ||
+                          value.trim().isEmpty) {
+                        return 'Enter employee name';
+                      }
 
-                return null;
-              },
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _salaryController,
+                    enabled: !_saving,
+                    decoration: const InputDecoration(
+                      labelText: 'Monthly Salary',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (value) {
+                      if (value == null ||
+                          value.trim().isEmpty) {
+                        return 'Enter monthly salary';
+                      }
+
+                      final salary =
+                          double.tryParse(value.trim());
+
+                      if (salary == null) {
+                        return 'Enter a valid salary';
+                      }
+
+                      if (salary <= 0) {
+                        return 'Salary must be greater than zero';
+                      }
+
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 50),
+                    child: FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child:
+                                  CircularProgressIndicator(),
+                            )
+                          : Text(
+                              widget.isEditing
+                                  ? 'Update Employee'
+                                  : 'Save Employee',
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _salaryController,
-              enabled: !_saving,
-              decoration: const InputDecoration(
-                labelText: 'Monthly Salary',
-                prefixText: '₹ ',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              validator: (value) {
-                if (value == null ||
-                    value.trim().isEmpty) {
-                  return 'Enter monthly salary';
-                }
-
-                final salary =
-                    double.tryParse(value.trim());
-
-                if (salary == null) {
-                  return 'Enter a valid salary';
-                }
-
-                if (salary <= 0) {
-                  return 'Salary must be greater than zero';
-                }
-
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 50,
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child:
-                            CircularProgressIndicator(),
-                      )
-                    : Text(
-                        widget.isEditing
-                            ? 'Update Employee'
-                            : 'Save Employee',
-                      ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

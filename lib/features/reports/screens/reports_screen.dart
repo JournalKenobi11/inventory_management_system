@@ -126,51 +126,58 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
           ],
         ),
       ),
-      body: Column(
-        children: [
-          _buildDateRangeSelector(selectedRange),
-          Expanded(
-            child: reportAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 48,
-                        color: Colors.red,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1000),
+            child: Column(
+              children: [
+                _buildDateRangeSelector(selectedRange),
+                Expanded(
+                  child: reportAsync.when(
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.red,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Error loading reports: $err',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () =>
+                                  ref.invalidate(comprehensiveReportProvider),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Error loading reports: $err',
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () =>
-                            ref.invalidate(comprehensiveReportProvider),
-                        child: const Text('Retry'),
-                      ),
-                    ],
+                    ),
+                    data: (report) => TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _FinancialOverviewTab(report: report),
+                        _ExpenseBreakdownTab(report: report),
+                        _TopCustomersTab(report: report),
+                        _TopPartsTab(report: report),
+                        _SalarySummaryTab(report: report),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              data: (report) => TabBarView(
-                controller: _tabController,
-                children: [
-                  _FinancialOverviewTab(report: report),
-                  _ExpenseBreakdownTab(report: report),
-                  _TopCustomersTab(report: report),
-                  _TopPartsTab(report: report),
-                  _SalarySummaryTab(report: report),
-                ],
-              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -340,57 +347,76 @@ class _FinancialOverviewTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                title: 'Total Sales',
-                value: '₹${report.sales.totalSales.toStringAsFixed(2)}',
-                subtitle: '${report.sales.invoiceCount} invoices',
-                color: Colors.blue.shade700,
-                icon: Icons.point_of_sale,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                title: 'Total Expenses',
-                value: '₹${report.expenses.totalExpenses.toStringAsFixed(2)}',
-                subtitle:
-                    'Biz: ₹${report.expenses.totalBusinessExpenses.toStringAsFixed(0)}',
-                color: Colors.orange.shade800,
-                icon: Icons.receipt_long,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _MetricCard(
-                title: 'Net Profit',
-                value: '₹${profit.netProfit.toStringAsFixed(2)}',
-                subtitle:
-                    'Margin: ${profit.profitMarginPercentage.toStringAsFixed(1)}%',
-                color: isProfitable
-                    ? Colors.green.shade700
-                    : Colors.red.shade700,
-                icon: isProfitable ? Icons.trending_up : Icons.trending_down,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _MetricCard(
-                title: 'Jobs Done',
-                value: '${report.servicesCompleted}',
-                subtitle:
-                    'Avg Inv: ₹${report.sales.averageInvoiceValue.toStringAsFixed(0)}',
-                color: Colors.purple.shade700,
-                icon: Icons.car_repair,
-              ),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final cardSales = _MetricCard(
+              title: 'Total Sales',
+              value: '₹${report.sales.totalSales.toStringAsFixed(2)}',
+              subtitle: '${report.sales.invoiceCount} invoices',
+              color: Colors.blue.shade700,
+              icon: Icons.point_of_sale,
+            );
+            final cardExpenses = _MetricCard(
+              title: 'Total Expenses',
+              value: '₹${report.expenses.totalExpenses.toStringAsFixed(2)}',
+              subtitle:
+                  'Biz: ₹${report.expenses.totalBusinessExpenses.toStringAsFixed(0)}',
+              color: Colors.orange.shade800,
+              icon: Icons.receipt_long,
+            );
+            final cardProfit = _MetricCard(
+              title: 'Net Profit',
+              value: '₹${profit.netProfit.toStringAsFixed(2)}',
+              subtitle:
+                  'Margin: ${profit.profitMarginPercentage.toStringAsFixed(1)}%',
+              color: isProfitable
+                  ? Colors.green.shade700
+                  : Colors.red.shade700,
+              icon: isProfitable ? Icons.trending_up : Icons.trending_down,
+            );
+            final cardJobs = _MetricCard(
+              title: 'Jobs Done',
+              value: '${report.servicesCompleted}',
+              subtitle:
+                  'Avg Inv: ₹${report.sales.averageInvoiceValue.toStringAsFixed(0)}',
+              color: Colors.purple.shade700,
+              icon: Icons.car_repair,
+            );
+
+            if (constraints.maxWidth >= 720) {
+              return Row(
+                children: [
+                  Expanded(child: cardSales),
+                  const SizedBox(width: 12),
+                  Expanded(child: cardExpenses),
+                  const SizedBox(width: 12),
+                  Expanded(child: cardProfit),
+                  const SizedBox(width: 12),
+                  Expanded(child: cardJobs),
+                ],
+              );
+            }
+
+            return Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: cardSales),
+                    const SizedBox(width: 12),
+                    Expanded(child: cardExpenses),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: cardProfit),
+                    const SizedBox(width: 12),
+                    Expanded(child: cardJobs),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 20),
         _buildProfitTallyCard(context, report),
@@ -486,30 +512,86 @@ class _FinancialOverviewTab extends StatelessWidget {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _SummaryCol(
-                  title: 'Total Parts',
-                  value: '${report.inventory.totalPartCount}',
-                ),
-                _SummaryCol(
-                  title: 'Total Stock Units',
-                  value: '${report.inventory.totalStockUnits}',
-                ),
-                _SummaryCol(
-                  title: 'Inventory Value',
-                  value:
-                      '₹${report.inventory.totalInventoryValue.toStringAsFixed(2)}',
-                ),
-                _SummaryCol(
-                  title: 'Low Stock Items',
-                  value: '${report.inventory.lowStockCount}',
-                  color: report.inventory.lowStockCount > 0
-                      ? Colors.red
-                      : Colors.green,
-                ),
-              ],
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 440;
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SummaryCol(
+                              title: 'Total Parts',
+                              value: '${report.inventory.totalPartCount}',
+                            ),
+                          ),
+                          Expanded(
+                            child: _SummaryCol(
+                              title: 'Total Stock Units',
+                              value: '${report.inventory.totalStockUnits}',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SummaryCol(
+                              title: 'Inventory Value',
+                              value:
+                                  '₹${report.inventory.totalInventoryValue.toStringAsFixed(2)}',
+                            ),
+                          ),
+                          Expanded(
+                            child: _SummaryCol(
+                              title: 'Low Stock Items',
+                              value: '${report.inventory.lowStockCount}',
+                              color: report.inventory.lowStockCount > 0
+                                  ? Colors.red
+                                  : Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Expanded(
+                      child: _SummaryCol(
+                        title: 'Total Parts',
+                        value: '${report.inventory.totalPartCount}',
+                      ),
+                    ),
+                    Expanded(
+                      child: _SummaryCol(
+                        title: 'Total Stock Units',
+                        value: '${report.inventory.totalStockUnits}',
+                      ),
+                    ),
+                    Expanded(
+                      child: _SummaryCol(
+                        title: 'Inventory Value',
+                        value:
+                            '₹${report.inventory.totalInventoryValue.toStringAsFixed(2)}',
+                      ),
+                    ),
+                    Expanded(
+                      child: _SummaryCol(
+                        title: 'Low Stock Items',
+                        value: '${report.inventory.lowStockCount}',
+                        color: report.inventory.lowStockCount > 0
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),
@@ -1252,6 +1334,7 @@ class _SummaryCol extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         FittedBox(
           fit: BoxFit.scaleDown,
@@ -1267,6 +1350,9 @@ class _SummaryCol extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           title,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
         ),
       ],

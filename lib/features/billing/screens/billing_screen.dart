@@ -373,43 +373,80 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   @override
   Widget build(BuildContext context) {
     final billingState = ref.watch(billingControllerProvider);
-
     final isLoading = billingState.isLoading;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWide = screenWidth >= 900;
+
+    final leftColumnWidgets = [
+      _buildCustomerCard(),
+      const SizedBox(height: 16),
+      _buildJobDetailsCard(),
+      const SizedBox(height: 16),
+      _buildLabourChargesCard(),
+    ];
+
+    final rightColumnWidgets = [
+      _buildPartsCard(),
+      const SizedBox(height: 16),
+      _buildTotalCard(),
+      const SizedBox(height: 20),
+      FilledButton.icon(
+        onPressed: _generateInvoice,
+        icon: isLoading
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.receipt_long),
+        label: Text(isLoading ? 'Generating...' : 'Generate Invoice'),
+      ),
+    ];
 
     return Scaffold(
       appBar: AppBar(
         leading: appDrawerLeading(context),
         title: const Text('Billing'),
       ),
-      body: AbsorbPointer(
-        absorbing: isLoading,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildCustomerCard(),
-              const SizedBox(height: 16),
-              _buildJobDetailsCard(),
-              const SizedBox(height: 16),
-              _buildLabourChargesCard(),
-              const SizedBox(height: 16),
-              _buildPartsCard(),
-              const SizedBox(height: 16),
-              _buildTotalCard(),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: _generateInvoice,
-                icon: isLoading
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+      body: SafeArea(
+        child: AbsorbPointer(
+          absorbing: isLoading,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1100),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: isWide
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: leftColumnWidgets,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: rightColumnWidgets,
+                            ),
+                          ),
+                        ],
                       )
-                    : const Icon(Icons.receipt_long),
-                label: Text(isLoading ? 'Generating...' : 'Generate Invoice'),
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          ...leftColumnWidgets,
+                          const SizedBox(height: 16),
+                          ...rightColumnWidgets,
+                        ],
+                      ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -429,24 +466,53 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             ),
             const SizedBox(height: 12),
             if (_selectedCustomer == null)
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _selectCustomer,
-                      icon: const Icon(Icons.person_search),
-                      label: const Text('Select Customer'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton.tonalIcon(
-                      onPressed: _createCustomer,
-                      icon: const Icon(Icons.person_add),
-                      label: const Text('New Customer'),
-                    ),
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isNarrow = constraints.maxWidth < 320;
+                  if (isNarrow) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _selectCustomer,
+                          icon: const Icon(Icons.person_search),
+                          label: const Text('Select Customer'),
+                        ),
+                        const SizedBox(height: 8),
+                        FilledButton.tonalIcon(
+                          onPressed: _createCustomer,
+                          icon: const Icon(Icons.person_add),
+                          label: const Text('New Customer'),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _selectCustomer,
+                          icon: const Icon(Icons.person_search),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Select Customer'),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.tonalIcon(
+                          onPressed: _createCustomer,
+                          icon: const Icon(Icons.person_add),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('New Customer'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               )
             else
               ListTile(
@@ -820,12 +886,16 @@ class _SearchablePartDialogState extends State<_SearchablePartDialog> {
       return nameMatches || numMatches || catMatches;
     }).toList();
 
+    final screenSize = MediaQuery.sizeOf(context);
+    final dialogWidth = (screenSize.width - 48).clamp(260.0, 550.0);
+    final dialogHeight = (screenSize.height * 0.75).clamp(280.0, 520.0);
+
     return AlertDialog(
       title: const Text('Select Part'),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       content: SizedBox(
-        width: 550,
-        height: 520,
+        width: dialogWidth,
+        height: dialogHeight,
         child: Column(
           children: [
             TextField(
@@ -1005,12 +1075,16 @@ class _SearchableCustomerDialogState extends State<_SearchableCustomerDialog> {
       return nameMatches || phoneMatches || vehicleMatches;
     }).toList();
 
+    final screenSize = MediaQuery.sizeOf(context);
+    final dialogWidth = (screenSize.width - 48).clamp(260.0, 500.0);
+    final dialogHeight = (screenSize.height * 0.75).clamp(280.0, 480.0);
+
     return AlertDialog(
       title: const Text('Select Customer'),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       content: SizedBox(
-        width: 500,
-        height: 480,
+        width: dialogWidth,
+        height: dialogHeight,
         child: Column(
           children: [
             TextField(

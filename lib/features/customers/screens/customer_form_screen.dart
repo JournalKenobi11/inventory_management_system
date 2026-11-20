@@ -106,58 +106,77 @@ class _CustomerFormScreenState
           isEditing ? 'Edit Customer' : 'Add Customer',
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Name',
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Name',
+                      ),
+                      validator: (value) {
+                        if (value == null ||
+                            value.trim().isEmpty) {
+                          return 'Name is required';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      controller: _mobileController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mobile',
+                      ),
+                      keyboardType:
+                          TextInputType.phone,
+                      validator: (value) {
+                        if (value == null ||
+                            value.trim().isEmpty) {
+                          return 'Mobile is required';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    TextFormField(
+                      controller: _vehicleController,
+                      decoration: const InputDecoration(
+                        labelText: 'Vehicle Name',
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: ElevatedButton(
+                        onPressed: _saving ? null : _save,
+                        child: _saving
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Save'),
+                      ),
+                    ),
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty) {
-                    return 'Name is required';
-                  }
-                  return null;
-                },
               ),
-
-              TextFormField(
-                controller: _mobileController,
-                decoration: const InputDecoration(
-                  labelText: 'Mobile',
-                ),
-                keyboardType:
-                    TextInputType.phone,
-                validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty) {
-                    return 'Mobile is required';
-                  }
-                  return null;
-                },
-              ),
-
-              TextFormField(
-                controller: _vehicleController,
-                decoration: const InputDecoration(
-                  labelText: 'Vehicle Name',
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const CircularProgressIndicator()
-                    : const Text('Save'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

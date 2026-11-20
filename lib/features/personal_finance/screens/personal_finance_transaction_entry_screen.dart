@@ -129,105 +129,116 @@ class _PersonalFinanceTransactionEntryScreenState
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add Transaction')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_errorMessage != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _errorMessage!,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onErrorContainer,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.errorContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // 1. Transaction Type Toggle
+                    const Text(
+                      'Transaction Type',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // 1. Transaction Type Toggle
-              const Text(
-                'Transaction Type',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<String>(
-                segments: const [
-                  ButtonSegment(
-                    value: 'credit',
-                    icon: Icon(
-                      Icons.arrow_downward_rounded,
-                      color: Colors.green,
+                    const SizedBox(height: 8),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                          value: 'credit',
+                          icon: Icon(
+                            Icons.arrow_downward_rounded,
+                            color: Colors.green,
+                          ),
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Credit (In)'),
+                          ),
+                        ),
+                        ButtonSegment(
+                          value: 'debit',
+                          icon: Icon(Icons.arrow_upward_rounded, color: Colors.red),
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Debit (Out)'),
+                          ),
+                        ),
+                      ],
+                      selected: {_type},
+                      onSelectionChanged: (set) => _onTypeChanged(set.first),
                     ),
-                    label: Text('Credit (In)'),
-                  ),
-                  ButtonSegment(
-                    value: 'debit',
-                    icon: Icon(Icons.arrow_upward_rounded, color: Colors.red),
-                    label: Text('Debit (Out)'),
-                  ),
-                ],
-                selected: {_type},
-                onSelectionChanged: (set) => _onTypeChanged(set.first),
-              ),
-              const SizedBox(height: 20),
+                    const SizedBox(height: 20),
 
-              // 2. Amount Field
-              TextFormField(
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: InputDecoration(
-                  labelText: 'Amount',
-                  prefixText: '₹ ',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: Icon(
-                    _type == 'credit'
-                        ? Icons.add_circle_outline
-                        : Icons.remove_circle_outline,
-                    color: _type == 'credit' ? Colors.green : Colors.red,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter an amount';
-                  }
-                  final parsed = double.tryParse(value.trim());
-                  if (parsed == null || parsed <= 0) {
-                    return 'Please enter a valid amount greater than zero';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                    // 2. Amount Field
+                    TextFormField(
+                      controller: _amountController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Amount',
+                        prefixText: '₹ ',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: Icon(
+                          _type == 'credit'
+                              ? Icons.add_circle_outline
+                              : Icons.remove_circle_outline,
+                          color: _type == 'credit' ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter an amount';
+                        }
+                        final parsed = double.tryParse(value.trim());
+                        if (parsed == null || parsed <= 0) {
+                          return 'Please enter a valid amount greater than zero';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-              // 3. Category Dropdown
-              DropdownButtonFormField<String>(
-                key: ValueKey('$_type-$_category'),
-                initialValue: _category,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.category_outlined),
-                ),
-                items: categories.map((cat) {
-                  return DropdownMenuItem(value: cat, child: Text(cat));
-                }).toList(),
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() => _category = val);
-                  }
-                },
-              ),
+                    // 3. Category Dropdown
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      key: ValueKey('$_type-$_category'),
+                      initialValue: _category,
+                      decoration: const InputDecoration(
+                        labelText: 'Category',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.category_outlined),
+                      ),
+                      items: categories.map((cat) {
+                        return DropdownMenuItem(value: cat, child: Text(cat));
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _category = val);
+                        }
+                      },
+                    ),
               const SizedBox(height: 16),
 
               // 4. Payee / From Field
@@ -306,6 +317,9 @@ class _PersonalFinanceTransactionEntryScreenState
                 ),
               ),
             ],
+          ),
+        ),
+      ),
           ),
         ),
       ),

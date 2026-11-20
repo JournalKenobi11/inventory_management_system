@@ -32,7 +32,11 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
         leading: appDrawerLeading(context),
         title: const Text('Inventory'),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
@@ -114,6 +118,9 @@ class _PartListScreenState extends ConsumerState<PartListScreen> {
             ),
           ),
         ],
+      ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

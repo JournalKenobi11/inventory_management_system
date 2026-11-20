@@ -24,7 +24,11 @@ class _PendingPaymentsScreenState
       appBar: AppBar(
         title: const Text('Pending Salaries'),
       ),
-      body: employeesState.when(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: employeesState.when(
         loading: () => const Center(
           child: CircularProgressIndicator(),
         ),
@@ -105,6 +109,9 @@ class _PendingPaymentsScreenState
             },
           );
         },
+      ),
+          ),
+        ),
       ),
     );
   }

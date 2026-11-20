@@ -93,24 +93,29 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Restore Database'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Paste your backup JSON content below. WARNING: Restoring will overwrite all current local data with the backup records.',
-              style: TextStyle(fontSize: 13, color: Colors.redAccent),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Paste your backup JSON content below. WARNING: Restoring will overwrite all current local data with the backup records.',
+                  style: TextStyle(fontSize: 13, color: Colors.redAccent),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _jsonTextController,
+                  maxLines: 8,
+                  decoration: const InputDecoration(
+                    hintText: 'Paste backup JSON here...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _jsonTextController,
-              maxLines: 8,
-              decoration: const InputDecoration(
-                hintText: 'Paste backup JSON here...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -257,216 +262,223 @@ class _BackupScreenState extends ConsumerState<BackupScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Backup & Restore')),
-      body: _isProcessing
-          ? const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Processing backup operation...'),
-                ],
-              ),
-            )
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Card(
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: _isProcessing
+                ? const Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Processing backup operation...'),
+                      ],
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      Card(
+                        elevation: 2,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.shield_outlined,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Offline Data Safety',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Your data is stored securely on your local device. Regularly creating backups protects your business records, invoices, and stock history.',
+                                style: TextStyle(fontSize: 13, color: Colors.black87),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Create Backup',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        child: Column(
                           children: [
-                            Icon(
-                              Icons.shield_outlined,
-                              color: Colors.blue.shade700,
+                            ListTile(
+                              leading: const CircleAvatar(
+                                child: Icon(Icons.cloud_upload_outlined),
+                              ),
+                              title: const Text('Export JSON Backup'),
+                              subtitle: const Text(
+                                'Creates a structured backup file of all customers, parts, invoices & expenses.',
+                              ),
+                              trailing: ElevatedButton.icon(
+                                onPressed: _handleCreateBackup,
+                                icon: const Icon(Icons.file_download, size: 18),
+                                label: const Text('Export'),
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Offline Data Safety',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const CircleAvatar(
+                                child: Icon(Icons.copy_outlined),
+                              ),
+                              title: const Text('Copy Backup JSON'),
+                              subtitle: const Text(
+                                'Copy full backup text to clipboard',
+                              ),
+                              trailing: TextButton.icon(
+                                onPressed: _copyBackupJsonToClipboard,
+                                icon: const Icon(Icons.copy, size: 18),
+                                label: const Text('Copy'),
+                              ),
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              leading: const CircleAvatar(
+                                child: Icon(Icons.storage_outlined),
+                              ),
+                              title: const Text('Export SQLite Database File'),
+                              subtitle: const Text(
+                                'Exports raw .sqlite database file to share via WhatsApp/Drive.',
+                              ),
+                              trailing: OutlinedButton.icon(
+                                onPressed: _handleShareDatabaseFile,
+                                icon: const Icon(Icons.share, size: 18),
+                                label: const Text('Share'),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                      ),
+                      const SizedBox(height: 24),
+                      if (backupSummary != null) ...[
                         const Text(
-                          'Your data is stored securely on your local device. Regularly creating backups protects your business records, invoices, and stock history.',
-                          style: TextStyle(fontSize: 13, color: Colors.black87),
+                          'Last Backup Details',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(height: 8),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Generated: ${backupSummary.exportDate}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text('Total Records: ${backupSummary.totalRecords}'),
+                                const Divider(),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: backupSummary.tableCounts.entries
+                                      .map(
+                                        (e) =>
+                                            Chip(label: Text('${e.key}: ${e.value}')),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
                       ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Create Backup',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.cloud_upload_outlined),
-                        ),
-                        title: const Text('Export JSON Backup'),
-                        subtitle: const Text(
-                          'Creates a structured backup file of all customers, parts, invoices & expenses.',
-                        ),
-                        trailing: ElevatedButton.icon(
-                          onPressed: _handleCreateBackup,
-                          icon: const Icon(Icons.file_download, size: 18),
-                          label: const Text('Export'),
+                      const Text(
+                        'Restore Database',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
                         ),
                       ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.copy_outlined),
-                        ),
-                        title: const Text('Copy Backup JSON'),
-                        subtitle: const Text(
-                          'Copy full backup text to clipboard',
-                        ),
-                        trailing: TextButton.icon(
-                          onPressed: _copyBackupJsonToClipboard,
-                          icon: const Icon(Icons.copy, size: 18),
-                          label: const Text('Copy'),
+                      const SizedBox(height: 8),
+                      Card(
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            child: Icon(Icons.restore),
+                          ),
+                          title: const Text('Restore from JSON Backup'),
+                          subtitle: const Text(
+                            'Re-import and validate previously exported backup data.',
+                          ),
+                          trailing: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade700,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: _handleRestoreFromJsonDialog,
+                            child: const Text('Restore'),
+                          ),
                         ),
                       ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.storage_outlined),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'QA & Stress Testing (Tracked Fake Data)',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurple,
                         ),
-                        title: const Text('Export SQLite Database File'),
-                        subtitle: const Text(
-                          'Exports raw .sqlite database file to share via WhatsApp/Drive.',
-                        ),
-                        trailing: OutlinedButton.icon(
-                          onPressed: _handleShareDatabaseFile,
-                          icon: const Icon(Icons.share, size: 18),
-                          label: const Text('Share'),
+                      ),
+                      const SizedBox(height: 8),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Populate the app with extreme long names, huge currency values, and large quantities (all prefixed with [FAKE] and ID fake_*) to stress-test UI formatting and overflow boundaries. Delete whenever satisfied.',
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 8,
+                                children: [
+                                  FilledButton.tonalIcon(
+                                    icon: const Icon(Icons.playlist_add_rounded),
+                                    label: const Text('Fill Extreme Fake Data'),
+                                    onPressed: _handleSeedFakeData,
+                                  ),
+                                  OutlinedButton.icon(
+                                    icon: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+                                    label: const Text('Delete All Fake Data', style: TextStyle(color: Colors.red)),
+                                    onPressed: _handleDeleteFakeData,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                if (backupSummary != null) ...[
-                  const Text(
-                    'Last Backup Details',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Generated: ${backupSummary.exportDate}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text('Total Records: ${backupSummary.totalRecords}'),
-                          const Divider(),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: backupSummary.tableCounts.entries
-                                .map(
-                                  (e) =>
-                                      Chip(label: Text('${e.key}: ${e.value}')),
-                                )
-                                .toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                const Text(
-                  'Restore Database',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.redAccent,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  child: ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      child: Icon(Icons.restore),
-                    ),
-                    title: const Text('Restore from JSON Backup'),
-                    subtitle: const Text(
-                      'Re-import and validate previously exported backup data.',
-                    ),
-                    trailing: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade700,
-                        foregroundColor: Colors.white,
-                      ),
-                      onPressed: _handleRestoreFromJsonDialog,
-                      child: const Text('Restore'),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'QA & Stress Testing (Tracked Fake Data)',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Populate the app with extreme long names, huge currency values, and large quantities (all prefixed with [FAKE] and ID fake_*) to stress-test UI formatting and overflow boundaries. Delete whenever satisfied.',
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 8,
-                          children: [
-                            FilledButton.tonalIcon(
-                              icon: const Icon(Icons.playlist_add_rounded),
-                              label: const Text('Fill Extreme Fake Data'),
-                              onPressed: _handleSeedFakeData,
-                            ),
-                            OutlinedButton.icon(
-                              icon: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
-                              label: const Text('Delete All Fake Data', style: TextStyle(color: Colors.red)),
-                              onPressed: _handleDeleteFakeData,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          ),
+        ),
+      ),
     );
   }
 }

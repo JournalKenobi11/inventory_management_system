@@ -147,11 +147,15 @@ class _SalaryPaymentEntryScreenState
       appBar: AppBar(
         title: const Text('Record Salary Payment'),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
             // Employee Picker / Header
             if (widget.employee != null) ...[
               Card(
@@ -242,6 +246,7 @@ class _SalaryPaymentEntryScreenState
                   }
 
                   return DropdownButtonFormField<Employee>(
+                    isExpanded: true,
                     key: ValueKey(_selectedEmployee?.id),
                     initialValue: _selectedEmployee,
                     decoration: const InputDecoration(
@@ -254,6 +259,7 @@ class _SalaryPaymentEntryScreenState
                         value: emp,
                         child: Text(
                           '${emp.name} (₹${emp.monthlySalary.toStringAsFixed(0)}/mo)',
+                          overflow: TextOverflow.ellipsis,
                         ),
                       );
                     }).toList(),
@@ -267,8 +273,10 @@ class _SalaryPaymentEntryScreenState
                 const SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       Text(
                         'Monthly: ₹${_selectedEmployee!.monthlySalary.toStringAsFixed(2)}',
@@ -376,6 +384,7 @@ class _SalaryPaymentEntryScreenState
 
             // Status Dropdown
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _status,
               decoration: const InputDecoration(
                 labelText: 'Payment Status',
@@ -416,8 +425,8 @@ class _SalaryPaymentEntryScreenState
             const SizedBox(height: 24),
 
             // Save button
-            SizedBox(
-              height: 50,
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 50),
               child: FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving
@@ -439,6 +448,9 @@ class _SalaryPaymentEntryScreenState
               ),
             ),
           ],
+        ),
+      ),
+          ),
         ),
       ),
     );

@@ -109,37 +109,41 @@ class EmployeeListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: employeesState.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(error.toString()),
-          ),
-        ),
-        data: (employees) {
-          if (employees.isEmpty) {
-            return const Center(
-              child: Text(
-                'No employees added yet.',
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: employeesState.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
               ),
-            );
-          }
+              error: (error, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(error.toString()),
+                ),
+              ),
+              data: (employees) {
+                if (employees.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No employees added yet.',
+                    ),
+                  );
+                }
 
-          final todayMap = todayAttendanceAsync.asData?.value ?? const {};
-          final summariesMap = summariesAsync.asData?.value ?? const {};
+                final todayMap = todayAttendanceAsync.asData?.value ?? const {};
+                final summariesMap = summariesAsync.asData?.value ?? const {};
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              await ref.read(employeesProvider.notifier).loadEmployees();
-              ref.invalidate(todayAttendanceMapProvider);
-              ref.invalidate(employeeAttendanceSummariesProvider);
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(12),
-              children: [
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    await ref.read(employeesProvider.notifier).loadEmployees();
+                    ref.invalidate(todayAttendanceMapProvider);
+                    ref.invalidate(employeeAttendanceSummariesProvider);
+                  },
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: [
                 // Period Selector & Quick Actions Bar
                 Card(
                   elevation: 0,
@@ -294,9 +298,12 @@ class EmployeeListScreen extends ConsumerWidget {
                                     Icons.payments_outlined,
                                     size: 16,
                                   ),
-                                  label: const Text(
-                                    'Pay Salary',
-                                    style: TextStyle(fontSize: 12),
+                                  label: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Pay Salary',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
                                   ),
                                   onPressed: () async {
                                     await Navigator.of(context).push(
@@ -368,20 +375,16 @@ class EmployeeListScreen extends ConsumerWidget {
                             const Divider(height: 20),
 
                             // Bottom Row: Today's Status Badge & Late Days Count
-                            Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                            Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 8,
+                              runSpacing: 6,
                               children: [
-                                // Today's Attendance Status
-                                Expanded(
-                                  child: _buildTodayStatus(
-                                    todayRecord,
-                                    config,
-                                  ),
+                                _buildTodayStatus(
+                                  todayRecord,
+                                  config,
                                 ),
-                                const SizedBox(width: 12),
-
-                                // Late-day Count for the Period
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
@@ -434,6 +437,9 @@ class EmployeeListScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {

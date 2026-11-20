@@ -79,7 +79,11 @@ class _EmployeeAttendanceDetailScreenState
       appBar: AppBar(
         title: Text(widget.employee.name),
       ),
-      body: FutureBuilder<List<Attendance>>(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: FutureBuilder<List<Attendance>>(
         future: service.getEmployeeHistory(
           widget.employee.id,
           startDate: range.startDate,
@@ -382,6 +386,9 @@ class _EmployeeAttendanceDetailScreenState
             ],
           );
         },
+      ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {

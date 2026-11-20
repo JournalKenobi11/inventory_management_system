@@ -71,7 +71,11 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
         leading: appDrawerLeading(context),
         title: const Text('Customers'),
       ),
-      body: Column(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
@@ -246,6 +250,9 @@ class _CustomerListScreenState extends ConsumerState<CustomerListScreen> {
             ),
           ),
         ],
+      ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {

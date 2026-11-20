@@ -189,8 +189,11 @@ class _RecordAttendanceDialogState
           ? 'Edit Attendance'
           : 'Record Attendance'),
       content: SingleChildScrollView(
-        child: SizedBox(
-          width: 400,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 400,
+            minWidth: MediaQuery.sizeOf(context).width < 340 ? 240 : 280,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,6 +239,7 @@ class _RecordAttendanceDialogState
                       return const Text('No employees found.');
                     }
                     return DropdownButtonFormField<Employee>(
+                      isExpanded: true,
                       initialValue: _selectedEmployee ?? employees.first,
                       decoration: const InputDecoration(
                         labelText: 'Employee',
@@ -245,7 +249,10 @@ class _RecordAttendanceDialogState
                       items: employees.map((emp) {
                         return DropdownMenuItem(
                           value: emp,
-                          child: Text(emp.name),
+                          child: Text(
+                            emp.name,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         );
                       }).toList(),
                       onChanged: (val) {

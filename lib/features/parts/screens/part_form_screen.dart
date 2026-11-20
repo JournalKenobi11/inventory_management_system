@@ -156,121 +156,128 @@ class _PartFormScreenState extends ConsumerState<PartFormScreen> {
           widget.isEditing ? 'Edit Part' : 'Add Part',
         ),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _partNumberController,
-              decoration: const InputDecoration(
-                labelText: 'Part Number',
-                border: OutlineInputBorder(),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  TextFormField(
+                    controller: _partNumberController,
+                    decoration: const InputDecoration(
+                      labelText: 'Part Number',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Enter part number';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _partNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Part Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Enter part name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _categoryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _purchasePriceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Purchase Price',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: _validateNumber,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _sellingPriceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Selling Price',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: _validateNumber,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _stockController,
+                    decoration: const InputDecoration(
+                      labelText: 'Current Stock',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    validator: _validateInteger,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _lowStockThresholdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Low Stock Threshold',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.done,
+                    validator: _validateInteger,
+                    onFieldSubmitted: (_) {
+                      _save();
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 50),
+                    child: FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(),
+                            )
+                          : Text(
+                              widget.isEditing
+                                  ? 'Update Part'
+                                  : 'Save Part',
+                            ),
+                    ),
+                  ),
+                ],
               ),
-              textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Enter part number';
-                }
-                return null;
-              },
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _partNameController,
-              decoration: const InputDecoration(
-                labelText: 'Part Name',
-                border: OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.next,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Enter part name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-              ),
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _purchasePriceController,
-              decoration: const InputDecoration(
-                labelText: 'Purchase Price',
-                prefixText: '₹ ',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              validator: _validateNumber,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _sellingPriceController,
-              decoration: const InputDecoration(
-                labelText: 'Selling Price',
-                prefixText: '₹ ',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.next,
-              validator: _validateNumber,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _stockController,
-              decoration: const InputDecoration(
-                labelText: 'Current Stock',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              validator: _validateInteger,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _lowStockThresholdController,
-              decoration: const InputDecoration(
-                labelText: 'Low Stock Threshold',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              validator: _validateInteger,
-              onFieldSubmitted: (_) {
-                _save();
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 50,
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(),
-                      )
-                    : Text(
-                        widget.isEditing
-                            ? 'Update Part'
-                            : 'Save Part',
-                      ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

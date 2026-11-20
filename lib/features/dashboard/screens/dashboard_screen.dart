@@ -161,22 +161,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildDashboard(BuildContext context, DashboardSummary summary) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _buildQuickActionButtons(),
-        const SizedBox(height: 16),
-        _buildDateControls(context),
-        const SizedBox(height: 16),
-        _buildSummaryGrid(summary),
-        const SizedBox(height: 16),
-        _buildServiceRemindersAlert(),
-        const SizedBox(height: 24),
-        _buildLowStockSection(summary),
-        const SizedBox(height: 24),
-        _buildTopSellingSection(summary),
-        const SizedBox(height: 24),
-      ],
+    return SafeArea(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final isWide = width >= 800;
+
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              _buildQuickActionButtons(context),
+              const SizedBox(height: 16),
+              _buildDateControls(context),
+              const SizedBox(height: 16),
+              _buildSummaryGrid(summary, width),
+              const SizedBox(height: 16),
+              _buildServiceRemindersAlert(),
+              const SizedBox(height: 24),
+              if (isWide)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: _buildLowStockSection(summary)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildTopSellingSection(summary)),
+                  ],
+                )
+              else ...[
+                _buildLowStockSection(summary),
+                const SizedBox(height: 24),
+                _buildTopSellingSection(summary),
+              ],
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -230,19 +250,56 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildQuickActionButtons() {
+  Widget _buildQuickActionButtons(BuildContext context) {
+    final width = MediaQuery.sizeOf(context).width;
+    final isVeryNarrow = width < 340;
+
+    if (isVeryNarrow) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: FilledButton.icon(
+              onPressed: _openBilling,
+              icon: const Icon(Icons.receipt_long, size: 22),
+              label: const Text(
+                'New Bill',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: FilledButton.tonalIcon(
+              onPressed: _openSalaries,
+              icon: const Icon(Icons.badge_rounded, size: 20),
+              label: const Text(
+                'Salaries',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       children: [
         Expanded(
           flex: 3,
-          child: SizedBox(
-            height: 56,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 52),
             child: FilledButton.icon(
               onPressed: _openBilling,
               icon: const Icon(Icons.receipt_long, size: 24),
-              label: const Text(
-                'New Bill',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'New Bill',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -250,14 +307,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         const SizedBox(width: 10),
         Expanded(
           flex: 2,
-          child: SizedBox(
-            height: 56,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 52),
             child: FilledButton.tonalIcon(
               onPressed: _openSalaries,
               icon: const Icon(Icons.badge_rounded, size: 22),
-              label: const Text(
-                'Salaries',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Salaries',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -310,58 +370,61 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  Widget _buildSummaryGrid(DashboardSummary summary) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-
-        final crossAxisCount = width >= 900
-            ? 4
-            : width >= 600
+  Widget _buildSummaryGrid(DashboardSummary summary, double width) {
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0);
+    final crossAxisCount = width >= 900
+        ? 4
+        : width >= 600
             ? 3
             : 2;
 
-        return GridView.count(
-          crossAxisCount: crossAxisCount,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: width < 380 ? 1.45 : 1.65,
-          children: [
-            _SummaryCard(
-              title: 'Sales',
-              value: _formatAmount(summary.totalSales),
-              icon: Icons.point_of_sale,
-            ),
-            _SummaryCard(
-              title: 'Expenses',
-              value: _formatAmount(summary.totalExpenses),
-              icon: Icons.money_off,
-            ),
-            _SummaryCard(
-              title: 'Profit',
-              value: _formatAmount(summary.profit),
-              icon: Icons.trending_up,
-            ),
-            _SummaryCard(
-              title: 'Services Completed',
-              value: summary.servicesCompleted.toString(),
-              icon: Icons.build,
-            ),
-            _SummaryCard(
-              title: 'Inventory Value',
-              value: _formatAmount(summary.inventoryValue),
-              icon: Icons.inventory_2,
-            ),
-            _SummaryCard(
-              title: 'Low Stock',
-              value: summary.lowStockParts.length.toString(),
-              icon: Icons.warning_amber,
-            ),
-          ],
-        );
-      },
+    final double baseRatio = width < 360
+        ? 1.35
+        : width < 420
+            ? 1.45
+            : (width >= 900 ? 1.75 : 1.6);
+    final double childAspectRatio =
+        (baseRatio / textScale.clamp(1.0, 1.6)).clamp(1.1, 2.0);
+
+    return GridView.count(
+      crossAxisCount: crossAxisCount,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: childAspectRatio,
+      children: [
+        _SummaryCard(
+          title: 'Sales',
+          value: _formatAmount(summary.totalSales),
+          icon: Icons.point_of_sale,
+        ),
+        _SummaryCard(
+          title: 'Expenses',
+          value: _formatAmount(summary.totalExpenses),
+          icon: Icons.money_off,
+        ),
+        _SummaryCard(
+          title: 'Profit',
+          value: _formatAmount(summary.profit),
+          icon: Icons.trending_up,
+        ),
+        _SummaryCard(
+          title: 'Services Completed',
+          value: summary.servicesCompleted.toString(),
+          icon: Icons.build,
+        ),
+        _SummaryCard(
+          title: 'Inventory Value',
+          value: _formatAmount(summary.inventoryValue),
+          icon: Icons.inventory_2,
+        ),
+        _SummaryCard(
+          title: 'Low Stock',
+          value: summary.lowStockParts.length.toString(),
+          icon: Icons.warning_amber,
+        ),
+      ],
     );
   }
 

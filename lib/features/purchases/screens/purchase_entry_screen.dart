@@ -113,138 +113,147 @@ class _PurchaseEntryScreenState
       appBar: AppBar(
         title: const Text('Purchase Stock'),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            partsAsync.when(
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              error: (error, _) => Text(
-                error.toString(),
-              ),
-              data: (parts) {
-                if (parts.isEmpty) {
-                  return const Text(
-                    'No parts available. Add a part first.',
-                  );
-                }
-
-                return DropdownButtonFormField<Part>(
-                  initialValue: _selectedPart,
-                  decoration: const InputDecoration(
-                    labelText: 'Part',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: parts.map((part) {
-                    return DropdownMenuItem<Part>(
-                      value: part,
-                      child: Text(
-                        '${part.partNumber} - ${part.partName}',
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  partsAsync.when(
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: _saving
-                      ? null
-                      : (part) {
-                          setState(() {
-                            _selectedPart = part;
+                    ),
+                    error: (error, _) => Text(
+                      error.toString(),
+                    ),
+                    data: (parts) {
+                      if (parts.isEmpty) {
+                        return const Text(
+                          'No parts available. Add a part first.',
+                        );
+                      }
 
-                            if (part != null) {
-                              _purchasePriceController.text =
-                                  part.purchasePrice.toString();
-                            }
-                          });
+                      return DropdownButtonFormField<Part>(
+                        isExpanded: true,
+                        initialValue: _selectedPart,
+                        decoration: const InputDecoration(
+                          labelText: 'Part',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: parts.map((part) {
+                          return DropdownMenuItem<Part>(
+                            value: part,
+                            child: Text(
+                              '${part.partNumber} - ${part.partName}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: _saving
+                            ? null
+                            : (part) {
+                                setState(() {
+                                  _selectedPart = part;
+
+                                  if (part != null) {
+                                    _purchasePriceController.text =
+                                        part.purchasePrice.toString();
+                                  }
+                                });
+                              },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Select a part';
+                          }
+
+                          return null;
                         },
-                  validator: (value) {
-                    if (value == null) {
-                      return 'Select a part';
-                    }
-
-                    return null;
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _quantityController,
-              decoration: const InputDecoration(
-                labelText: 'Quantity',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              validator: _validateQuantity,
-            ),
-            const SizedBox(height: 16),
-            if (_selectedPart != null) ...[
-              Card(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Catalog Worth: ₹${_selectedPart!.purchasePrice.toStringAsFixed(2)} per unit',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _quantityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Quantity',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    validator: _validateQuantity,
+                  ),
+                  const SizedBox(height: 16),
+                  if (_selectedPart != null) ...[
+                    Card(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Theme.of(context).colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Catalog Worth: ₹${_selectedPart!.purchasePrice.toStringAsFixed(2)} per unit',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  TextFormField(
+                    controller: _purchasePriceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Amount Paid (per unit)',
+                      helperText:
+                          'Enter the actual price you paid, not the catalog worth',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    validator: _validatePrice,
+                    onFieldSubmitted: (_) {
+                      if (!_saving) {
+                        _save();
+                      }
+                    },
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-            TextFormField(
-              controller: _purchasePriceController,
-              decoration: const InputDecoration(
-                labelText: 'Amount Paid (per unit)',
-                helperText:
-                    'Enter the actual price you paid, not the catalog worth',
-                prefixText: '₹ ',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.done,
-              validator: _validatePrice,
-              onFieldSubmitted: (_) {
-                if (!_saving) {
-                  _save();
-                }
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 50,
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(),
-                      )
-                    : const Text('Record Purchase'),
+                  const SizedBox(height: 24),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 50),
+                    child: FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: _saving
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(),
+                            )
+                          : const Text('Record Purchase'),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

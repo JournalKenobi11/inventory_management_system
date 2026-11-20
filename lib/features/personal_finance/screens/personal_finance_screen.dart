@@ -37,39 +37,41 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Set Opening Balance'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Configure the initial starting balance for your personal account.',
-                style: TextStyle(fontSize: 13),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Configure the initial starting balance for your personal account.',
+                  style: TextStyle(fontSize: 13),
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'Opening Balance (₹)',
-                  prefixText: '₹ ',
-                  border: OutlineInputBorder(),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: controller,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  decoration: const InputDecoration(
+                    labelText: 'Opening Balance (₹)',
+                    prefixText: '₹ ',
+                    border: OutlineInputBorder(),
+                  ),
+                  autofocus: true,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) {
+                      return 'Please enter an opening balance';
+                    }
+                    final parsed = double.tryParse(val.trim());
+                    if (parsed == null || parsed < 0) {
+                      return 'Please enter a valid amount (>= 0)';
+                    }
+                    return null;
+                  },
                 ),
-                autofocus: true,
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter an opening balance';
-                  }
-                  final parsed = double.tryParse(val.trim());
-                  if (parsed == null || parsed < 0) {
-                    return 'Please enter a valid amount (>= 0)';
-                  }
-                  return null;
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         actions: [
@@ -133,11 +135,15 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshAll,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: RefreshIndicator(
+              onRefresh: _refreshAll,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
             // 1. Current Balance Card
             Card(
               elevation: 2,
@@ -328,14 +334,17 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Text(
-                              '${summary.netChange >= 0 ? '+' : ''}₹${summary.netChange.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: summary.netChange >= 0
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
-                                fontSize: 14,
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${summary.netChange >= 0 ? '+' : ''}₹${summary.netChange.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: summary.netChange >= 0
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -443,6 +452,9 @@ class _PersonalFinanceScreenState extends ConsumerState<PersonalFinanceScreen> {
               ),
             ),
           ],
+        ),
+      ),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(

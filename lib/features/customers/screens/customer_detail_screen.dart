@@ -26,14 +26,18 @@ class CustomerDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Customer Details'),
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(customerBillingHistoryProvider(customer.id));
-          ref.invalidate(customerReminderProvider(customer.id));
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(customerBillingHistoryProvider(customer.id));
+                ref.invalidate(customerReminderProvider(customer.id));
+              },
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
             // 1. Customer Information Card
             _buildCustomerInfoCard(context, theme),
             const SizedBox(height: 16),
@@ -154,6 +158,9 @@ class CustomerDetailScreen extends ConsumerWidget {
               },
             ),
           ],
+        ),
+      ),
+          ),
         ),
       ),
     );
@@ -725,16 +732,21 @@ class CustomerDetailScreen extends ConsumerWidget {
     required String value,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 18, color: Colors.grey),
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 18, color: Colors.grey),
+        ),
         const SizedBox(width: 10),
-        SizedBox(
-          width: 110,
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 80, maxWidth: 120),
           child: Text(
             label,
             style: const TextStyle(fontSize: 13, color: Colors.grey),
           ),
         ),
+        const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,

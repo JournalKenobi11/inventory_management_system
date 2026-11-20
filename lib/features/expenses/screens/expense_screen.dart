@@ -63,13 +63,20 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _ManualExpensesTab(filter: _filter, onFilterChanged: _applyFilter),
-          const _SalaryExpensesTab(),
-          const _PurchaseExpensesTab(),
-        ],
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _ManualExpensesTab(filter: _filter, onFilterChanged: _applyFilter),
+                const _SalaryExpensesTab(),
+                const _PurchaseExpensesTab(),
+              ],
+            ),
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -280,7 +287,10 @@ class _SalaryExpensesTab extends ConsumerWidget {
                   Expanded(
                     child: FilledButton.tonalIcon(
                       icon: const Icon(Icons.payment_rounded, size: 16),
-                      label: const Text('Pay Salary'),
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Pay Salary'),
+                      ),
                       onPressed: () => _recordPayment(context, ref),
                     ),
                   ),
@@ -288,7 +298,10 @@ class _SalaryExpensesTab extends ConsumerWidget {
                   Expanded(
                     child: OutlinedButton.icon(
                       icon: const Icon(Icons.badge_outlined, size: 16),
-                      label: const Text('Staff Roster'),
+                      label: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text('Staff Roster'),
+                      ),
                       onPressed: () => _openStaffRoster(context, ref),
                     ),
                   ),

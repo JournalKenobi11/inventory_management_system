@@ -54,6 +54,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final useNavigationRail = screenWidth >= 720;
+
     return Scaffold(
       drawer: Drawer(
         child: ListView(
@@ -165,38 +168,95 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ],
         ),
       ),
-      body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.point_of_sale_outlined),
-            selectedIcon: Icon(Icons.point_of_sale_rounded),
-            label: 'Billing',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2_rounded),
-            label: 'Inventory',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.people_alt_outlined),
-            selectedIcon: Icon(Icons.people_alt_rounded),
-            label: 'Customers',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Reports',
-          ),
-        ],
-      ),
+      body: useNavigationRail
+          ? SafeArea(
+              child: Row(
+                children: [
+                  NavigationRail(
+                    selectedIndex: _currentIndex,
+                    onDestinationSelected: (idx) =>
+                        setState(() => _currentIndex = idx),
+                    labelType: NavigationRailLabelType.all,
+                    leading: Builder(
+                      builder: (ctx) => IconButton(
+                        icon: const Icon(Icons.menu),
+                        tooltip: 'Menu',
+                        onPressed: () => Scaffold.of(ctx).openDrawer(),
+                      ),
+                    ),
+                    destinations: const [
+                      NavigationRailDestination(
+                        icon: Icon(Icons.dashboard_outlined),
+                        selectedIcon: Icon(Icons.dashboard_rounded),
+                        label: Text('Dashboard'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.point_of_sale_outlined),
+                        selectedIcon: Icon(Icons.point_of_sale_rounded),
+                        label: Text('Billing'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.inventory_2_outlined),
+                        selectedIcon: Icon(Icons.inventory_2_rounded),
+                        label: Text('Inventory'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.people_alt_outlined),
+                        selectedIcon: Icon(Icons.people_alt_rounded),
+                        label: Text('Customers'),
+                      ),
+                      NavigationRailDestination(
+                        icon: Icon(Icons.analytics_outlined),
+                        selectedIcon: Icon(Icons.analytics_rounded),
+                        label: Text('Reports'),
+                      ),
+                    ],
+                  ),
+                  const VerticalDivider(thickness: 1, width: 1),
+                  Expanded(
+                    child: IndexedStack(
+                      index: _currentIndex,
+                      children: _screens,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : IndexedStack(index: _currentIndex, children: _screens),
+      bottomNavigationBar: useNavigationRail
+          ? null
+          : NavigationBar(
+              selectedIndex: _currentIndex,
+              onDestinationSelected: (idx) =>
+                  setState(() => _currentIndex = idx),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.dashboard_outlined),
+                  selectedIcon: Icon(Icons.dashboard_rounded),
+                  label: 'Dashboard',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.point_of_sale_outlined),
+                  selectedIcon: Icon(Icons.point_of_sale_rounded),
+                  label: 'Billing',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  selectedIcon: Icon(Icons.inventory_2_rounded),
+                  label: 'Inventory',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.people_alt_outlined),
+                  selectedIcon: Icon(Icons.people_alt_rounded),
+                  label: 'Customers',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.analytics_outlined),
+                  selectedIcon: Icon(Icons.analytics_rounded),
+                  label: 'Reports',
+                ),
+              ],
+            ),
     );
   }
 }
