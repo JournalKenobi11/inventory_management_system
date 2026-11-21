@@ -1,5 +1,7 @@
 
 
+import 'package:drift/drift.dart';
+
 import '../../../../database/app_database.dart' as db;
 import '../../models/service_part.dart';
 import '../interfaces/service_part_repository.dart';
@@ -21,6 +23,7 @@ class SqliteServicePartRepository
             partId: servicePart.partId,
             quantity: servicePart.quantity,
             priceEach: servicePart.priceEach,
+            purchasePriceEach: Value(servicePart.purchasePriceEach),
           ),
         );
 
@@ -55,6 +58,7 @@ class SqliteServicePartRepository
       partId: row.partId,
       quantity: row.quantity,
       priceEach: row.priceEach,
+      purchasePriceEach: row.purchasePriceEach,
     );
   }
 }

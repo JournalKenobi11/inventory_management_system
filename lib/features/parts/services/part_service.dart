@@ -1,12 +1,16 @@
 import '../../../core/errors/app_exceptions.dart';
+import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/id_generator.dart';
 import '../models/part.dart';
+import '../models/stock_movement.dart';
 import '../repositories/interfaces/part_repository.dart';
+import '../repositories/interfaces/stock_movement_repository.dart';
 
 class PartService {
   final PartRepository repository;
+  final StockMovementRepository? stockMovementRepository;
 
-  PartService(this.repository);
+  PartService(this.repository, [this.stockMovementRepository]);
 
   Future<Part> createPart({
     required String partNumber,
@@ -43,7 +47,24 @@ class PartService {
       lowStockThreshold: lowStockThreshold,
     );
 
-    return repository.create(part);
+    final created = await repository.create(part);
+
+    if (currentStock > 0 && stockMovementRepository != null) {
+      await stockMovementRepository!.create(
+        StockMovement(
+          id: IdGenerator.generate(),
+          partId: created.id,
+          quantityChange: currentStock,
+          balanceAfter: currentStock,
+          movementType: 'initial',
+          referenceId: null,
+          notes: 'Initial stock on creation',
+          createdDate: AppDateUtils.nowIso(),
+        ),
+      );
+    }
+
+    return created;
   }
 
   Future<Part?> getPartById(String id) {
@@ -60,6 +81,11 @@ class PartService {
 
   Future<List<Part>> getLowStockParts() {
     return repository.getLowStock();
+  }
+
+  Future<List<StockMovement>> getStockMovements(String partId) async {
+    if (stockMovementRepository == null) return [];
+    return stockMovementRepository!.getByPartId(partId);
   }
 
   Future<void> updatePart(Part part) async {
@@ -88,7 +114,13 @@ class PartService {
     );
   }
 
-  Future<void> adjustStock(String partId, int delta) async {
+  Future<void> adjustStock(
+    String partId,
+    int delta, {
+    String movementType = 'adjustment',
+    String? referenceId,
+    String? notes,
+  }) async {
     final part = await repository.getById(partId);
 
     if (part == null) {
@@ -102,6 +134,21 @@ class PartService {
     }
 
     await repository.adjustStock(partId, delta);
+
+    if (stockMovementRepository != null) {
+      await stockMovementRepository!.create(
+        StockMovement(
+          id: IdGenerator.generate(),
+          partId: partId,
+          quantityChange: delta,
+          balanceAfter: newStock,
+          movementType: movementType,
+          referenceId: referenceId,
+          notes: notes,
+          createdDate: AppDateUtils.nowIso(),
+        ),
+      );
+    }
   }
 
   Future<void> deletePart(String id) async {

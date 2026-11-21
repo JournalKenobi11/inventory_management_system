@@ -63,7 +63,22 @@ class ServiceParts extends Table {
   TextColumn get serviceId => text().references(ServiceJobs, #id)();
   TextColumn get partId => text().references(Parts, #id)();
   IntColumn get quantity => integer()();
-  RealColumn get priceEach => real()(); // snapshot at billing time
+  RealColumn get priceEach => real()(); // snapshot selling price at billing time
+  RealColumn get purchasePriceEach => real().withDefault(const Constant(0.0))(); // snapshot cost price at billing time
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class StockMovements extends Table {
+  TextColumn get id => text()();
+  TextColumn get partId => text().references(Parts, #id)();
+  IntColumn get quantityChange => integer()(); // +ve for restock/purchase, -ve for billing/sale
+  IntColumn get balanceAfter => integer()();
+  TextColumn get movementType => text()(); // 'purchase', 'bill', 'adjustment', 'bill_edit_restore'
+  TextColumn get referenceId => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  TextColumn get createdDate => text()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -173,6 +188,7 @@ class PersonalFinanceTransactions extends Table {
     Purchases,
     ServiceJobs,
     ServiceParts,
+    StockMovements,
     Invoices,
     Expenses,
     Employees,
@@ -188,7 +204,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e) : super();
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -228,6 +244,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 4) {
         await m.addColumn(serviceJobs, serviceJobs.serviceReport);
         await m.addColumn(serviceJobs, serviceJobs.labourEntries);
+      }
+      if (from < 5) {
+        await m.addColumn(serviceParts, serviceParts.purchasePriceEach);
+        await m.createTable(stockMovements);
       }
     },
   );

@@ -43,6 +43,18 @@ class ReportDateRangeNotifier extends Notifier<ReportDateRange> {
     state = ReportDateRange.singleDay(date);
   }
 
+  void setWeek(DateTime date) {
+    state = ReportDateRange.week(date);
+  }
+
+  void setMonth(DateTime date) {
+    state = ReportDateRange.month(date);
+  }
+
+  void setYear(DateTime date) {
+    state = ReportDateRange.year(date);
+  }
+
   void setCustomRange(DateTime start, DateTime end) {
     state = ReportDateRange(start: start, end: end);
   }

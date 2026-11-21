@@ -51,9 +51,10 @@ class CustomerQuickServiceSheet extends ConsumerWidget {
     final historyAsync =
         ref.watch(customerBillingHistoryProvider(customer.id));
 
-    return SafeArea(
-      top: false,
-      child: Center(
+    return RepaintBoundary(
+      child: SafeArea(
+        top: false,
+        child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
           child: Column(
@@ -287,8 +288,9 @@ class CustomerQuickServiceSheet extends ConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildKpiMetrics(
     BuildContext context,

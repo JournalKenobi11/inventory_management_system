@@ -14,6 +14,7 @@ class ServicePart {
   final String partId;
   final int quantity;
   final double priceEach;
+  final double purchasePriceEach;
 
   const ServicePart({
     required this.id,
@@ -21,9 +22,11 @@ class ServicePart {
     required this.partId,
     required this.quantity,
     required this.priceEach,
+    this.purchasePriceEach = 0.0,
   });
 
   double get lineTotal => quantity * priceEach;
+  double get costLineTotal => quantity * purchasePriceEach;
 
   ServicePart copyWith({
     String? id,
@@ -31,6 +34,7 @@ class ServicePart {
     String? partId,
     int? quantity,
     double? priceEach,
+    double? purchasePriceEach,
   }) {
     return ServicePart(
       id: id ?? this.id,
@@ -38,6 +42,7 @@ class ServicePart {
       partId: partId ?? this.partId,
       quantity: quantity ?? this.quantity,
       priceEach: priceEach ?? this.priceEach,
+      purchasePriceEach: purchasePriceEach ?? this.purchasePriceEach,
     );
   }
 
@@ -48,6 +53,7 @@ class ServicePart {
       'partId': partId,
       'quantity': quantity,
       'priceEach': priceEach,
+      'purchasePriceEach': purchasePriceEach,
     };
   }
 
@@ -58,6 +64,7 @@ class ServicePart {
       partId: json['partId'] as String,
       quantity: (json['quantity'] as num).toInt(),
       priceEach: (json['priceEach'] as num).toDouble(),
+      purchasePriceEach: (json['purchasePriceEach'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -70,7 +77,8 @@ class ServicePart {
             serviceId == other.serviceId &&
             partId == other.partId &&
             quantity == other.quantity &&
-            priceEach == other.priceEach;
+            priceEach == other.priceEach &&
+            purchasePriceEach == other.purchasePriceEach;
   }
 
   @override
@@ -81,6 +89,7 @@ class ServicePart {
       partId,
       quantity,
       priceEach,
+      purchasePriceEach,
     );
   }
 
@@ -91,7 +100,8 @@ class ServicePart {
         'serviceId: $serviceId, '
         'partId: $partId, '
         'quantity: $quantity, '
-        'priceEach: $priceEach'
+        'priceEach: $priceEach, '
+        'purchasePriceEach: $purchasePriceEach'
         ')';
   }
 }

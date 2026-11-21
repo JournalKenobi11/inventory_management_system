@@ -19,6 +19,12 @@ class ReportDateRange {
         end = _dateOnly(date),
         label = _formatDate(date);
 
+  ReportDateRange.week(DateTime date)
+      : start = _dateOnly(date.subtract(Duration(days: date.weekday - 1))),
+        end = _dateOnly(date.add(Duration(days: 7 - date.weekday))),
+        label =
+            '${_formatDate(_dateOnly(date.subtract(Duration(days: date.weekday - 1))))} - ${_formatDate(_dateOnly(date.add(Duration(days: 7 - date.weekday))))}';
+
   ReportDateRange.month(DateTime date)
       : start = DateTime(date.year, date.month, 1),
         end = DateTime(date.year, date.month + 1, 0),
@@ -28,6 +34,27 @@ class ReportDateRange {
       : start = DateTime(date.year, 1, 1),
         end = DateTime(date.year, 12, 31),
         label = 'Year ${date.year}';
+
+  bool get isSingleDay =>
+      start.year == end.year && start.month == end.month && start.day == end.day;
+
+  bool get isWeek =>
+      !isSingleDay && end.difference(start).inDays == 6;
+
+  bool get isMonth =>
+      !isSingleDay &&
+      start.day == 1 &&
+      end.day == DateTime(start.year, start.month + 1, 0).day &&
+      start.month == end.month &&
+      start.year == end.year;
+
+  bool get isYear =>
+      !isSingleDay &&
+      start.day == 1 &&
+      start.month == 1 &&
+      end.day == 31 &&
+      end.month == 12 &&
+      start.year == end.year;
 
   bool contains(DateTime date) {
     final value = _dateOnly(date);

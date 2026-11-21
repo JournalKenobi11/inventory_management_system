@@ -2,11 +2,13 @@ import '../models/expense.dart';
 import '../repositories/interfaces/expense_repository.dart';
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/utils/id_generator.dart';
+import '../../personal_finance/personal_finance.dart';
 
 class ExpenseService {
   final ExpenseRepository repository;
+  final PersonalFinanceService? personalFinanceService;
 
-  ExpenseService(this.repository);
+  ExpenseService(this.repository, [this.personalFinanceService]);
 
   Future<Expense> createExpense({
     required String category,
@@ -42,6 +44,20 @@ class ExpenseService {
     );
 
     await repository.create(expense);
+
+    if (isPersonal && personalFinanceService != null) {
+      try {
+        await personalFinanceService!.addTransaction(
+          type: 'debit',
+          amount: amount,
+          category: trimmedCategory,
+          note: trimmedNote,
+          payee: 'Personal Expense',
+        );
+      } catch (_) {
+        // Log/tolerate if personal finance posting fails so expense is preserved
+      }
+    }
 
     return expense;
   }

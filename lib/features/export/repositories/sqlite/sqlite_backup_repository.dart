@@ -39,6 +39,8 @@ class SqliteBackupRepository implements BackupRepository {
     final personalFinanceTransactionRows = await database
         .select(database.personalFinanceTransactions)
         .get();
+    final stockMovementRows =
+        await database.select(database.stockMovements).get();
 
     return {
       'customers': customersRows
@@ -99,6 +101,7 @@ class SqliteBackupRepository implements BackupRepository {
               'partId': sp.partId,
               'quantity': sp.quantity,
               'priceEach': sp.priceEach,
+              'purchasePriceEach': sp.purchasePriceEach,
             },
           )
           .toList(),
@@ -183,6 +186,20 @@ class SqliteBackupRepository implements BackupRepository {
             },
           )
           .toList(),
+      'stockMovements': stockMovementRows
+          .map(
+            (sm) => {
+              'id': sm.id,
+              'partId': sm.partId,
+              'quantityChange': sm.quantityChange,
+              'balanceAfter': sm.balanceAfter,
+              'movementType': sm.movementType,
+              'referenceId': sm.referenceId,
+              'notes': sm.notes,
+              'createdDate': sm.createdDate,
+            },
+          )
+          .toList(),
     };
   }
 
@@ -198,6 +215,7 @@ class SqliteBackupRepository implements BackupRepository {
       await database.delete(database.invoices).go();
       await database.delete(database.serviceJobs).go();
       await database.delete(database.purchases).go();
+      await database.delete(database.stockMovements).go();
       await database.delete(database.salaryPayments).go();
       await database.delete(database.attendances).go();
       await database.delete(database.expenses).go();
@@ -292,6 +310,9 @@ class SqliteBackupRepository implements BackupRepository {
                 partId: sp['partId'] as String,
                 quantity: (sp['quantity'] as num).toInt(),
                 priceEach: (sp['priceEach'] as num).toDouble(),
+                purchasePriceEach: Value(
+                  (sp['purchasePriceEach'] as num?)?.toDouble() ?? 0.0,
+                ),
               ),
             );
       }
@@ -455,6 +476,25 @@ class SqliteBackupRepository implements BackupRepository {
                 payee: Value(t['payee'] as String?),
                 note: Value(t['note'] as String?),
                 transactionDate: t['transactionDate'] as String,
+              ),
+            );
+      }
+
+      // 14. Insert stock movements
+      final rawStockMovements = tablesData['stockMovements'] ?? [];
+      for (final sm in rawStockMovements) {
+        await database
+            .into(database.stockMovements)
+            .insert(
+              StockMovementsCompanion.insert(
+                id: sm['id'] as String,
+                partId: sm['partId'] as String,
+                quantityChange: (sm['quantityChange'] as num).toInt(),
+                balanceAfter: (sm['balanceAfter'] as num).toInt(),
+                movementType: sm['movementType'] as String,
+                referenceId: Value(sm['referenceId'] as String?),
+                notes: Value(sm['notes'] as String?),
+                createdDate: sm['createdDate'] as String,
               ),
             );
       }

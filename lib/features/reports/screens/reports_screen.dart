@@ -17,11 +17,31 @@ class ReportsScreen extends ConsumerStatefulWidget {
 class _ReportsScreenState extends ConsumerState<ReportsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late DateTime _anchorDate;
+  String _periodMode = 'month';
+
+  static const _months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
+  static const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _anchorDate = DateTime.now();
+    _periodMode = 'month';
   }
 
   @override
@@ -30,49 +50,128 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     super.dispose();
   }
 
-  Future<void> _pickSingleDay() async {
-    final currentRange = ref.read(selectedReportRangeProvider);
+  void _changePeriodMode(String mode) {
+    setState(() {
+      _periodMode = mode;
+      switch (mode) {
+        case 'day':
+          ref.read(selectedReportRangeProvider.notifier).setSingleDay(_anchorDate);
+          break;
+        case 'week':
+          ref.read(selectedReportRangeProvider.notifier).setWeek(_anchorDate);
+          break;
+        case 'month':
+          ref.read(selectedReportRangeProvider.notifier).setMonth(_anchorDate);
+          break;
+        case 'year':
+          ref.read(selectedReportRangeProvider.notifier).setYear(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  void _goToPrevious() {
+    setState(() {
+      switch (_periodMode) {
+        case 'day':
+          _anchorDate = _anchorDate.subtract(const Duration(days: 1));
+          ref.read(selectedReportRangeProvider.notifier).setSingleDay(_anchorDate);
+          break;
+        case 'week':
+          _anchorDate = _anchorDate.subtract(const Duration(days: 7));
+          ref.read(selectedReportRangeProvider.notifier).setWeek(_anchorDate);
+          break;
+        case 'month':
+          _anchorDate = DateTime(_anchorDate.year, _anchorDate.month - 1, 1);
+          ref.read(selectedReportRangeProvider.notifier).setMonth(_anchorDate);
+          break;
+        case 'year':
+          _anchorDate = DateTime(_anchorDate.year - 1, 1, 1);
+          ref.read(selectedReportRangeProvider.notifier).setYear(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  void _goToNext() {
+    setState(() {
+      switch (_periodMode) {
+        case 'day':
+          _anchorDate = _anchorDate.add(const Duration(days: 1));
+          ref.read(selectedReportRangeProvider.notifier).setSingleDay(_anchorDate);
+          break;
+        case 'week':
+          _anchorDate = _anchorDate.add(const Duration(days: 7));
+          ref.read(selectedReportRangeProvider.notifier).setWeek(_anchorDate);
+          break;
+        case 'month':
+          _anchorDate = DateTime(_anchorDate.year, _anchorDate.month + 1, 1);
+          ref.read(selectedReportRangeProvider.notifier).setMonth(_anchorDate);
+          break;
+        case 'year':
+          _anchorDate = DateTime(_anchorDate.year + 1, 1, 1);
+          ref.read(selectedReportRangeProvider.notifier).setYear(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  void _jumpToToday() {
+    setState(() {
+      _anchorDate = DateTime.now();
+      if (_periodMode == 'custom') {
+        _periodMode = 'month';
+      }
+      switch (_periodMode) {
+        case 'day':
+          ref.read(selectedReportRangeProvider.notifier).setSingleDay(_anchorDate);
+          break;
+        case 'week':
+          ref.read(selectedReportRangeProvider.notifier).setWeek(_anchorDate);
+          break;
+        case 'month':
+          ref.read(selectedReportRangeProvider.notifier).setMonth(_anchorDate);
+          break;
+        case 'year':
+          ref.read(selectedReportRangeProvider.notifier).setYear(_anchorDate);
+          break;
+      }
+    });
+  }
+
+  Future<void> _pickCustomDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: currentRange.start,
+      initialDate: _anchorDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2035),
     );
 
-    if (picked != null) {
-      ref.read(selectedReportRangeProvider.notifier).setSingleDay(picked);
+    if (picked == null) {
+      return;
     }
-  }
 
-  Future<void> _showDateSelectionDialog() async {
-    final choice = await showModalBottomSheet<String>(
-      context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.event_outlined),
-              title: const Text('Single Day'),
-              subtitle: const Text('Pick a single date to analyze'),
-              onTap: () => Navigator.pop(ctx, 'single'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.date_range_outlined),
-              title: const Text('Date Range'),
-              subtitle: const Text('Pick a custom start and end date'),
-              onTap: () => Navigator.pop(ctx, 'range'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (choice == 'single') {
-      await _pickSingleDay();
-    } else if (choice == 'range') {
-      await _pickCustomDateRange();
-    }
+    setState(() {
+      _anchorDate = picked;
+      switch (_periodMode) {
+        case 'day':
+          ref.read(selectedReportRangeProvider.notifier).setSingleDay(picked);
+          break;
+        case 'week':
+          ref.read(selectedReportRangeProvider.notifier).setWeek(picked);
+          break;
+        case 'month':
+          ref.read(selectedReportRangeProvider.notifier).setMonth(picked);
+          break;
+        case 'year':
+          ref.read(selectedReportRangeProvider.notifier).setYear(picked);
+          break;
+        case 'custom':
+          _periodMode = 'day';
+          ref.read(selectedReportRangeProvider.notifier).setSingleDay(picked);
+          break;
+      }
+    });
   }
 
   Future<void> _pickCustomDateRange() async {
@@ -88,9 +187,87 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     );
 
     if (selected != null) {
+      setState(() {
+        _periodMode = 'custom';
+        _anchorDate = selected.start;
+      });
       ref
           .read(selectedReportRangeProvider.notifier)
           .setCustomRange(selected.start, selected.end);
+    }
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool _isCurrentPeriod() {
+    final now = DateTime.now();
+    switch (_periodMode) {
+      case 'day':
+        return _isSameDay(_anchorDate, now);
+      case 'week':
+        final currentWeek = ReportDateRange.week(now);
+        final selectedWeek = ReportDateRange.week(_anchorDate);
+        return currentWeek.start == selectedWeek.start &&
+            currentWeek.end == selectedWeek.end;
+      case 'month':
+        return _anchorDate.year == now.year && _anchorDate.month == now.month;
+      case 'year':
+        return _anchorDate.year == now.year;
+      default:
+        return false;
+    }
+  }
+
+  String _getPeriodTitle(ReportDateRange selectedRange) {
+    final now = DateTime.now();
+    switch (_periodMode) {
+      case 'day':
+        if (_isSameDay(_anchorDate, now)) {
+          return 'Today, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}';
+        }
+        final yesterday = now.subtract(const Duration(days: 1));
+        if (_isSameDay(_anchorDate, yesterday)) {
+          return 'Yesterday, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}';
+        }
+        final tomorrow = now.add(const Duration(days: 1));
+        if (_isSameDay(_anchorDate, tomorrow)) {
+          return 'Tomorrow, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}';
+        }
+        final dayName = _weekdays[_anchorDate.weekday - 1];
+        final yearStr =
+            _anchorDate.year != now.year ? ' ${_anchorDate.year}' : '';
+        return '$dayName, ${_anchorDate.day} ${_months[_anchorDate.month - 1]}$yearStr';
+
+      case 'week':
+        final currentWeek = ReportDateRange.week(now);
+        final isThisWeek = currentWeek.start == selectedRange.start &&
+            currentWeek.end == selectedRange.end;
+        final s = selectedRange.start;
+        final e = selectedRange.end;
+        final prefix = isThisWeek ? 'This Week: ' : '';
+        final yearStr = e.year != now.year ? ' ${e.year}' : '';
+        if (s.month == e.month) {
+          return '$prefix${s.day}–${e.day} ${_months[s.month - 1]}$yearStr';
+        } else {
+          return '$prefix${s.day} ${_months[s.month - 1]} – ${e.day} ${_months[e.month - 1]}$yearStr';
+        }
+
+      case 'month':
+        return '${_months[_anchorDate.month - 1]} ${_anchorDate.year}';
+
+      case 'year':
+        return 'Year ${_anchorDate.year}';
+
+      case 'custom':
+      default:
+        final s = selectedRange.start;
+        final e = selectedRange.end;
+        if (s == e) {
+          return '${s.day} ${_months[s.month - 1]} ${s.year}';
+        }
+        return '${s.day} ${_months[s.month - 1]} ${s.year} – ${e.day} ${_months[e.month - 1]} ${e.year}';
     }
   }
 
@@ -182,153 +359,164 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     );
   }
 
-  String _formatDateDisplay(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    final d = date.day.toString().padLeft(2, '0');
-    final m = months[date.month - 1];
-    return '$d $m ${date.year}';
-  }
-
   Widget _buildDateRangeSelector(ReportDateRange selectedRange) {
     final theme = Theme.of(context);
-    final startDateStr = _formatDateDisplay(selectedRange.start);
-    final endDateStr = _formatDateDisplay(selectedRange.end);
 
-    return Container(
+    return Card(
+      elevation: 0,
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
+      color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.primary.withAlpha(70),
-          width: 1.5,
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withAlpha(80),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Dedicated Date Display Header
-          InkWell(
-            onTap: _showDateSelectionDialog,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.calendar_month_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Column(
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment<String>(
+                    value: 'day',
+                    label: Text('Day'),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ACTIVE REPORT PERIOD',
-                          style: TextStyle(
-                            fontSize: 10,
-                            letterSpacing: 1.1,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          selectedRange.start == selectedRange.end
-                              ? startDateStr
-                              : '$startDateStr  —  $endDateStr',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        Text(
-                          selectedRange.label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+                  ButtonSegment<String>(
+                    value: 'week',
+                    label: Text('Week'),
                   ),
-                  Icon(
-                    Icons.edit_calendar_outlined,
-                    color: theme.colorScheme.primary,
-                    size: 20,
+                  ButtonSegment<String>(
+                    value: 'month',
+                    label: Text('Month'),
+                  ),
+                  ButtonSegment<String>(
+                    value: 'year',
+                    label: Text('Year'),
                   ),
                 ],
+                selected: _periodMode == 'custom' ? <String>{} : {_periodMode},
+                emptySelectionAllowed: true,
+                onSelectionChanged: (newSelection) {
+                  if (newSelection.isNotEmpty) {
+                    _changePeriodMode(newSelection.first);
+                  }
+                },
+                showSelectedIcon: false,
+                style: const ButtonStyle(
+                  visualDensity: VisualDensity.compact,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 4),
+                  ),
+                  textStyle: WidgetStatePropertyAll(
+                    TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  ),
+                ),
               ),
             ),
-          ),
-          const Divider(height: 1, thickness: 1),
-          // Filter presets row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 6,
+            const SizedBox(height: 8),
+            Row(
               children: [
-                ActionChip(
-                  avatar: const Icon(Icons.today_outlined, size: 16),
-                  label: const Text('This Month'),
-                  onPressed: () => ref
-                      .read(selectedReportRangeProvider.notifier)
-                      .setThisMonth(),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: const Icon(Icons.chevron_left_rounded, size: 28),
+                  onPressed: _periodMode == 'custom' ? null : _goToPrevious,
+                  tooltip: 'Previous $_periodMode',
                 ),
-                ActionChip(
-                  avatar: const Icon(Icons.date_range_outlined, size: 16),
-                  label: const Text('This Year'),
-                  onPressed: () => ref
-                      .read(selectedReportRangeProvider.notifier)
-                      .setThisYear(),
+                Expanded(
+                  child: InkWell(
+                    onTap: _periodMode == 'custom'
+                        ? _pickCustomDateRange
+                        : _pickCustomDate,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  _getPeriodTitle(selectedRange),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 14,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ],
+                          ),
+                          if (!_isCurrentPeriod()) ...[
+                            const SizedBox(height: 3),
+                            InkWell(
+                              onTap: _jumpToToday,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  'Jump to Today',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                ActionChip(
-                  avatar: const Icon(Icons.event_outlined, size: 16),
-                  label: const Text('Single Day'),
-                  onPressed: _pickSingleDay,
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                  onPressed: _periodMode == 'custom' ? null : _goToNext,
+                  tooltip: 'Next $_periodMode',
                 ),
-                ActionChip(
-                  avatar: const Icon(Icons.tune_rounded, size: 16),
-                  label: const Text('Date Range'),
+                const SizedBox(width: 4),
+                IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  icon: Icon(
+                    Icons.tune_rounded,
+                    size: 20,
+                    color: _periodMode == 'custom'
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: _pickCustomDateRange,
+                  tooltip: 'Custom Date Range',
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

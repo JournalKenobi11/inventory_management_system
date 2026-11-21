@@ -1,6 +1,7 @@
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/utils/date_utils.dart';
 import '../../../core/utils/id_generator.dart';
+import '../models/attendance.dart';
 import '../models/employee.dart';
 import '../models/salary_payment.dart';
 import '../repositories/interfaces/attendance_repository.dart';
@@ -275,6 +276,86 @@ class SalaryService {
     final owed = employee.monthlySalary - paidThisMonth;
 
     return owed < 0 ? 0 : owed;
+  }
+
+  Future<Map<String, dynamic>> getMonthlyAttendanceSummary(
+    String employeeId, {
+    DateTime? month,
+  }) async {
+    if (employeeId.trim().isEmpty) {
+      throw ValidationException('Employee ID cannot be empty.');
+    }
+
+    final targetMonth = month ?? DateTime.now();
+    final startStr =
+        '${targetMonth.year}-${targetMonth.month.toString().padLeft(2, '0')}-01';
+    final daysInMonth =
+        DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
+    final endStr =
+        '${targetMonth.year}-${targetMonth.month.toString().padLeft(2, '0')}-${daysInMonth.toString().padLeft(2, '0')}';
+
+    if (attendanceRepository == null) {
+      return {
+        'presentDays': 0,
+        'absentDays': 0,
+        'lateDays': 0,
+        'daysInMonth': daysInMonth,
+        'hasAttendance': false,
+        'suggestedSalary': null,
+      };
+    }
+
+    final records =
+        await attendanceRepository!.getByEmployeeAndDateRange(
+      employeeId: employeeId,
+      startDate: startStr,
+      endDate: endStr,
+    );
+
+    if (records.isEmpty) {
+      return {
+        'presentDays': 0,
+        'absentDays': 0,
+        'lateDays': 0,
+        'daysInMonth': daysInMonth,
+        'hasAttendance': false,
+        'suggestedSalary': null,
+      };
+    }
+
+    final employee = await employeeRepository.getById(employeeId);
+    final monthlySalary = employee?.monthlySalary ?? 0.0;
+
+    int present = 0;
+    int absent = 0;
+    int late = 0;
+
+    for (final r in records) {
+      if (r.status == AttendanceStatus.present) {
+        present++;
+        if (r.isLate()) late++;
+      } else {
+        absent++;
+      }
+    }
+
+    final recordedDays = present + absent;
+    double? suggestedSalary;
+    if (recordedDays > 0 && monthlySalary > 0) {
+      // Prorated daily salary: (monthlySalary / daysInMonth) * present
+      suggestedSalary =
+          (monthlySalary / daysInMonth) * present;
+    }
+
+    return {
+      'presentDays': present,
+      'absentDays': absent,
+      'lateDays': late,
+      'daysInMonth': daysInMonth,
+      'recordedDays': recordedDays,
+      'hasAttendance': true,
+      'suggestedSalary': suggestedSalary,
+    };
   }
 
   void _validateStatus(String status) {

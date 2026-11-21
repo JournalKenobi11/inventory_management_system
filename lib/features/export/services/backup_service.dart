@@ -13,7 +13,7 @@ class BackupService {
 
   BackupService(this.backupRepository);
 
-  static const int currentBackupVersion = 2;
+  static const int currentBackupVersion = 3;
   static const String appIdentifier = 'inventory_management_system';
 
   Future<BackupSummary> createBackup({String? customDirectoryPath}) async {

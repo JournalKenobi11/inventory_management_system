@@ -2,8 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
 import '../models/part.dart';
+import '../models/stock_movement.dart';
 import '../repositories/interfaces/part_repository.dart';
+import '../repositories/interfaces/stock_movement_repository.dart';
 import '../repositories/sqlite/sqlite_part_repository.dart';
+import '../repositories/sqlite/sqlite_stock_movement_repository.dart';
 import '../services/part_service.dart';
 
 final partRepositoryProvider = Provider<PartRepository>((ref) {
@@ -12,10 +15,24 @@ final partRepositoryProvider = Provider<PartRepository>((ref) {
   );
 });
 
+final stockMovementRepositoryProvider =
+    Provider<StockMovementRepository>((ref) {
+  return SqliteStockMovementRepository(
+    ref.read(appDatabaseProvider),
+  );
+});
+
 final partServiceProvider = Provider<PartService>((ref) {
   return PartService(
     ref.read(partRepositoryProvider),
+    ref.read(stockMovementRepositoryProvider),
   );
+});
+
+final partStockMovementsProvider =
+    FutureProvider.family<List<StockMovement>, String>((ref, partId) async {
+  final service = ref.watch(partServiceProvider);
+  return service.getStockMovements(partId);
 });
 
 final partsProvider =

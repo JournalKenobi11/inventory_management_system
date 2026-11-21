@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/di/providers.dart';
+import '../../personal_finance/personal_finance.dart';
 import '../models/expense.dart';
 import '../repositories/interfaces/expense_repository.dart';
 import '../repositories/sqlite/sqlite_expense_repository.dart';
@@ -15,6 +16,7 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
 final expenseServiceProvider = Provider<ExpenseService>((ref) {
   return ExpenseService(
     ref.read(expenseRepositoryProvider),
+    ref.read(personalFinanceServiceProvider),
   );
 });
 

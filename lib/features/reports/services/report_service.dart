@@ -195,7 +195,9 @@ class ReportService {
         for (final sp in serviceParts) {
           partsRevenue += sp.quantity * sp.priceEach;
           final part = partById[sp.partId];
-          final unitCost = part?.purchasePrice ?? 0.0;
+          final unitCost = sp.purchasePriceEach > 0
+              ? sp.purchasePriceEach
+              : (part?.purchasePrice ?? 0.0);
           cogs += sp.quantity * unitCost;
         }
       }

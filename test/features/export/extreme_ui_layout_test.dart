@@ -135,7 +135,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('ACTIVE REPORT PERIOD'), findsOneWidget);
+    expect(find.byType(SegmentedButton<String>), findsOneWidget);
+    expect(find.text('Month'), findsOneWidget);
   });
 
   testWidgets('EmployeeListScreen renders seeded extreme salary & period on 360x640 canvas without overflow', (tester) async {

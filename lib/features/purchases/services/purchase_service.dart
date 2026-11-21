@@ -58,6 +58,9 @@ class PurchaseService {
       await partService.adjustStock(
         partId,
         quantity,
+        movementType: 'purchase',
+        referenceId: createdPurchase.id,
+        notes: 'Stock purchase @ ₹${price.toStringAsFixed(2)}',
       );
 
       return createdPurchase;

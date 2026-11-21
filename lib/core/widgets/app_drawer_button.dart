@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// A standard Material hamburger button (☰) that opens the existing sidebar Drawer.
 class AppDrawerButton extends StatelessWidget {
@@ -8,7 +9,9 @@ class AppDrawerButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       icon: const Icon(Icons.menu),
+      tooltip: 'Menu',
       onPressed: () {
+        HapticFeedback.lightImpact();
         ScaffoldState? target;
         context.visitAncestorElements((element) {
           if (element is StatefulElement && element.state is ScaffoldState) {

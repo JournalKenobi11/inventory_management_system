@@ -156,6 +156,7 @@ class BillingService {
       //
       // priceEach is deliberately copied from the current selling
       // price. This is the historical price snapshot.
+      // purchasePriceEach is snapshotted for frozen COGS.
       // ------------------------------------------------------------
 
       double partsTotal = 0;
@@ -167,6 +168,7 @@ class BillingService {
           partId: resolved.part.id,
           quantity: resolved.input.quantity,
           priceEach: resolved.part.sellingPrice,
+          purchasePriceEach: resolved.part.purchasePrice,
         );
 
         await servicePartRepository.create(
@@ -179,25 +181,14 @@ class BillingService {
       }
 
       // ------------------------------------------------------------
-      // 5. Deduct stock
-      // ------------------------------------------------------------
-
-      for (final resolved in resolvedParts) {
-        await partService.adjustStock(
-          resolved.part.id,
-          -resolved.input.quantity,
-        );
-      }
-
-      // ------------------------------------------------------------
-      // 6. Calculate invoice total
+      // 5. Calculate invoice total
       // ------------------------------------------------------------
 
       final totalAmount =
           partsTotal + effectiveLabourCharge;
 
       // ------------------------------------------------------------
-      // 7. Generate sequential invoice number
+      // 6. Generate sequential invoice number
       // ------------------------------------------------------------
 
       final invoiceNumber =
@@ -213,6 +204,20 @@ class BillingService {
 
       final createdInvoice =
           await invoiceRepository.create(invoice);
+
+      // ------------------------------------------------------------
+      // 7. Deduct stock with movement ledger entry
+      // ------------------------------------------------------------
+
+      for (final resolved in resolvedParts) {
+        await partService.adjustStock(
+          resolved.part.id,
+          -resolved.input.quantity,
+          movementType: 'bill',
+          referenceId: createdInvoice.id,
+          notes: 'Invoice #$invoiceNumber',
+        );
+      }
 
       // ------------------------------------------------------------
       // 8. Link invoice back to service
@@ -289,7 +294,13 @@ class BillingService {
       final oldServiceParts =
           await servicePartRepository.getByServiceId(service.id);
       for (final sp in oldServiceParts) {
-        await partService.adjustStock(sp.partId, sp.quantity);
+        await partService.adjustStock(
+          sp.partId,
+          sp.quantity,
+          movementType: 'bill_edit_restore',
+          referenceId: invoice.id,
+          notes: 'Restored stock for bill edit (Invoice #${invoice.invoiceNumber})',
+        );
       }
 
       // 2. Validate all new parts against restored stock
@@ -315,6 +326,9 @@ class BillingService {
         await partService.adjustStock(
           resolved.part.id,
           -resolved.input.quantity,
+          movementType: 'bill',
+          referenceId: invoice.id,
+          notes: 'Invoice #${invoice.invoiceNumber}',
         );
       }
 
@@ -333,6 +347,7 @@ class BillingService {
           partId: resolved.part.id,
           quantity: resolved.input.quantity,
           priceEach: resolved.part.sellingPrice,
+          purchasePriceEach: resolved.part.purchasePrice,
         );
         await servicePartRepository.create(servicePart);
         partsTotal += lineTotal;

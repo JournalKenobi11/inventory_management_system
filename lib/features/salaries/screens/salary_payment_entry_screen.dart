@@ -25,6 +25,7 @@ class _SalaryPaymentEntryScreenState
   Employee? _selectedEmployee;
   double? _owedThisMonth;
   bool _loadingOwed = false;
+  Map<String, dynamic>? _attendanceSummary;
   String _status = 'paid';
   bool _saving = false;
 
@@ -37,6 +38,7 @@ class _SalaryPaymentEntryScreenState
       _amountController.text =
           _selectedEmployee!.monthlySalary.toStringAsFixed(2);
       _fetchOwed(_selectedEmployee!);
+      _fetchAttendance(_selectedEmployee!);
     }
   }
 
@@ -59,6 +61,19 @@ class _SalaryPaymentEntryScreenState
     }
   }
 
+  Future<void> _fetchAttendance(Employee emp) async {
+    try {
+      final summary = await ref
+          .read(salaryServiceProvider)
+          .getMonthlyAttendanceSummary(emp.id);
+      if (mounted) {
+        setState(() {
+          _attendanceSummary = summary;
+        });
+      }
+    } catch (_) {}
+  }
+
   void _onEmployeeChanged(Employee? emp) {
     if (emp == null) return;
     setState(() {
@@ -66,6 +81,7 @@ class _SalaryPaymentEntryScreenState
       _amountController.text = emp.monthlySalary.toStringAsFixed(2);
     });
     _fetchOwed(emp);
+    _fetchAttendance(emp);
   }
 
   @override
@@ -301,6 +317,43 @@ class _SalaryPaymentEntryScreenState
               ],
             ],
 
+            // Attendance Summary Synergy Card
+            if (_selectedEmployee != null &&
+                _attendanceSummary != null &&
+                _attendanceSummary!['hasAttendance'] == true) ...[
+              const SizedBox(height: 12),
+              Card(
+                elevation: 0,
+                color: theme.colorScheme.surfaceContainerHighest.withAlpha(120),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(color: theme.colorScheme.outlineVariant),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(Icons.event_available,
+                          size: 20, color: theme.colorScheme.primary),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Month Attendance: ${_attendanceSummary!['presentDays']} Present, '
+                          '${_attendanceSummary!['absentDays']} Absent'
+                          '${_attendanceSummary!['lateDays'] > 0 ? " (${_attendanceSummary!['lateDays']} Late)" : ""}',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 16),
 
             // Quick Fill Amount Chips
@@ -319,6 +372,22 @@ class _SalaryPaymentEntryScreenState
                         setState(() {
                           _amountController.text =
                               _owedThisMonth!.toStringAsFixed(2);
+                        });
+                      },
+                    ),
+                  if (_attendanceSummary?['suggestedSalary'] != null)
+                    ActionChip(
+                      avatar:
+                          const Icon(Icons.calculate_outlined, size: 16),
+                      label: Text(
+                        'Prorated (₹${(_attendanceSummary!['suggestedSalary'] as double).toStringAsFixed(0)})',
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _amountController.text =
+                              (_attendanceSummary!['suggestedSalary']
+                                      as double)
+                                  .toStringAsFixed(2);
                         });
                       },
                     ),
