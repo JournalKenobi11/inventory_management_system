@@ -1373,6 +1373,50 @@ class $ServiceJobsTable extends ServiceJobs
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('completed'),
+  );
+  static const VerificationMeta _advanceAmountMeta = const VerificationMeta(
+    'advanceAmount',
+  );
+  @override
+  late final GeneratedColumn<double> advanceAmount = GeneratedColumn<double>(
+    'advance_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _advancePaymentModeMeta =
+      const VerificationMeta('advancePaymentMode');
+  @override
+  late final GeneratedColumn<String> advancePaymentMode =
+      GeneratedColumn<String>(
+        'advance_payment_mode',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _advanceNotesMeta = const VerificationMeta(
+    'advanceNotes',
+  );
+  @override
+  late final GeneratedColumn<String> advanceNotes = GeneratedColumn<String>(
+    'advance_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1383,6 +1427,10 @@ class $ServiceJobsTable extends ServiceJobs
     invoiceId,
     serviceReport,
     labourEntries,
+    status,
+    advanceAmount,
+    advancePaymentMode,
+    advanceNotes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1462,6 +1510,39 @@ class $ServiceJobsTable extends ServiceJobs
         ),
       );
     }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('advance_amount')) {
+      context.handle(
+        _advanceAmountMeta,
+        advanceAmount.isAcceptableOrUnknown(
+          data['advance_amount']!,
+          _advanceAmountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('advance_payment_mode')) {
+      context.handle(
+        _advancePaymentModeMeta,
+        advancePaymentMode.isAcceptableOrUnknown(
+          data['advance_payment_mode']!,
+          _advancePaymentModeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('advance_notes')) {
+      context.handle(
+        _advanceNotesMeta,
+        advanceNotes.isAcceptableOrUnknown(
+          data['advance_notes']!,
+          _advanceNotesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1503,6 +1584,22 @@ class $ServiceJobsTable extends ServiceJobs
         DriftSqlType.string,
         data['${effectivePrefix}labour_entries'],
       ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      advanceAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}advance_amount'],
+      )!,
+      advancePaymentMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}advance_payment_mode'],
+      ),
+      advanceNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}advance_notes'],
+      ),
     );
   }
 
@@ -1521,6 +1618,10 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
   final String? invoiceId;
   final String? serviceReport;
   final String? labourEntries;
+  final String status;
+  final double advanceAmount;
+  final String? advancePaymentMode;
+  final String? advanceNotes;
   const ServiceJob({
     required this.id,
     required this.customerId,
@@ -1530,6 +1631,10 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     this.invoiceId,
     this.serviceReport,
     this.labourEntries,
+    required this.status,
+    required this.advanceAmount,
+    this.advancePaymentMode,
+    this.advanceNotes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1549,6 +1654,14 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     }
     if (!nullToAbsent || labourEntries != null) {
       map['labour_entries'] = Variable<String>(labourEntries);
+    }
+    map['status'] = Variable<String>(status);
+    map['advance_amount'] = Variable<double>(advanceAmount);
+    if (!nullToAbsent || advancePaymentMode != null) {
+      map['advance_payment_mode'] = Variable<String>(advancePaymentMode);
+    }
+    if (!nullToAbsent || advanceNotes != null) {
+      map['advance_notes'] = Variable<String>(advanceNotes);
     }
     return map;
   }
@@ -1571,6 +1684,14 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       labourEntries: labourEntries == null && nullToAbsent
           ? const Value.absent()
           : Value(labourEntries),
+      status: Value(status),
+      advanceAmount: Value(advanceAmount),
+      advancePaymentMode: advancePaymentMode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(advancePaymentMode),
+      advanceNotes: advanceNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(advanceNotes),
     );
   }
 
@@ -1588,6 +1709,12 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       invoiceId: serializer.fromJson<String?>(json['invoiceId']),
       serviceReport: serializer.fromJson<String?>(json['serviceReport']),
       labourEntries: serializer.fromJson<String?>(json['labourEntries']),
+      status: serializer.fromJson<String>(json['status']),
+      advanceAmount: serializer.fromJson<double>(json['advanceAmount']),
+      advancePaymentMode: serializer.fromJson<String?>(
+        json['advancePaymentMode'],
+      ),
+      advanceNotes: serializer.fromJson<String?>(json['advanceNotes']),
     );
   }
   @override
@@ -1602,6 +1729,10 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       'invoiceId': serializer.toJson<String?>(invoiceId),
       'serviceReport': serializer.toJson<String?>(serviceReport),
       'labourEntries': serializer.toJson<String?>(labourEntries),
+      'status': serializer.toJson<String>(status),
+      'advanceAmount': serializer.toJson<double>(advanceAmount),
+      'advancePaymentMode': serializer.toJson<String?>(advancePaymentMode),
+      'advanceNotes': serializer.toJson<String?>(advanceNotes),
     };
   }
 
@@ -1614,6 +1745,10 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     Value<String?> invoiceId = const Value.absent(),
     Value<String?> serviceReport = const Value.absent(),
     Value<String?> labourEntries = const Value.absent(),
+    String? status,
+    double? advanceAmount,
+    Value<String?> advancePaymentMode = const Value.absent(),
+    Value<String?> advanceNotes = const Value.absent(),
   }) => ServiceJob(
     id: id ?? this.id,
     customerId: customerId ?? this.customerId,
@@ -1627,6 +1762,12 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     labourEntries: labourEntries.present
         ? labourEntries.value
         : this.labourEntries,
+    status: status ?? this.status,
+    advanceAmount: advanceAmount ?? this.advanceAmount,
+    advancePaymentMode: advancePaymentMode.present
+        ? advancePaymentMode.value
+        : this.advancePaymentMode,
+    advanceNotes: advanceNotes.present ? advanceNotes.value : this.advanceNotes,
   );
   ServiceJob copyWithCompanion(ServiceJobsCompanion data) {
     return ServiceJob(
@@ -1650,6 +1791,16 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
       labourEntries: data.labourEntries.present
           ? data.labourEntries.value
           : this.labourEntries,
+      status: data.status.present ? data.status.value : this.status,
+      advanceAmount: data.advanceAmount.present
+          ? data.advanceAmount.value
+          : this.advanceAmount,
+      advancePaymentMode: data.advancePaymentMode.present
+          ? data.advancePaymentMode.value
+          : this.advancePaymentMode,
+      advanceNotes: data.advanceNotes.present
+          ? data.advanceNotes.value
+          : this.advanceNotes,
     );
   }
 
@@ -1663,7 +1814,11 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
           ..write('serviceDate: $serviceDate, ')
           ..write('invoiceId: $invoiceId, ')
           ..write('serviceReport: $serviceReport, ')
-          ..write('labourEntries: $labourEntries')
+          ..write('labourEntries: $labourEntries, ')
+          ..write('status: $status, ')
+          ..write('advanceAmount: $advanceAmount, ')
+          ..write('advancePaymentMode: $advancePaymentMode, ')
+          ..write('advanceNotes: $advanceNotes')
           ..write(')'))
         .toString();
   }
@@ -1678,6 +1833,10 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
     invoiceId,
     serviceReport,
     labourEntries,
+    status,
+    advanceAmount,
+    advancePaymentMode,
+    advanceNotes,
   );
   @override
   bool operator ==(Object other) =>
@@ -1690,7 +1849,11 @@ class ServiceJob extends DataClass implements Insertable<ServiceJob> {
           other.serviceDate == this.serviceDate &&
           other.invoiceId == this.invoiceId &&
           other.serviceReport == this.serviceReport &&
-          other.labourEntries == this.labourEntries);
+          other.labourEntries == this.labourEntries &&
+          other.status == this.status &&
+          other.advanceAmount == this.advanceAmount &&
+          other.advancePaymentMode == this.advancePaymentMode &&
+          other.advanceNotes == this.advanceNotes);
 }
 
 class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
@@ -1702,6 +1865,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
   final Value<String?> invoiceId;
   final Value<String?> serviceReport;
   final Value<String?> labourEntries;
+  final Value<String> status;
+  final Value<double> advanceAmount;
+  final Value<String?> advancePaymentMode;
+  final Value<String?> advanceNotes;
   final Value<int> rowid;
   const ServiceJobsCompanion({
     this.id = const Value.absent(),
@@ -1712,6 +1879,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     this.invoiceId = const Value.absent(),
     this.serviceReport = const Value.absent(),
     this.labourEntries = const Value.absent(),
+    this.status = const Value.absent(),
+    this.advanceAmount = const Value.absent(),
+    this.advancePaymentMode = const Value.absent(),
+    this.advanceNotes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ServiceJobsCompanion.insert({
@@ -1723,6 +1894,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     this.invoiceId = const Value.absent(),
     this.serviceReport = const Value.absent(),
     this.labourEntries = const Value.absent(),
+    this.status = const Value.absent(),
+    this.advanceAmount = const Value.absent(),
+    this.advancePaymentMode = const Value.absent(),
+    this.advanceNotes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        customerId = Value(customerId),
@@ -1736,6 +1911,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     Expression<String>? invoiceId,
     Expression<String>? serviceReport,
     Expression<String>? labourEntries,
+    Expression<String>? status,
+    Expression<double>? advanceAmount,
+    Expression<String>? advancePaymentMode,
+    Expression<String>? advanceNotes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1747,6 +1926,11 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
       if (invoiceId != null) 'invoice_id': invoiceId,
       if (serviceReport != null) 'service_report': serviceReport,
       if (labourEntries != null) 'labour_entries': labourEntries,
+      if (status != null) 'status': status,
+      if (advanceAmount != null) 'advance_amount': advanceAmount,
+      if (advancePaymentMode != null)
+        'advance_payment_mode': advancePaymentMode,
+      if (advanceNotes != null) 'advance_notes': advanceNotes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1760,6 +1944,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     Value<String?>? invoiceId,
     Value<String?>? serviceReport,
     Value<String?>? labourEntries,
+    Value<String>? status,
+    Value<double>? advanceAmount,
+    Value<String?>? advancePaymentMode,
+    Value<String?>? advanceNotes,
     Value<int>? rowid,
   }) {
     return ServiceJobsCompanion(
@@ -1771,6 +1959,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
       invoiceId: invoiceId ?? this.invoiceId,
       serviceReport: serviceReport ?? this.serviceReport,
       labourEntries: labourEntries ?? this.labourEntries,
+      status: status ?? this.status,
+      advanceAmount: advanceAmount ?? this.advanceAmount,
+      advancePaymentMode: advancePaymentMode ?? this.advancePaymentMode,
+      advanceNotes: advanceNotes ?? this.advanceNotes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1802,6 +1994,18 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
     if (labourEntries.present) {
       map['labour_entries'] = Variable<String>(labourEntries.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (advanceAmount.present) {
+      map['advance_amount'] = Variable<double>(advanceAmount.value);
+    }
+    if (advancePaymentMode.present) {
+      map['advance_payment_mode'] = Variable<String>(advancePaymentMode.value);
+    }
+    if (advanceNotes.present) {
+      map['advance_notes'] = Variable<String>(advanceNotes.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1819,6 +2023,10 @@ class ServiceJobsCompanion extends UpdateCompanion<ServiceJob> {
           ..write('invoiceId: $invoiceId, ')
           ..write('serviceReport: $serviceReport, ')
           ..write('labourEntries: $labourEntries, ')
+          ..write('status: $status, ')
+          ..write('advanceAmount: $advanceAmount, ')
+          ..write('advancePaymentMode: $advancePaymentMode, ')
+          ..write('advanceNotes: $advanceNotes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2849,6 +3057,18 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _advanceAmountMeta = const VerificationMeta(
+    'advanceAmount',
+  );
+  @override
+  late final GeneratedColumn<double> advanceAmount = GeneratedColumn<double>(
+    'advance_amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2856,6 +3076,7 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     serviceId,
     totalAmount,
     createdDate,
+    advanceAmount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2915,6 +3136,15 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
     } else if (isInserting) {
       context.missing(_createdDateMeta);
     }
+    if (data.containsKey('advance_amount')) {
+      context.handle(
+        _advanceAmountMeta,
+        advanceAmount.isAcceptableOrUnknown(
+          data['advance_amount']!,
+          _advanceAmountMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2944,6 +3174,10 @@ class $InvoicesTable extends Invoices with TableInfo<$InvoicesTable, Invoice> {
         DriftSqlType.string,
         data['${effectivePrefix}created_date'],
       )!,
+      advanceAmount: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}advance_amount'],
+      )!,
     );
   }
 
@@ -2959,12 +3193,14 @@ class Invoice extends DataClass implements Insertable<Invoice> {
   final String serviceId;
   final double totalAmount;
   final String createdDate;
+  final double advanceAmount;
   const Invoice({
     required this.id,
     required this.invoiceNumber,
     required this.serviceId,
     required this.totalAmount,
     required this.createdDate,
+    required this.advanceAmount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2974,6 +3210,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     map['service_id'] = Variable<String>(serviceId);
     map['total_amount'] = Variable<double>(totalAmount);
     map['created_date'] = Variable<String>(createdDate);
+    map['advance_amount'] = Variable<double>(advanceAmount);
     return map;
   }
 
@@ -2984,6 +3221,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       serviceId: Value(serviceId),
       totalAmount: Value(totalAmount),
       createdDate: Value(createdDate),
+      advanceAmount: Value(advanceAmount),
     );
   }
 
@@ -2998,6 +3236,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       serviceId: serializer.fromJson<String>(json['serviceId']),
       totalAmount: serializer.fromJson<double>(json['totalAmount']),
       createdDate: serializer.fromJson<String>(json['createdDate']),
+      advanceAmount: serializer.fromJson<double>(json['advanceAmount']),
     );
   }
   @override
@@ -3009,6 +3248,7 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       'serviceId': serializer.toJson<String>(serviceId),
       'totalAmount': serializer.toJson<double>(totalAmount),
       'createdDate': serializer.toJson<String>(createdDate),
+      'advanceAmount': serializer.toJson<double>(advanceAmount),
     };
   }
 
@@ -3018,12 +3258,14 @@ class Invoice extends DataClass implements Insertable<Invoice> {
     String? serviceId,
     double? totalAmount,
     String? createdDate,
+    double? advanceAmount,
   }) => Invoice(
     id: id ?? this.id,
     invoiceNumber: invoiceNumber ?? this.invoiceNumber,
     serviceId: serviceId ?? this.serviceId,
     totalAmount: totalAmount ?? this.totalAmount,
     createdDate: createdDate ?? this.createdDate,
+    advanceAmount: advanceAmount ?? this.advanceAmount,
   );
   Invoice copyWithCompanion(InvoicesCompanion data) {
     return Invoice(
@@ -3038,6 +3280,9 @@ class Invoice extends DataClass implements Insertable<Invoice> {
       createdDate: data.createdDate.present
           ? data.createdDate.value
           : this.createdDate,
+      advanceAmount: data.advanceAmount.present
+          ? data.advanceAmount.value
+          : this.advanceAmount,
     );
   }
 
@@ -3048,14 +3293,21 @@ class Invoice extends DataClass implements Insertable<Invoice> {
           ..write('invoiceNumber: $invoiceNumber, ')
           ..write('serviceId: $serviceId, ')
           ..write('totalAmount: $totalAmount, ')
-          ..write('createdDate: $createdDate')
+          ..write('createdDate: $createdDate, ')
+          ..write('advanceAmount: $advanceAmount')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, invoiceNumber, serviceId, totalAmount, createdDate);
+  int get hashCode => Object.hash(
+    id,
+    invoiceNumber,
+    serviceId,
+    totalAmount,
+    createdDate,
+    advanceAmount,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3064,7 +3316,8 @@ class Invoice extends DataClass implements Insertable<Invoice> {
           other.invoiceNumber == this.invoiceNumber &&
           other.serviceId == this.serviceId &&
           other.totalAmount == this.totalAmount &&
-          other.createdDate == this.createdDate);
+          other.createdDate == this.createdDate &&
+          other.advanceAmount == this.advanceAmount);
 }
 
 class InvoicesCompanion extends UpdateCompanion<Invoice> {
@@ -3073,6 +3326,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
   final Value<String> serviceId;
   final Value<double> totalAmount;
   final Value<String> createdDate;
+  final Value<double> advanceAmount;
   final Value<int> rowid;
   const InvoicesCompanion({
     this.id = const Value.absent(),
@@ -3080,6 +3334,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     this.serviceId = const Value.absent(),
     this.totalAmount = const Value.absent(),
     this.createdDate = const Value.absent(),
+    this.advanceAmount = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   InvoicesCompanion.insert({
@@ -3088,6 +3343,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     required String serviceId,
     required double totalAmount,
     required String createdDate,
+    this.advanceAmount = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        invoiceNumber = Value(invoiceNumber),
@@ -3100,6 +3356,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     Expression<String>? serviceId,
     Expression<double>? totalAmount,
     Expression<String>? createdDate,
+    Expression<double>? advanceAmount,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -3108,6 +3365,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
       if (serviceId != null) 'service_id': serviceId,
       if (totalAmount != null) 'total_amount': totalAmount,
       if (createdDate != null) 'created_date': createdDate,
+      if (advanceAmount != null) 'advance_amount': advanceAmount,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3118,6 +3376,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     Value<String>? serviceId,
     Value<double>? totalAmount,
     Value<String>? createdDate,
+    Value<double>? advanceAmount,
     Value<int>? rowid,
   }) {
     return InvoicesCompanion(
@@ -3126,6 +3385,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
       serviceId: serviceId ?? this.serviceId,
       totalAmount: totalAmount ?? this.totalAmount,
       createdDate: createdDate ?? this.createdDate,
+      advanceAmount: advanceAmount ?? this.advanceAmount,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3148,6 +3408,9 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
     if (createdDate.present) {
       map['created_date'] = Variable<String>(createdDate.value);
     }
+    if (advanceAmount.present) {
+      map['advance_amount'] = Variable<double>(advanceAmount.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3162,6 +3425,7 @@ class InvoicesCompanion extends UpdateCompanion<Invoice> {
           ..write('serviceId: $serviceId, ')
           ..write('totalAmount: $totalAmount, ')
           ..write('createdDate: $createdDate, ')
+          ..write('advanceAmount: $advanceAmount, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6865,6 +7129,10 @@ typedef $$ServiceJobsTableCreateCompanionBuilder =
       Value<String?> invoiceId,
       Value<String?> serviceReport,
       Value<String?> labourEntries,
+      Value<String> status,
+      Value<double> advanceAmount,
+      Value<String?> advancePaymentMode,
+      Value<String?> advanceNotes,
       Value<int> rowid,
     });
 typedef $$ServiceJobsTableUpdateCompanionBuilder =
@@ -6877,6 +7145,10 @@ typedef $$ServiceJobsTableUpdateCompanionBuilder =
       Value<String?> invoiceId,
       Value<String?> serviceReport,
       Value<String?> labourEntries,
+      Value<String> status,
+      Value<double> advanceAmount,
+      Value<String?> advancePaymentMode,
+      Value<String?> advanceNotes,
       Value<int> rowid,
     });
 
@@ -6980,6 +7252,26 @@ class $$ServiceJobsTableFilterComposer
 
   ColumnFilters<String> get labourEntries => $composableBuilder(
     column: $table.labourEntries,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get advanceAmount => $composableBuilder(
+    column: $table.advanceAmount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get advancePaymentMode => $composableBuilder(
+    column: $table.advancePaymentMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get advanceNotes => $composableBuilder(
+    column: $table.advanceNotes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7101,6 +7393,26 @@ class $$ServiceJobsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get advanceAmount => $composableBuilder(
+    column: $table.advanceAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get advancePaymentMode => $composableBuilder(
+    column: $table.advancePaymentMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get advanceNotes => $composableBuilder(
+    column: $table.advanceNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CustomersTableOrderingComposer get customerId {
     final $$CustomersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -7162,6 +7474,24 @@ class $$ServiceJobsTableAnnotationComposer
 
   GeneratedColumn<String> get labourEntries => $composableBuilder(
     column: $table.labourEntries,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<double> get advanceAmount => $composableBuilder(
+    column: $table.advanceAmount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get advancePaymentMode => $composableBuilder(
+    column: $table.advancePaymentMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get advanceNotes => $composableBuilder(
+    column: $table.advanceNotes,
     builder: (column) => column,
   );
 
@@ -7279,6 +7609,10 @@ class $$ServiceJobsTableTableManager
                 Value<String?> invoiceId = const Value.absent(),
                 Value<String?> serviceReport = const Value.absent(),
                 Value<String?> labourEntries = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<double> advanceAmount = const Value.absent(),
+                Value<String?> advancePaymentMode = const Value.absent(),
+                Value<String?> advanceNotes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServiceJobsCompanion(
                 id: id,
@@ -7289,6 +7623,10 @@ class $$ServiceJobsTableTableManager
                 invoiceId: invoiceId,
                 serviceReport: serviceReport,
                 labourEntries: labourEntries,
+                status: status,
+                advanceAmount: advanceAmount,
+                advancePaymentMode: advancePaymentMode,
+                advanceNotes: advanceNotes,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -7301,6 +7639,10 @@ class $$ServiceJobsTableTableManager
                 Value<String?> invoiceId = const Value.absent(),
                 Value<String?> serviceReport = const Value.absent(),
                 Value<String?> labourEntries = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<double> advanceAmount = const Value.absent(),
+                Value<String?> advancePaymentMode = const Value.absent(),
+                Value<String?> advanceNotes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ServiceJobsCompanion.insert(
                 id: id,
@@ -7311,6 +7653,10 @@ class $$ServiceJobsTableTableManager
                 invoiceId: invoiceId,
                 serviceReport: serviceReport,
                 labourEntries: labourEntries,
+                status: status,
+                advanceAmount: advanceAmount,
+                advancePaymentMode: advancePaymentMode,
+                advanceNotes: advanceNotes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -8259,6 +8605,7 @@ typedef $$InvoicesTableCreateCompanionBuilder =
       required String serviceId,
       required double totalAmount,
       required String createdDate,
+      Value<double> advanceAmount,
       Value<int> rowid,
     });
 typedef $$InvoicesTableUpdateCompanionBuilder =
@@ -8268,6 +8615,7 @@ typedef $$InvoicesTableUpdateCompanionBuilder =
       Value<String> serviceId,
       Value<double> totalAmount,
       Value<String> createdDate,
+      Value<double> advanceAmount,
       Value<int> rowid,
     });
 
@@ -8319,6 +8667,11 @@ class $$InvoicesTableFilterComposer
 
   ColumnFilters<String> get createdDate => $composableBuilder(
     column: $table.createdDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get advanceAmount => $composableBuilder(
+    column: $table.advanceAmount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8375,6 +8728,11 @@ class $$InvoicesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get advanceAmount => $composableBuilder(
+    column: $table.advanceAmount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ServiceJobsTableOrderingComposer get serviceId {
     final $$ServiceJobsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8423,6 +8781,11 @@ class $$InvoicesTableAnnotationComposer
 
   GeneratedColumn<String> get createdDate => $composableBuilder(
     column: $table.createdDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get advanceAmount => $composableBuilder(
+    column: $table.advanceAmount,
     builder: (column) => column,
   );
 
@@ -8483,6 +8846,7 @@ class $$InvoicesTableTableManager
                 Value<String> serviceId = const Value.absent(),
                 Value<double> totalAmount = const Value.absent(),
                 Value<String> createdDate = const Value.absent(),
+                Value<double> advanceAmount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InvoicesCompanion(
                 id: id,
@@ -8490,6 +8854,7 @@ class $$InvoicesTableTableManager
                 serviceId: serviceId,
                 totalAmount: totalAmount,
                 createdDate: createdDate,
+                advanceAmount: advanceAmount,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8499,6 +8864,7 @@ class $$InvoicesTableTableManager
                 required String serviceId,
                 required double totalAmount,
                 required String createdDate,
+                Value<double> advanceAmount = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InvoicesCompanion.insert(
                 id: id,
@@ -8506,6 +8872,7 @@ class $$InvoicesTableTableManager
                 serviceId: serviceId,
                 totalAmount: totalAmount,
                 createdDate: createdDate,
+                advanceAmount: advanceAmount,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

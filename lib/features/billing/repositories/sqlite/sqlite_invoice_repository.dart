@@ -19,6 +19,7 @@ class SqliteInvoiceRepository
             serviceId: invoice.serviceId,
             totalAmount: invoice.totalAmount,
             createdDate: invoice.createdDate,
+            advanceAmount: Value(invoice.advanceAmount),
           ),
         );
 
@@ -32,6 +33,7 @@ class SqliteInvoiceRepository
         .write(
       db.InvoicesCompanion(
         totalAmount: Value(invoice.totalAmount),
+        advanceAmount: Value(invoice.advanceAmount),
       ),
     );
     return invoice;
@@ -126,6 +128,7 @@ class SqliteInvoiceRepository
       serviceId: row.serviceId,
       totalAmount: row.totalAmount,
       createdDate: row.createdDate,
+      advanceAmount: row.advanceAmount,
     );
   }
 }

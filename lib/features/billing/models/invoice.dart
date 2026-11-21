@@ -4,6 +4,7 @@ class Invoice {
   final String serviceId;
   final double totalAmount;
   final String createdDate;
+  final double advanceAmount;
 
   const Invoice({
     required this.id,
@@ -11,7 +12,11 @@ class Invoice {
     required this.serviceId,
     required this.totalAmount,
     required this.createdDate,
+    this.advanceAmount = 0.0,
   });
+
+  double get balanceDue =>
+      (totalAmount - advanceAmount).clamp(0.0, double.infinity);
 
   Invoice copyWith({
     String? id,
@@ -19,6 +24,7 @@ class Invoice {
     String? serviceId,
     double? totalAmount,
     String? createdDate,
+    double? advanceAmount,
   }) {
     return Invoice(
       id: id ?? this.id,
@@ -26,6 +32,7 @@ class Invoice {
       serviceId: serviceId ?? this.serviceId,
       totalAmount: totalAmount ?? this.totalAmount,
       createdDate: createdDate ?? this.createdDate,
+      advanceAmount: advanceAmount ?? this.advanceAmount,
     );
   }
 
@@ -36,6 +43,7 @@ class Invoice {
       'serviceId': serviceId,
       'totalAmount': totalAmount,
       'createdDate': createdDate,
+      'advanceAmount': advanceAmount,
     };
   }
 
@@ -46,6 +54,7 @@ class Invoice {
       serviceId: json['serviceId'] as String,
       totalAmount: (json['totalAmount'] as num).toDouble(),
       createdDate: json['createdDate'] as String,
+      advanceAmount: (json['advanceAmount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -58,7 +67,8 @@ class Invoice {
             invoiceNumber == other.invoiceNumber &&
             serviceId == other.serviceId &&
             totalAmount == other.totalAmount &&
-            createdDate == other.createdDate;
+            createdDate == other.createdDate &&
+            advanceAmount == other.advanceAmount;
   }
 
   @override
@@ -69,6 +79,7 @@ class Invoice {
       serviceId,
       totalAmount,
       createdDate,
+      advanceAmount,
     );
   }
 
@@ -79,7 +90,8 @@ class Invoice {
         'invoiceNumber: $invoiceNumber, '
         'serviceId: $serviceId, '
         'totalAmount: $totalAmount, '
-        'createdDate: $createdDate'
+        'createdDate: $createdDate, '
+        'advanceAmount: $advanceAmount'
         ')';
   }
 }

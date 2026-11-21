@@ -10,6 +10,10 @@ class Service {
   final String? invoiceId;
   final String? serviceReport;
   final String? labourEntriesJson;
+  final String status; // 'pending', 'completed', 'cancelled'
+  final double advanceAmount;
+  final String? advancePaymentMode;
+  final String? advanceNotes;
 
   const Service({
     required this.id,
@@ -20,7 +24,15 @@ class Service {
     this.invoiceId,
     this.serviceReport,
     this.labourEntriesJson,
+    this.status = 'completed',
+    this.advanceAmount = 0.0,
+    this.advancePaymentMode,
+    this.advanceNotes,
   });
+
+  bool get isPending => status == 'pending';
+  bool get isCompleted => status == 'completed';
+  bool get isCancelled => status == 'cancelled';
 
   List<LabourEntry> get labourEntries {
     if (labourEntriesJson != null && labourEntriesJson!.trim().isNotEmpty) {
@@ -51,6 +63,10 @@ class Service {
     String? invoiceId,
     String? serviceReport,
     String? labourEntriesJson,
+    String? status,
+    double? advanceAmount,
+    String? advancePaymentMode,
+    String? advanceNotes,
   }) {
     return Service(
       id: id ?? this.id,
@@ -61,6 +77,10 @@ class Service {
       invoiceId: invoiceId ?? this.invoiceId,
       serviceReport: serviceReport ?? this.serviceReport,
       labourEntriesJson: labourEntriesJson ?? this.labourEntriesJson,
+      status: status ?? this.status,
+      advanceAmount: advanceAmount ?? this.advanceAmount,
+      advancePaymentMode: advancePaymentMode ?? this.advancePaymentMode,
+      advanceNotes: advanceNotes ?? this.advanceNotes,
     );
   }
 
@@ -74,6 +94,10 @@ class Service {
       'invoiceId': invoiceId,
       'serviceReport': serviceReport,
       'labourEntriesJson': labourEntriesJson,
+      'status': status,
+      'advanceAmount': advanceAmount,
+      'advancePaymentMode': advancePaymentMode,
+      'advanceNotes': advanceNotes,
     };
   }
 
@@ -87,6 +111,10 @@ class Service {
       invoiceId: json['invoiceId'] as String?,
       serviceReport: json['serviceReport'] as String?,
       labourEntriesJson: json['labourEntriesJson'] as String?,
+      status: json['status'] as String? ?? 'completed',
+      advanceAmount: (json['advanceAmount'] as num?)?.toDouble() ?? 0.0,
+      advancePaymentMode: json['advancePaymentMode'] as String?,
+      advanceNotes: json['advanceNotes'] as String?,
     );
   }
 
@@ -102,7 +130,11 @@ class Service {
             serviceDate == other.serviceDate &&
             invoiceId == other.invoiceId &&
             serviceReport == other.serviceReport &&
-            labourEntriesJson == other.labourEntriesJson;
+            labourEntriesJson == other.labourEntriesJson &&
+            status == other.status &&
+            advanceAmount == other.advanceAmount &&
+            advancePaymentMode == other.advancePaymentMode &&
+            advanceNotes == other.advanceNotes;
   }
 
   @override
@@ -116,6 +148,10 @@ class Service {
       invoiceId,
       serviceReport,
       labourEntriesJson,
+      status,
+      advanceAmount,
+      advancePaymentMode,
+      advanceNotes,
     );
   }
 
@@ -129,7 +165,11 @@ class Service {
         'serviceDate: $serviceDate, '
         'invoiceId: $invoiceId, '
         'serviceReport: $serviceReport, '
-        'labourEntriesJson: $labourEntriesJson'
+        'labourEntriesJson: $labourEntriesJson, '
+        'status: $status, '
+        'advanceAmount: $advanceAmount, '
+        'advancePaymentMode: $advancePaymentMode, '
+        'advanceNotes: $advanceNotes'
         ')';
   }
 }

@@ -29,6 +29,14 @@ class CustomerDetailScreen extends ConsumerWidget {
         title: const Text('Customer Details'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.assignment_add),
+            tooltip: 'New Job Card & Advance',
+            onPressed: () => CreateJobCardSheet.show(
+              context,
+              preselectedCustomer: customer,
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.edit_outlined),
             tooltip: 'Edit Customer',
             onPressed: () async {
@@ -41,6 +49,7 @@ class CustomerDetailScreen extends ConsumerWidget {
               ref.invalidate(customersProvider);
               ref.invalidate(customerBillingHistoryProvider(customer.id));
               ref.invalidate(customerReminderProvider(customer.id));
+              ref.invalidate(customerPendingJobCardsProvider(customer.id));
             },
           ),
         ],
@@ -53,6 +62,7 @@ class CustomerDetailScreen extends ConsumerWidget {
               onRefresh: () async {
                 ref.invalidate(customerBillingHistoryProvider(customer.id));
                 ref.invalidate(customerReminderProvider(customer.id));
+                ref.invalidate(customerPendingJobCardsProvider(customer.id));
               },
               child: ListView(
                 padding: const EdgeInsets.all(16),
@@ -60,6 +70,9 @@ class CustomerDetailScreen extends ConsumerWidget {
             // 1. Customer Information Card
             _buildCustomerInfoCard(context, theme),
             const SizedBox(height: 16),
+
+            // 1b. Active Job Cards & Advances
+            _buildActiveJobCards(context, theme, ref),
 
             // 2. Service Reminder Card (6 Months from previous service)
             _buildServiceReminderCard(context, theme, reminderAsync),
@@ -182,6 +195,159 @@ class CustomerDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActiveJobCards(
+    BuildContext context,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
+    final pendingAsync =
+        ref.watch(customerPendingJobCardsProvider(customer.id));
+
+    return pendingAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (jobs) {
+        if (jobs.isEmpty) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: jobs.map((job) {
+              return Card(
+                elevation: 0.5,
+                color: Colors.amber.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Colors.amber.shade300,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade200,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.engineering_rounded,
+                              size: 18,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Active Work Order in Progress',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13.5,
+                                color: Colors.amber.shade900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        job.problemDesc ?? 'Service in progress',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (job.advanceNotes != null &&
+                          job.advanceNotes!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          job.advanceNotes!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: theme.colorScheme.outline,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (job.advanceAmount > 0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.green.shade300,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.payments_rounded,
+                                    size: 15,
+                                    color: Colors.green.shade800,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '₹${job.advanceAmount.toStringAsFixed(0)} Advance (${job.advancePaymentMode ?? "Cash"})',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.green.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            const Text(
+                              'No Advance Paid',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          const Spacer(),
+                          FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BillingScreen(
+                                    existingPendingJob: job,
+                                    initialCustomer: customer,
+                                  ),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.receipt_long, size: 16),
+                            label: const Text('Complete & Bill'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 

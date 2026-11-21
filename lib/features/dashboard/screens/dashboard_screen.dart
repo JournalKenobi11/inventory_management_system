@@ -10,6 +10,7 @@ import '../../salaries/salaries.dart';
 import '../models/dashboard_summary.dart';
 import '../providers/dashboard_provider.dart';
 import '../services/dashboard_service.dart';
+import 'dashboard_completed_services_sheet.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -221,6 +222,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     _refresh();
   }
 
+  void _openCompletedServices() {
+    DashboardCompletedServicesSheet.show(
+      context: context,
+      start: _selectedRange.start,
+      end: _selectedRange.end,
+      periodTitle: _getPeriodTitle(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboardAsync = ref.watch(dashboardProvider(_selectedRange));
@@ -230,6 +240,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         leading: appDrawerLeading(context),
         title: const Text('Dashboard'),
         actions: [
+          IconButton(
+            onPressed: () => CreateJobCardSheet.show(context),
+            tooltip: 'New Job Card & Advance',
+            icon: const Icon(Icons.assignment_add),
+          ),
           IconButton(
             onPressed: _refresh,
             tooltip: 'Refresh',
@@ -291,6 +306,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 16),
               _buildSummaryGrid(summary, width),
               const SizedBox(height: 16),
+              _buildPendingJobCardsAlert(),
+              const SizedBox(height: 16),
               _buildServiceRemindersAlert(),
               const SizedBox(height: 24),
               if (isWide)
@@ -312,6 +329,58 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildPendingJobCardsAlert() {
+    final pendingJobsAsync = ref.watch(pendingJobCardsProvider);
+
+    return pendingJobsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (jobs) {
+        if (jobs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final totalAdvance = jobs.fold<double>(
+          0.0,
+          (sum, j) => sum + j.advanceAmount,
+        );
+
+        return Card(
+          elevation: 1,
+          color: Colors.amber.shade50,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: Colors.amber.shade300,
+            ),
+          ),
+          child: ListTile(
+            leading: Icon(
+              Icons.engineering_rounded,
+              color: Colors.amber.shade900,
+              size: 28,
+            ),
+            title: Text(
+              '${jobs.length} Active Work Order${jobs.length > 1 ? 's' : ''}'
+              '${totalAdvance > 0 ? ' • ₹${_formatAmount(totalAdvance)} Advance Held' : ''}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.amber.shade900,
+              ),
+            ),
+            subtitle: Text(
+              '${jobs.first.problemDesc ?? "Service in progress"}. Tap to review, bill, or manage.',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+            onTap: () => PendingJobCardsSheet.show(context),
+          ),
+        );
+      },
     );
   }
 
@@ -422,18 +491,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
               onPressed: _openBilling,
-              icon: const Icon(Icons.receipt_long, size: 20),
+              icon: const Icon(Icons.receipt_long, size: 18),
               label: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'New Bill',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 6),
+        Expanded(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+              ),
+              onPressed: () => CreateJobCardSheet.show(context),
+              icon: const Icon(Icons.engineering_rounded, size: 18),
+              label: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'Job Card',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
         Expanded(
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 48),
@@ -442,32 +531,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 4),
               ),
               onPressed: _openAddStock,
-              icon: const Icon(Icons.add_box_rounded, size: 20),
+              icon: const Icon(Icons.add_box_rounded, size: 18),
               label: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   'Add Stock',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
-            child: FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-              onPressed: _openSalaries,
-              icon: const Icon(Icons.badge_rounded, size: 20),
-              label: const FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  'Salaries',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -480,7 +549,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildDateControls(BuildContext context) {
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withAlpha(120),
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
@@ -629,13 +698,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _SummaryCard(
           title: 'Sales',
           value: _formatAmount(summary.totalSales),
-          icon: Icons.point_of_sale,
-          color: Theme.of(context).colorScheme.primaryContainer.withAlpha(50),
+          icon: Icons.point_of_sale_rounded,
+          iconColor: Colors.blue.shade700,
+          onTap: _openCompletedServices,
+          onLongPress: _openCompletedServices,
         ),
         _SummaryCard(
           title: 'Expenses',
           value: _formatAmount(summary.totalExpenses),
-          icon: Icons.money_off,
+          icon: Icons.money_off_rounded,
+          iconColor: Colors.orange.shade800,
           subtitle: summary.stockPurchases > 0
               ? 'Stock: ${_formatAmount(summary.stockPurchases)}'
               : null,
@@ -643,28 +715,34 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _SummaryCard(
           title: 'Profit',
           value: _formatAmount(summary.profit),
-          icon: summary.profit >= 0 ? Icons.trending_up : Icons.trending_down,
-          color: summary.profit >= 0
-              ? Colors.green.withAlpha(25)
-              : Colors.red.withAlpha(25),
+          icon: summary.profit >= 0
+              ? Icons.trending_up_rounded
+              : Icons.trending_down_rounded,
+          iconColor: summary.profit >= 0
+              ? Colors.green.shade700
+              : Colors.red.shade700,
         ),
         _SummaryCard(
           title: 'Services Completed',
           value: summary.servicesCompleted.toString(),
-          icon: Icons.build,
+          icon: Icons.build_circle_rounded,
+          iconColor: Colors.indigo.shade700,
+          onTap: _openCompletedServices,
+          onLongPress: _openCompletedServices,
         ),
         _SummaryCard(
           title: 'Inventory Value',
           value: _formatAmount(summary.inventoryValue),
-          icon: Icons.inventory_2,
+          icon: Icons.inventory_2_rounded,
+          iconColor: Colors.teal.shade700,
         ),
         _SummaryCard(
           title: 'Low Stock',
           value: summary.lowStockParts.length.toString(),
-          icon: Icons.warning_amber,
-          color: summary.lowStockParts.isNotEmpty
-              ? Theme.of(context).colorScheme.errorContainer.withAlpha(50)
-              : null,
+          icon: Icons.warning_amber_rounded,
+          iconColor: summary.lowStockParts.isNotEmpty
+              ? Colors.amber.shade900
+              : Colors.grey.shade600,
         ),
       ],
     );
@@ -760,59 +838,103 @@ class _SummaryCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
-  final Color? color;
+  final Color iconColor;
   final String? subtitle;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   const _SummaryCard({
     required this.title,
     required this.value,
     required this.icon,
-    this.color,
+    this.iconColor = const Color(0xFF0D47A1),
     this.subtitle,
+    this.onTap,
+    this.onLongPress,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Card(
-      color: color,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Icon(icon, size: 22),
-                if (subtitle != null)
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: Text(
-                        subtitle!,
-                        textAlign: TextAlign.end,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Theme.of(context).colorScheme.outline,
+      elevation: 0.5,
+      color: theme.colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: theme.colorScheme.outlineVariant.withAlpha(80),
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: iconColor.withAlpha(24),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, size: 18, color: iconColor),
+                  ),
+                  if (subtitle != null)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: Text(
+                          subtitle!,
+                          textAlign: TextAlign.end,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: theme.colorScheme.outline,
+                          ),
                         ),
                       ),
+                    )
+                  else if (onTap != null)
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 16,
+                      color: theme.colorScheme.outline.withAlpha(120),
                     ),
-                  ),
-              ],
-            ),
-            Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ],
               ),
-            ),
-          ],
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

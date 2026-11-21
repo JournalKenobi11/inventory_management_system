@@ -11,6 +11,15 @@ abstract class ServiceRepository {
 
   Future<List<Service>> getByCustomerId(String customerId);
 
+  Future<List<Service>> getPendingServices();
+
+  Future<List<Service>> getPendingServicesByCustomerId(String customerId);
+
+  Future<void> updateStatus(
+    String serviceId,
+    String status,
+  );
+
   Future<void> linkInvoice(
     String serviceId,
     String invoiceId,

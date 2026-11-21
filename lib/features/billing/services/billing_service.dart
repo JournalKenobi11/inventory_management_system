@@ -33,6 +33,71 @@ class BillingService {
     this.database,
   );
 
+  Future<Service> createJobCard({
+    required String customerId,
+    required String problemDesc,
+    double advanceAmount = 0.0,
+    String? advancePaymentMode,
+    String? advanceNotes,
+  }) async {
+    final cleanCustomerId = customerId.trim();
+    final cleanProblemDesc = problemDesc.trim();
+
+    if (cleanCustomerId.isEmpty) {
+      throw ValidationException('Customer ID cannot be empty.');
+    }
+    if (cleanProblemDesc.isEmpty) {
+      throw ValidationException('Problem description cannot be empty.');
+    }
+    if (advanceAmount < 0) {
+      throw ValidationException('Advance amount cannot be negative.');
+    }
+
+    final customer = await customerService.getCustomer(cleanCustomerId);
+    if (customer == null) {
+      throw NotFoundException('Customer', cleanCustomerId);
+    }
+
+    final service = Service(
+      id: IdGenerator.generate(),
+      customerId: customer.id,
+      problemDesc: cleanProblemDesc,
+      labourCharge: 0.0,
+      serviceDate: AppDateUtils.nowIso(),
+      status: 'pending',
+      advanceAmount: advanceAmount,
+      advancePaymentMode: advancePaymentMode?.trim().isEmpty == true
+          ? null
+          : advancePaymentMode?.trim(),
+      advanceNotes: advanceNotes?.trim().isEmpty == true
+          ? null
+          : advanceNotes?.trim(),
+    );
+
+    return serviceRepository.create(service);
+  }
+
+  Future<List<Service>> getPendingJobCards() {
+    return serviceRepository.getPendingServices();
+  }
+
+  Future<List<Service>> getPendingJobCardsByCustomer(String customerId) {
+    return serviceRepository.getPendingServicesByCustomerId(customerId);
+  }
+
+  Future<void> cancelJobCard(String serviceId) async {
+    final service = await serviceRepository.getById(serviceId);
+    if (service == null) {
+      throw NotFoundException('Service', serviceId);
+    }
+    if (service.invoiceId != null) {
+      throw ValidationException(
+        'Cannot cancel a service that has already been billed.',
+      );
+    }
+    await serviceRepository.updateStatus(serviceId, 'cancelled');
+  }
+
   Future<Invoice> billService({
     required String customerId,
     required String problemDesc,
@@ -40,6 +105,8 @@ class BillingService {
     List<LabourEntry>? labourEntries,
     String? serviceReport,
     required List<ServicePartInput> partsUsed,
+    String? existingServiceId,
+    double? advanceAmount,
   }) async {
     final cleanCustomerId = customerId.trim();
     final cleanProblemDesc = problemDesc.trim();
@@ -62,6 +129,12 @@ class BillingService {
     if (effectiveLabourCharge < 0) {
       throw ValidationException(
         'Labour charge cannot be negative.',
+      );
+    }
+
+    if (advanceAmount != null && advanceAmount < 0) {
+      throw ValidationException(
+        'Advance amount cannot be negative.',
       );
     }
 
@@ -128,28 +201,61 @@ class BillingService {
       }
 
       // ------------------------------------------------------------
-      // 3. Create service
+      // 3. Create or resolve existing service
       // ------------------------------------------------------------
 
-      final serviceId = IdGenerator.generate();
+      String serviceId;
+      double effectiveAdvance = 0.0;
 
-      final service = Service(
-        id: serviceId,
-        customerId: customer.id,
-        problemDesc: cleanProblemDesc.isEmpty
-            ? null
-            : cleanProblemDesc,
-        labourCharge: effectiveLabourCharge,
-        serviceDate: AppDateUtils.nowIso(),
-        serviceReport: cleanServiceReport == null || cleanServiceReport.isEmpty
-            ? null
-            : cleanServiceReport,
-        labourEntriesJson: labourEntries != null && labourEntries.isNotEmpty
-            ? jsonEncode(labourEntries.map((e) => e.toJson()).toList())
-            : null,
-      );
+      if (existingServiceId != null) {
+        final existingService =
+            await serviceRepository.getById(existingServiceId);
+        if (existingService == null) {
+          throw NotFoundException('Service', existingServiceId);
+        }
+        if (existingService.invoiceId != null) {
+          throw ValidationException(
+            'This job card has already been billed.',
+          );
+        }
+        serviceId = existingService.id;
+        effectiveAdvance = advanceAmount ?? existingService.advanceAmount;
 
-      await serviceRepository.create(service);
+        final updatedService = existingService.copyWith(
+          problemDesc: cleanProblemDesc.isEmpty ? null : cleanProblemDesc,
+          labourCharge: effectiveLabourCharge,
+          serviceReport: cleanServiceReport == null || cleanServiceReport.isEmpty
+              ? null
+              : cleanServiceReport,
+          labourEntriesJson: labourEntries != null && labourEntries.isNotEmpty
+              ? jsonEncode(labourEntries.map((e) => e.toJson()).toList())
+              : null,
+          status: 'completed',
+          advanceAmount: effectiveAdvance,
+        );
+        await serviceRepository.update(updatedService);
+      } else {
+        serviceId = IdGenerator.generate();
+        effectiveAdvance = advanceAmount ?? 0.0;
+
+        final service = Service(
+          id: serviceId,
+          customerId: customer.id,
+          problemDesc: cleanProblemDesc.isEmpty ? null : cleanProblemDesc,
+          labourCharge: effectiveLabourCharge,
+          serviceDate: AppDateUtils.nowIso(),
+          serviceReport: cleanServiceReport == null || cleanServiceReport.isEmpty
+              ? null
+              : cleanServiceReport,
+          labourEntriesJson: labourEntries != null && labourEntries.isNotEmpty
+              ? jsonEncode(labourEntries.map((e) => e.toJson()).toList())
+              : null,
+          status: 'completed',
+          advanceAmount: effectiveAdvance,
+        );
+
+        await serviceRepository.create(service);
+      }
 
       // ------------------------------------------------------------
       // 4. Create service-part rows
@@ -200,6 +306,7 @@ class BillingService {
         serviceId: serviceId,
         totalAmount: totalAmount,
         createdDate: AppDateUtils.nowIso(),
+        advanceAmount: effectiveAdvance,
       );
 
       final createdInvoice =
@@ -556,6 +663,34 @@ class BillingService {
     }
 
     return history;
+  }
+
+  Future<List<InvoiceDetails>> getInvoicesInDateRange(
+    DateTime start,
+    DateTime end,
+  ) async {
+    final allInvoices = await invoiceRepository.getAll();
+    final startDateOnly = DateTime(start.year, start.month, start.day);
+    final endDateOnly =
+        DateTime(end.year, end.month, end.day, 23, 59, 59, 999);
+
+    final inRangeInvoices = allInvoices.where((inv) {
+      final date = DateTime.tryParse(inv.createdDate);
+      if (date == null) return false;
+      return !date.isBefore(startDateOnly) && !date.isAfter(endDateOnly);
+    }).toList();
+
+    inRangeInvoices.sort((a, b) => b.createdDate.compareTo(a.createdDate));
+
+    final detailsList = <InvoiceDetails>[];
+    for (final inv in inRangeInvoices) {
+      try {
+        final details = await getInvoiceDetails(inv.id);
+        detailsList.add(details);
+      } catch (_) {}
+    }
+
+    return detailsList;
   }
 
   List<ServicePartInput> _normalizeParts(

@@ -563,6 +563,20 @@ class PdfService {
                   fontSize: 13,
                 ),
               ),
+              if (data.invoice.advanceAmount > 0) ...[
+                pw.SizedBox(height: 2),
+                _amountRow(
+                  'Advance Paid',
+                  -data.invoice.advanceAmount,
+                ),
+                pw.Divider(color: PdfColors.grey300),
+                _amountRow(
+                  'Balance Due / Paid',
+                  data.invoice.balanceDue,
+                  isBold: true,
+                  fontSize: 12,
+                ),
+              ],
             ],
           ),
         ),

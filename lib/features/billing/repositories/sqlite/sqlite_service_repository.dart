@@ -29,6 +29,14 @@ class SqliteServiceRepository implements ServiceRepository {
             labourEntries: service.labourEntriesJson == null
                 ? const Value.absent()
                 : Value(service.labourEntriesJson!),
+            status: Value(service.status),
+            advanceAmount: Value(service.advanceAmount),
+            advancePaymentMode: service.advancePaymentMode == null
+                ? const Value.absent()
+                : Value(service.advancePaymentMode!),
+            advanceNotes: service.advanceNotes == null
+                ? const Value.absent()
+                : Value(service.advanceNotes!),
           ),
         );
 
@@ -52,6 +60,14 @@ class SqliteServiceRepository implements ServiceRepository {
         labourEntries: service.labourEntriesJson == null
             ? const Value.absent()
             : Value(service.labourEntriesJson!),
+        status: Value(service.status),
+        advanceAmount: Value(service.advanceAmount),
+        advancePaymentMode: service.advancePaymentMode == null
+            ? const Value.absent()
+            : Value(service.advancePaymentMode!),
+        advanceNotes: service.advanceNotes == null
+            ? const Value.absent()
+            : Value(service.advanceNotes!),
       ),
     );
     return service;
@@ -109,6 +125,55 @@ class SqliteServiceRepository implements ServiceRepository {
   }
 
   @override
+  Future<List<Service>> getPendingServices() async {
+    final query = database.select(database.serviceJobs)
+      ..where((tbl) => tbl.status.equals('pending'))
+      ..orderBy([
+        (tbl) => OrderingTerm(
+              expression: tbl.serviceDate,
+              mode: OrderingMode.desc,
+            ),
+      ]);
+
+    final rows = await query.get();
+    return rows.map(_toModel).toList();
+  }
+
+  @override
+  Future<List<Service>> getPendingServicesByCustomerId(
+    String customerId,
+  ) async {
+    final query = database.select(database.serviceJobs)
+      ..where(
+        (tbl) =>
+            tbl.customerId.equals(customerId) & tbl.status.equals('pending'),
+      )
+      ..orderBy([
+        (tbl) => OrderingTerm(
+              expression: tbl.serviceDate,
+              mode: OrderingMode.desc,
+            ),
+      ]);
+
+    final rows = await query.get();
+    return rows.map(_toModel).toList();
+  }
+
+  @override
+  Future<void> updateStatus(
+    String serviceId,
+    String status,
+  ) async {
+    await (database.update(database.serviceJobs)
+          ..where((tbl) => tbl.id.equals(serviceId)))
+        .write(
+      db.ServiceJobsCompanion(
+        status: Value(status),
+      ),
+    );
+  }
+
+  @override
   Future<void> linkInvoice(
     String serviceId,
     String invoiceId,
@@ -120,6 +185,7 @@ class SqliteServiceRepository implements ServiceRepository {
         .write(
       db.ServiceJobsCompanion(
         invoiceId: Value(invoiceId),
+        status: const Value('completed'),
       ),
     );
   }
@@ -134,6 +200,10 @@ class SqliteServiceRepository implements ServiceRepository {
       invoiceId: row.invoiceId,
       serviceReport: row.serviceReport,
       labourEntriesJson: row.labourEntries,
+      status: row.status,
+      advanceAmount: row.advanceAmount,
+      advancePaymentMode: row.advancePaymentMode,
+      advanceNotes: row.advanceNotes,
     );
   }
 }

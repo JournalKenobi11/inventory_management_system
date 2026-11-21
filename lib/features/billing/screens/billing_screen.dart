@@ -9,16 +9,21 @@ import '../../parts/models/part.dart';
 import '../../parts/providers/part_provider.dart';
 import '../models/invoice_details.dart';
 import '../models/labour_entry.dart';
+import '../models/service.dart';
 import '../models/service_part.dart';
 import '../providers/billing_provider.dart';
 import 'invoice_overview_screen.dart';
 
 class BillingScreen extends ConsumerStatefulWidget {
   final InvoiceDetails? existingInvoiceDetails;
+  final Service? existingPendingJob;
+  final Customer? initialCustomer;
 
   const BillingScreen({
     super.key,
     this.existingInvoiceDetails,
+    this.existingPendingJob,
+    this.initialCustomer,
   });
 
   @override
@@ -30,6 +35,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   final _problemController = TextEditingController();
   final _serviceReportController = TextEditingController();
+  final _advanceController = TextEditingController();
 
   bool _includeLabour = false;
   final List<_LabourInputItem> _labourItems = [];
@@ -39,8 +45,21 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialCustomer != null) {
+      _selectedCustomer = widget.initialCustomer;
+    }
+    if (widget.existingPendingJob != null) {
+      _initExistingPendingJob(widget.existingPendingJob!);
+    }
     if (widget.existingInvoiceDetails != null) {
       _initExistingInvoice(widget.existingInvoiceDetails!);
+    }
+  }
+
+  void _initExistingPendingJob(Service job) {
+    _problemController.text = job.problemDesc ?? '';
+    if (job.advanceAmount > 0) {
+      _advanceController.text = job.advanceAmount.toStringAsFixed(0);
     }
   }
 
@@ -116,6 +135,7 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
   void dispose() {
     _problemController.dispose();
     _serviceReportController.dispose();
+    _advanceController.dispose();
     for (final item in _labourItems) {
       item.dispose();
     }
@@ -139,6 +159,14 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
 
   double get _grandTotal {
     return _partsTotal + _labourCharge;
+  }
+
+  double get _advanceAmount {
+    return double.tryParse(_advanceController.text.trim()) ?? 0.0;
+  }
+
+  double get _balanceDue {
+    return (_grandTotal - _advanceAmount).clamp(0.0, double.infinity);
   }
 
   void _toggleIncludeLabour(bool value) {
@@ -354,7 +382,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             'Customer: ${_selectedCustomer!.name}\n'
             'Parts: ₹${_partsTotal.toStringAsFixed(2)}\n'
             'Labour: ₹${_labourCharge.toStringAsFixed(2)}\n'
-            'Total: ₹${_grandTotal.toStringAsFixed(2)}',
+            'Total: ₹${_grandTotal.toStringAsFixed(2)}'
+            '${_advanceAmount > 0 ? '\nAdvance Deducted: -₹${_advanceAmount.toStringAsFixed(2)}\nBalance to Collect: ₹${_balanceDue.toStringAsFixed(2)}' : ''}',
           ),
           actions: [
             TextButton(
@@ -434,6 +463,8 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                   ),
                 )
                 .toList(),
+            existingServiceId: widget.existingPendingJob?.id,
+            advanceAmount: _advanceAmount > 0 ? _advanceAmount : null,
           );
 
       if (!mounted) {
@@ -672,9 +703,31 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Service Details & Report',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Service Details & Report',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                if (widget.existingPendingJob != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Active Work Order',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber.shade900,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             TextField(
@@ -685,6 +738,18 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
                 hintText: 'Customer complaints or initial inspection notes',
                 border: OutlineInputBorder(),
               ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _advanceController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Advance Collected (₹)',
+                hintText: '0',
+                prefixText: '₹ ',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -921,16 +986,33 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
             _totalRow('Labour', _labourCharge),
             const Divider(height: 24),
             _totalRow('Total', _grandTotal, bold: true),
+            if (_advanceAmount > 0) ...[
+              const SizedBox(height: 8),
+              _totalRow('Advance Paid', -_advanceAmount, color: Colors.green.shade700),
+              const Divider(height: 16),
+              _totalRow(
+                'Balance to Collect',
+                _balanceDue,
+                bold: true,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _totalRow(String label, double amount, {bool bold = false}) {
+  Widget _totalRow(
+    String label,
+    double amount, {
+    bool bold = false,
+    Color? color,
+  }) {
     final style = TextStyle(
       fontSize: bold ? 20 : 16,
       fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+      color: color,
     );
 
     return Row(
@@ -942,7 +1024,12 @@ class _BillingScreenState extends ConsumerState<BillingScreen> {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerRight,
-            child: Text('₹${amount.toStringAsFixed(2)}', style: style),
+            child: Text(
+              amount < 0
+                  ? '-₹${(-amount).toStringAsFixed(2)}'
+                  : '₹${amount.toStringAsFixed(2)}',
+              style: style,
+            ),
           ),
         ),
       ],

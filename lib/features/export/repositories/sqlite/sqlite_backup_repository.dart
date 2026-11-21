@@ -90,6 +90,10 @@ class SqliteBackupRepository implements BackupRepository {
               'invoiceId': s.invoiceId,
               'serviceReport': s.serviceReport,
               'labourEntries': s.labourEntries,
+              'status': s.status,
+              'advanceAmount': s.advanceAmount,
+              'advancePaymentMode': s.advancePaymentMode,
+              'advanceNotes': s.advanceNotes,
             },
           )
           .toList(),
@@ -113,6 +117,7 @@ class SqliteBackupRepository implements BackupRepository {
               'serviceId': i.serviceId,
               'totalAmount': i.totalAmount,
               'createdDate': i.createdDate,
+              'advanceAmount': i.advanceAmount,
             },
           )
           .toList(),
@@ -294,6 +299,12 @@ class SqliteBackupRepository implements BackupRepository {
                 invoiceId: Value(s['invoiceId'] as String?),
                 serviceReport: Value(s['serviceReport'] as String?),
                 labourEntries: Value(s['labourEntries'] as String?),
+                status: Value((s['status'] as String?) ?? 'completed'),
+                advanceAmount: Value(
+                  (s['advanceAmount'] as num?)?.toDouble() ?? 0.0,
+                ),
+                advancePaymentMode: Value(s['advancePaymentMode'] as String?),
+                advanceNotes: Value(s['advanceNotes'] as String?),
               ),
             );
       }
@@ -329,6 +340,9 @@ class SqliteBackupRepository implements BackupRepository {
                 serviceId: i['serviceId'] as String,
                 totalAmount: (i['totalAmount'] as num).toDouble(),
                 createdDate: i['createdDate'] as String,
+                advanceAmount: Value(
+                  (i['advanceAmount'] as num?)?.toDouble() ?? 0.0,
+                ),
               ),
             );
       }

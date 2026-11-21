@@ -53,6 +53,10 @@ class ServiceJobs extends Table {
   TextColumn get invoiceId => text().nullable()();
   TextColumn get serviceReport => text().nullable()();
   TextColumn get labourEntries => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('completed'))();
+  RealColumn get advanceAmount => real().withDefault(const Constant(0.0))();
+  TextColumn get advancePaymentMode => text().nullable()();
+  TextColumn get advanceNotes => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -90,6 +94,7 @@ class Invoices extends Table {
   TextColumn get serviceId => text().references(ServiceJobs, #id)();
   RealColumn get totalAmount => real()();
   TextColumn get createdDate => text()();
+  RealColumn get advanceAmount => real().withDefault(const Constant(0.0))();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -204,7 +209,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e) : super();
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -248,6 +253,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 5) {
         await m.addColumn(serviceParts, serviceParts.purchasePriceEach);
         await m.createTable(stockMovements);
+      }
+      if (from < 6) {
+        await m.addColumn(serviceJobs, serviceJobs.status);
+        await m.addColumn(serviceJobs, serviceJobs.advanceAmount);
+        await m.addColumn(serviceJobs, serviceJobs.advancePaymentMode);
+        await m.addColumn(serviceJobs, serviceJobs.advanceNotes);
+        await m.addColumn(invoices, invoices.advanceAmount);
       }
     },
   );

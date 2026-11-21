@@ -16,6 +16,7 @@ import '../services/billing_service.dart';
 
 import '../models/customer_service_reminder.dart';
 import '../models/labour_entry.dart';
+import '../models/service.dart';
 
 final serviceRepositoryProvider =
     Provider<ServiceRepository>((ref) {
@@ -71,6 +72,8 @@ class BillingController
     List<LabourEntry>? labourEntries,
     String? serviceReport,
     required List<ServicePartInput> partsUsed,
+    String? existingServiceId,
+    double? advanceAmount,
   }) async {
     state = const AsyncLoading<Invoice?>();
 
@@ -84,9 +87,13 @@ class BillingController
             labourEntries: labourEntries,
             serviceReport: serviceReport,
             partsUsed: partsUsed,
+            existingServiceId: existingServiceId,
+            advanceAmount: advanceAmount,
           );
 
       state = AsyncData<Invoice?>(invoice);
+      ref.invalidate(pendingJobCardsProvider);
+      ref.invalidate(customerPendingJobCardsProvider(customerId));
 
       return invoice;
     } catch (error, stackTrace) {
@@ -130,6 +137,44 @@ final customerReminderProvider =
         (ref, customerId) async {
   final billingService = ref.watch(billingServiceProvider);
   return billingService.getCustomerReminder(customerId);
+});
+
+class DateRangeKey {
+  final DateTime start;
+  final DateTime end;
+
+  const DateRangeKey(this.start, this.end);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DateRangeKey &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end;
+
+  @override
+  int get hashCode => Object.hash(start, end);
+}
+
+final completedServicesInRangeProvider =
+    FutureProvider.autoDispose.family<List<InvoiceDetails>, DateRangeKey>(
+        (ref, key) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getInvoicesInDateRange(key.start, key.end);
+});
+
+final pendingJobCardsProvider =
+    FutureProvider.autoDispose<List<Service>>((ref) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getPendingJobCards();
+});
+
+final customerPendingJobCardsProvider =
+    FutureProvider.autoDispose.family<List<Service>, String>(
+        (ref, customerId) async {
+  final billingService = ref.watch(billingServiceProvider);
+  return billingService.getPendingJobCardsByCustomer(customerId);
 });
 
 

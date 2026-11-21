@@ -6,12 +6,12 @@ import 'package:inventory_management_system/database/app_database.dart';
 void main() {
   group('Database Migration Safety', () {
     test(
-      'fresh database has schemaVersion 5 and seeds default owner account',
+      'fresh database has schemaVersion 6 and seeds default owner account',
       () async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
 
-        expect(db.schemaVersion, equals(5));
+        expect(db.schemaVersion, equals(6));
 
         // Verify all tables exist and default account is present
         final accounts = await db.select(db.personalFinanceAccounts).get();
