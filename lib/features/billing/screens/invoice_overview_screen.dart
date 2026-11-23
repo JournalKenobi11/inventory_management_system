@@ -1,5 +1,10 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../../core/config/establishment_config.dart';
 import '../../../core/utils/phone_number_utils.dart';
@@ -27,7 +32,9 @@ class InvoiceOverviewScreen extends ConsumerStatefulWidget {
 }
 
 class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
+  final GlobalKey _billCaptureKey = GlobalKey();
   InvoiceDetails? _overrideDetails;
+  bool _isSharingWhatsAppImage = false;
   bool _isSharingWhatsAppPdf = false;
   bool _isDownloadingPdf = false;
 
@@ -66,6 +73,59 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
       ref.invalidate(invoiceDetailsProvider(updated.invoice.id));
       ref.invalidate(invoicesListProvider);
       ref.invalidate(customerBillingHistoryProvider(updated.customer.id));
+    }
+  }
+
+  Future<void> _shareImageOnWhatsApp(InvoiceDetails details) async {
+    setState(() => _isSharingWhatsAppImage = true);
+
+    try {
+      final boundary = _billCaptureKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        throw Exception('Bill view is not ready to capture');
+      }
+
+      // 2.5x pixel ratio produces high-resolution, ultra-crisp image with sharp text and scan-ready QR
+      final image = await boundary.toImage(pixelRatio: 2.5);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+
+      if (byteData == null) {
+        throw Exception('Failed to generate bill image');
+      }
+
+      final pngBytes = byteData.buffer.asUint8List();
+      final tempDir = await getTemporaryDirectory();
+      final file =
+          File('${tempDir.path}/Invoice_${details.invoice.invoiceNumber}.png');
+      await file.writeAsBytes(pngBytes, flush: true);
+
+      if (!mounted) return;
+
+      final shareService = ref.read(shareServiceProvider);
+      final pdfData = _createPdfData(details);
+
+      await shareService.shareInvoiceImage(
+        file,
+        invoiceNumber: details.invoice.invoiceNumber,
+        customerName: details.customer.name,
+        customerMobile: details.customer.mobile,
+        garageName: pdfData.garageName,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to share bill image: $e'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSharingWhatsAppImage = false);
+      }
     }
   }
 
@@ -201,11 +261,6 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => _editBill(details),
           ),
-          IconButton(
-            tooltip: 'Payment Received / Done',
-            icon: const Icon(Icons.check_circle_outline_rounded),
-            onPressed: () => Navigator.pop(context),
-          ),
         ],
       ),
       body: SafeArea(
@@ -215,60 +270,72 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 1. Success & Status Banner
-                _buildHeaderCard(details, theme),
-                const SizedBox(height: 12),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Bill Card Content to be captured as crisp PNG image
+                  RepaintBoundary(
+                    key: _billCaptureKey,
+                    child: Container(
+                      color: theme.scaffoldBackgroundColor,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 1. Success & Status Banner
+                          _buildHeaderCard(details, theme),
+                          const SizedBox(height: 12),
 
-                // 2. Customer & Vehicle Information
-                _buildCustomerCard(details, theme, isMobileValid),
-                const SizedBox(height: 12),
+                          // 2. Customer & Vehicle Information
+                          _buildCustomerCard(details, theme, isMobileValid),
+                          const SizedBox(height: 12),
 
-                // 3. Service / Problem Description
-                if (details.service.problemDesc != null &&
-                    details.service.problemDesc!.trim().isNotEmpty) ...[
-                  _buildServiceCard(details, theme),
-                  const SizedBox(height: 12),
+                          // 3. Service / Problem Description
+                          if (details.service.problemDesc != null &&
+                              details.service.problemDesc!.trim().isNotEmpty) ...[
+                            _buildServiceCard(details, theme),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // 4. Parts Used List / Table
+                          _buildPartsCard(details, theme),
+                          const SizedBox(height: 12),
+
+                          // 5. Labour Services Breakdown
+                          if (details.service.labourEntries.isNotEmpty ||
+                              details.labourCharge > 0) ...[
+                            _buildLabourBreakdownCard(details, theme),
+                            const SizedBox(height: 12),
+                          ],
+
+                          // 6. Cost Breakdown & Totals
+                          _buildSummaryCard(details, theme),
+                          const SizedBox(height: 16),
+
+                          // 7. Report Section (Service Summary)
+                          if (details.service.serviceReport != null &&
+                              details.service.serviceReport!.trim().isNotEmpty) ...[
+                            _buildReportCard(details, theme),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // 8. Terms and Conditions (below Report section)
+                          _buildTermsAndConditionsCard(theme),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 9. Action Buttons
+                  _buildActionButtons(details),
+                  const SizedBox(height: 24),
                 ],
-
-                // 4. Parts Used List / Table
-                _buildPartsCard(details, theme),
-                const SizedBox(height: 12),
-
-                // 5. Labour Services Breakdown
-                if (details.service.labourEntries.isNotEmpty ||
-                    details.labourCharge > 0) ...[
-                  _buildLabourBreakdownCard(details, theme),
-                  const SizedBox(height: 12),
-                ],
-
-                // 6. Cost Breakdown & Totals
-                _buildSummaryCard(details, theme),
-                const SizedBox(height: 16),
-
-                // 7. Report Section (Service Summary)
-                if (details.service.serviceReport != null &&
-                    details.service.serviceReport!.trim().isNotEmpty) ...[
-                  _buildReportCard(details, theme),
-                  const SizedBox(height: 16),
-                ],
-
-                // 8. Terms and Conditions (below Report section)
-                _buildTermsAndConditionsCard(theme),
-                const SizedBox(height: 20),
-
-                // 9. Action Buttons
-                _buildActionButtons(details),
-                const SizedBox(height: 24),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildHeaderCard(InvoiceDetails details, ThemeData theme) {
     return Card(
@@ -868,7 +935,7 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // 1. Share PDF on WhatsApp (Primary action with WhatsApp brand green styling)
+        // 1. Share Bill as Image on WhatsApp (Primary action with WhatsApp brand green styling)
         FilledButton.icon(
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF25D366),
@@ -878,10 +945,10 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-          onPressed: _isSharingWhatsAppPdf
+          onPressed: _isSharingWhatsAppImage
               ? null
-              : () => _sharePdfOnWhatsApp(details),
-          icon: _isSharingWhatsAppPdf
+              : () => _shareImageOnWhatsApp(details),
+          icon: _isSharingWhatsAppImage
               ? const SizedBox(
                   width: 18,
                   height: 18,
@@ -892,9 +959,9 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
                 )
               : const Icon(Icons.chat_bubble_rounded),
           label: Text(
-            _isSharingWhatsAppPdf
-                ? 'Preparing PDF...'
-                : 'Share PDF on WhatsApp',
+            _isSharingWhatsAppImage
+                ? 'Preparing Image...'
+                : 'Share Bill on WhatsApp (Image)',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
@@ -931,7 +998,37 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
         ),
         const SizedBox(height: 10),
 
-        // 3. Edit Bill Details button
+        // 3. Share PDF File
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: _isSharingWhatsAppPdf
+              ? null
+              : () => _sharePdfOnWhatsApp(details),
+          icon: _isSharingWhatsAppPdf
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.picture_as_pdf_outlined),
+          label: Text(
+            _isSharingWhatsAppPdf
+                ? 'Preparing PDF...'
+                : 'Share PDF File',
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // 4. Edit Bill Details button
         FilledButton.tonalIcon(
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -946,28 +1043,6 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // 4. Payment Received / Done button
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            side: BorderSide(color: Colors.green.shade600, width: 1.5),
-            foregroundColor: Colors.green.shade700,
-          ),
-          onPressed: () => Navigator.pop(context),
-          icon: Icon(Icons.check_circle_rounded, color: Colors.green.shade600),
-          label: const Text(
-            'Payment Received / Done',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
             ),
           ),
         ),

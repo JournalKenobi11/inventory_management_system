@@ -80,6 +80,26 @@ class ShareService {
     );
   }
 
+  Future<ShareResult> shareInvoiceImage(
+    File imageFile, {
+    required int invoiceNumber,
+    String? customerName,
+    String? customerMobile,
+    String garageName = EstablishmentConfig.name,
+  }) async {
+    final customerInfo = customerName != null ? ' for $customerName' : '';
+    final message =
+        'Here is your invoice #$invoiceNumber$customerInfo from $garageName. Thank you for your business!';
+
+    return SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(imageFile.path, mimeType: 'image/png')],
+        subject: 'Invoice #$invoiceNumber - $garageName',
+        text: message,
+      ),
+    );
+  }
+
   /// Formats a complete, readable text invoice for WhatsApp messaging.
   String formatInvoiceWhatsAppMessage({
     required InvoiceDetails details,
