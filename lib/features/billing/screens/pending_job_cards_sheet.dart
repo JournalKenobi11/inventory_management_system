@@ -76,20 +76,25 @@ class PendingJobCardsSheet extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Active Work Orders & Advances',
+                            'Active Work Orders',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           pendingJobsAsync.when(
                             data: (jobs) {
-                              final validJobs = jobs.whereType<Service>().toList();
+                              final validJobs =
+                                  jobs.whereType<Service>().toList();
                               final totalAdvance = validJobs.fold<double>(
                                 0.0,
                                 (sum, j) => sum + j.advanceAmount,
                               );
                               return Text(
-                                '${validJobs.length} open job${validJobs.length == 1 ? '' : 's'} • ₹${totalAdvance.toStringAsFixed(0)} advance held',
+                                '${validJobs.length} open • ₹${totalAdvance.toStringAsFixed(0)} advance held',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.outline,
                                   fontWeight: FontWeight.w600,
@@ -102,9 +107,11 @@ class PendingJobCardsSheet extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(width: 8),
                     FilledButton.tonalIcon(
                       style: FilledButton.styleFrom(
                         visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
                       ),
                       onPressed: () => CreateJobCardSheet.show(context),
                       icon: const Icon(Icons.add, size: 18),
@@ -192,6 +199,13 @@ class PendingJobCardsSheet extends ConsumerWidget {
                               ),
                             );
                           },
+                          onEdit: () {
+                            CreateJobCardSheet.show(
+                              context,
+                              preselectedCustomer: customer,
+                              existingJob: job,
+                            );
+                          },
                           onCancel: () => _confirmCancel(context, ref, job),
                         );
                       },
@@ -253,12 +267,14 @@ class _PendingJobCardItem extends StatelessWidget {
   final Service job;
   final Customer? customer;
   final VoidCallback onBill;
+  final VoidCallback onEdit;
   final VoidCallback onCancel;
 
   const _PendingJobCardItem({
     required this.job,
     required this.customer,
     required this.onBill,
+    required this.onEdit,
     required this.onCancel,
   });
 
@@ -373,72 +389,129 @@ class _PendingJobCardItem extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Advance Badge & Action Buttons
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (job.advanceAmount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.green.shade300,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.payments_rounded,
-                          size: 15,
-                          color: Colors.green.shade800,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '₹${job.advanceAmount.toStringAsFixed(0)} Advance (${job.advancePaymentMode ?? 'Cash'})',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
+                // Top row: Advance Badge & Complete & Bill Button
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (job.advanceAmount > 0)
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.green.shade300,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.payments_rounded,
+                                size: 15,
+                                color: Colors.green.shade800,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '₹${job.advanceAmount.toStringAsFixed(0)} Advance (${job.advancePaymentMode ?? 'Cash'})',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade800,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'No Advance',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                      onPressed: onBill,
+                      icon: const Icon(Icons.receipt_long, size: 16),
+                      label: const Text('Complete & Bill'),
                     ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'No Advance',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  tooltip: 'Cancel Job',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: onCancel,
+                  ],
                 ),
-                const SizedBox(width: 4),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                  ),
-                  onPressed: onBill,
-                  icon: const Icon(Icons.receipt_long, size: 16),
-                  label: const Text('Complete & Bill'),
+                const SizedBox(height: 8),
+                // Bottom row: Management Actions (Edit and Delete in red)
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: theme.colorScheme.onSurfaceVariant,
+                        side: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                      ),
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 15),
+                      label: const Text('Edit', style: TextStyle(fontSize: 12)),
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: Colors.red.shade50,
+                        foregroundColor: Colors.red.shade700,
+                        side: BorderSide(color: Colors.red.shade200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                      ),
+                      onPressed: onCancel,
+                      icon: Icon(
+                        Icons.delete_outline_rounded,
+                        size: 15,
+                        color: Colors.red.shade700,
+                      ),
+                      label: Text(
+                        'Delete',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.red.shade700,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

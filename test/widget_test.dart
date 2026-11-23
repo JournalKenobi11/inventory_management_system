@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:inventory_management_system/core/config/establishment_config.dart';
 import 'package:inventory_management_system/main.dart';
 
 void main() {
@@ -27,7 +28,7 @@ void main() {
       expect(menuButtonFinder, findsWidgets);
 
       // Verify Drawer is initially not open
-      expect(find.text('Garage & Inventory'), findsNothing);
+      expect(find.text(EstablishmentConfig.name), findsNothing);
 
       // Tap the hamburger button
       await tester.tap(menuButtonFinder.first);
@@ -36,7 +37,7 @@ void main() {
 
       // Verify existing Drawer opened
       expect(find.byType(Drawer), findsOneWidget);
-      expect(find.text('Garage & Inventory'), findsOneWidget);
+      expect(find.text(EstablishmentConfig.name), findsOneWidget);
       expect(find.text('Personal Finance'), findsOneWidget);
     },
   );

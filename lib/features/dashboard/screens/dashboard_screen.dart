@@ -240,11 +240,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         leading: appDrawerLeading(context),
         title: const Text('Dashboard'),
         actions: [
-          IconButton(
-            onPressed: () => CreateJobCardSheet.show(context),
-            tooltip: 'New Job Card & Advance',
-            icon: const Icon(Icons.assignment_add),
-          ),
+          _buildPendingJobsNotificationAction(context),
           IconButton(
             onPressed: _refresh,
             tooltip: 'Refresh',
@@ -302,11 +298,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             children: [
               _buildQuickActionButtons(context),
               const SizedBox(height: 16),
+              _buildPendingJobCardsAlert(),
+              const SizedBox(height: 16),
               _buildDateControls(context),
               const SizedBox(height: 16),
               _buildSummaryGrid(summary, width),
-              const SizedBox(height: 16),
-              _buildPendingJobCardsAlert(),
               const SizedBox(height: 16),
               _buildServiceRemindersAlert(),
               const SizedBox(height: 24),
@@ -329,6 +325,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildPendingJobsNotificationAction(BuildContext context) {
+    final pendingJobsAsync = ref.watch(pendingJobCardsProvider);
+    final count = pendingJobsAsync.asData?.value.length ?? 0;
+
+    return IconButton(
+      tooltip: 'Work Orders & Advances',
+      onPressed: () => PendingJobCardsSheet.show(context),
+      icon: count > 0
+          ? Badge.count(
+              count: count,
+              backgroundColor: Colors.red.shade700,
+              child: const Icon(Icons.pending_actions_rounded),
+            )
+          : const Icon(Icons.pending_actions_rounded),
     );
   }
 

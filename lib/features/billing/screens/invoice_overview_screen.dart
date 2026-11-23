@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/establishment_config.dart';
 import '../../../core/utils/phone_number_utils.dart';
 import '../../export/export.dart';
+import '../../settings/settings.dart';
 import '../models/bill_terms.dart';
 import '../models/invoice_details.dart';
 import '../providers/billing_provider.dart';
@@ -29,6 +31,26 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
   bool _isSharingWhatsAppPdf = false;
   bool _isDownloadingPdf = false;
 
+  InvoicePdfData _createPdfData(InvoiceDetails details) {
+    final settings = ref.read(shopSettingsProvider).value;
+    return InvoicePdfData.fromDetails(
+      details,
+      garageName: (settings != null && settings.businessName.trim().isNotEmpty)
+          ? settings.businessName.trim()
+          : EstablishmentConfig.name,
+      garageServices: (settings != null && settings.services.trim().isNotEmpty)
+          ? settings.services.trim()
+          : EstablishmentConfig.services,
+      garagePhone: (settings != null && settings.phone.trim().isNotEmpty)
+          ? settings.phone.trim()
+          : EstablishmentConfig.phone,
+      garageAddress: (settings != null && settings.address.trim().isNotEmpty)
+          ? settings.address.trim()
+          : EstablishmentConfig.address,
+      upiId: settings?.upiId,
+    );
+  }
+
   Future<void> _editBill(InvoiceDetails details) async {
     final updated = await Navigator.push<InvoiceDetails>(
       context,
@@ -54,7 +76,7 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
       final pdfService = ref.read(pdfServiceProvider);
       final shareService = ref.read(shareServiceProvider);
 
-      final pdfData = InvoicePdfData.fromDetails(details);
+      final pdfData = _createPdfData(details);
       final pdfFile = await pdfService.saveInvoicePdfToFile(pdfData);
 
       if (!mounted) return;
@@ -64,6 +86,7 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
         invoiceNumber: details.invoice.invoiceNumber,
         customerName: details.customer.name,
         customerMobile: details.customer.mobile,
+        garageName: pdfData.garageName,
       );
     } catch (e) {
       if (mounted) {
@@ -86,7 +109,7 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
 
     try {
       final pdfService = ref.read(pdfServiceProvider);
-      final pdfData = InvoicePdfData.fromDetails(details);
+      final pdfData = _createPdfData(details);
       final file = await pdfService.downloadInvoicePdf(pdfData);
 
       if (!mounted) return;
@@ -179,8 +202,8 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
             onPressed: () => _editBill(details),
           ),
           IconButton(
-            tooltip: 'Done',
-            icon: const Icon(Icons.check),
+            tooltip: 'Payment Received / Done',
+            icon: const Icon(Icons.check_circle_outline_rounded),
             onPressed: () => Navigator.pop(context),
           ),
         ],
@@ -928,17 +951,20 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
         ),
         const SizedBox(height: 10),
 
-        // 4. Done button
-        OutlinedButton(
+        // 4. Payment Received / Done button
+        OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
+            side: BorderSide(color: Colors.green.shade600, width: 1.5),
+            foregroundColor: Colors.green.shade700,
           ),
           onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'Done',
+          icon: Icon(Icons.check_circle_rounded, color: Colors.green.shade600),
+          label: const Text(
+            'Payment Received / Done',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,

@@ -98,6 +98,47 @@ class BillingService {
     await serviceRepository.updateStatus(serviceId, 'cancelled');
   }
 
+  Future<Service> updateJobCard({
+    required String serviceId,
+    required String problemDesc,
+    required double advanceAmount,
+    String? advancePaymentMode,
+    String? advanceNotes,
+  }) async {
+    final cleanProblemDesc = problemDesc.trim();
+    if (cleanProblemDesc.isEmpty) {
+      throw ValidationException('Problem description cannot be empty.');
+    }
+    if (advanceAmount < 0) {
+      throw ValidationException('Advance amount cannot be negative.');
+    }
+
+    final service = await serviceRepository.getById(serviceId);
+    if (service == null) {
+      throw NotFoundException('Service', serviceId);
+    }
+    if (service.invoiceId != null) {
+      throw ValidationException(
+        'Cannot edit a work order that has already been billed.',
+      );
+    }
+
+    final updated = service.copyWith(
+      problemDesc: cleanProblemDesc,
+      advanceAmount: advanceAmount,
+      advancePaymentMode: advanceAmount > 0
+          ? (advancePaymentMode?.trim().isEmpty == true
+              ? null
+              : advancePaymentMode?.trim())
+          : null,
+      advanceNotes: advanceNotes?.trim().isEmpty == true
+          ? null
+          : advanceNotes?.trim(),
+    );
+
+    return serviceRepository.update(updated);
+  }
+
   Future<Invoice> billService({
     required String customerId,
     required String problemDesc,

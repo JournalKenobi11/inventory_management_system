@@ -523,8 +523,50 @@ class PdfService {
 
   pw.Widget _buildTotalsSection(InvoicePdfData data) {
     return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.end,
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
+        // Left column: Dynamic UPI QR Code Box
+        if (data.upiUri != null && data.upiUri!.isNotEmpty)
+          pw.Container(
+            padding: const pw.EdgeInsets.all(8),
+            decoration: pw.BoxDecoration(
+              border: pw.Border.all(color: PdfColors.grey300),
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              mainAxisSize: pw.MainAxisSize.min,
+              children: [
+                pw.BarcodeWidget(
+                  barcode: pw.Barcode.qrCode(),
+                  data: data.upiUri!,
+                  width: 75,
+                  height: 75,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Scan to Pay via UPI',
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.SizedBox(height: 2),
+                pw.Text(
+                  'GPay • PhonePe • Paytm • BHIM',
+                  style: const pw.TextStyle(
+                    fontSize: 6.5,
+                    color: PdfColors.grey600,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          pw.SizedBox(),
+
+        // Right column: Totals summary
         pw.Container(
           width: 220,
           child: pw.Column(

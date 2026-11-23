@@ -204,5 +204,41 @@ void main() {
       expect(invoice.advanceAmount, equals(1000.0));
       expect(invoice.balanceDue, equals(0.0));
     });
+
+    test('updateJobCard modifies advance amount, payment mode, and problem desc',
+        () async {
+      final customer = await customerService.createCustomer(
+        name: 'Deepak Rao',
+        mobile: '9765432109',
+      );
+
+      final jobCard = await billingService.createJobCard(
+        customerId: customer.id,
+        problemDesc: 'Brake pads replacement',
+        advanceAmount: 2000.0,
+        advancePaymentMode: 'Cash',
+      );
+
+      // Customer comes back and pays additional 3,000 via UPI (total 5,000)
+      final updated = await billingService.updateJobCard(
+        serviceId: jobCard.id,
+        problemDesc: 'Brake pads and rotor replacement',
+        advanceAmount: 5000.0,
+        advancePaymentMode: 'UPI',
+        advanceNotes: 'Additional 3k paid via UPI',
+      );
+
+      expect(updated.advanceAmount, equals(5000.0));
+      expect(updated.advancePaymentMode, equals('UPI'));
+      expect(updated.problemDesc, equals('Brake pads and rotor replacement'));
+      expect(updated.advanceNotes, equals('Additional 3k paid via UPI'));
+
+      // Check repository fetch
+      final pending =
+          await billingService.getPendingJobCardsByCustomer(customer.id);
+      expect(pending.length, equals(1));
+      expect(pending.first.advanceAmount, equals(5000.0));
+      expect(pending.first.advancePaymentMode, equals('UPI'));
+    });
   });
 }

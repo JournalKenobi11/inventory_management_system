@@ -238,4 +238,56 @@ void main() {
     expect(bytes, isNotEmpty);
     expect(utf8.decode(bytes.sublist(0, 5)), equals('%PDF-'));
   });
+
+  test('generates valid PDF invoice with UPI QR barcode when upiId is configured', () async {
+    final customer = Customer(
+      id: 'cust-upi',
+      name: 'Pooja Patil',
+      mobile: '9845012345',
+      createdDate: '2026-11-20T10:00:00.000Z',
+    );
+    final service = Service(
+      id: 'srv-upi',
+      customerId: 'cust-upi',
+      labourCharge: 300.0,
+      serviceDate: '2026-11-20T10:00:00.000Z',
+    );
+    final invoice = Invoice(
+      id: 'inv-upi',
+      invoiceNumber: 2005,
+      serviceId: 'srv-upi',
+      totalAmount: 1500.0,
+      advanceAmount: 500.0,
+      createdDate: '2026-11-20T10:00:00.000Z',
+    );
+
+    final pdfData = InvoicePdfData(
+      invoice: invoice,
+      service: service,
+      customer: customer,
+      parts: const [
+        InvoicePartLineItem(
+          partId: 'p-1',
+          partName: 'Brake Cable',
+          partNumber: 'BC-01',
+          quantity: 2,
+          priceEach: 600.0,
+          lineTotal: 1200.0,
+        ),
+      ],
+      labourCharge: 300.0,
+      totalAmount: 1500.0,
+      upiId: 'mestrymotors@okhdfcbank',
+    );
+
+    // Balance due should be used for payable amount: 1500 - 500 = 1000
+    expect(pdfData.payableAmount, equals(1000.0));
+    expect(pdfData.upiUri, isNotNull);
+    expect(pdfData.upiUri, contains('pa=mestrymotors@okhdfcbank'));
+    expect(pdfData.upiUri, contains('am=1000.00'));
+
+    final bytes = await pdfService.generateInvoicePdf(pdfData);
+    expect(bytes, isNotEmpty);
+    expect(utf8.decode(bytes.sublist(0, 5)), equals('%PDF-'));
+  });
 }

@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/expenses/expenses.dart';
 import '../../features/export/export.dart';
 import '../../features/personal_finance/personal_finance.dart';
 import '../../features/purchases/purchases.dart';
 import '../../features/salaries/salaries.dart';
+import '../../features/settings/settings.dart';
+import '../config/establishment_config.dart';
 
 /// A modern, high-performance Material 3 sidebar drawer.
 /// Optimized with [RepaintBoundary] and hardware acceleration to eliminate
 /// gesture drag jitter and ensure 120fps fluid scrolling.
-class AnimatedAppDrawer extends StatelessWidget {
+class AnimatedAppDrawer extends ConsumerWidget {
   final int currentIndex;
   final ValueChanged<int> onNavigate;
 
@@ -108,9 +111,20 @@ class AnimatedAppDrawer extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final settings = ref.watch(shopSettingsProvider).value;
+
+    final businessName = (settings != null && settings.businessName.trim().isNotEmpty)
+        ? settings.businessName.trim()
+        : EstablishmentConfig.name;
+
+    final servicesSubtitle = (settings != null && settings.services.trim().isNotEmpty)
+        ? settings.services.trim()
+        : ((settings != null && settings.ownerName.trim().isNotEmpty)
+            ? settings.ownerName.trim()
+            : EstablishmentConfig.services);
 
     return Drawer(
       elevation: 4,
@@ -193,22 +207,26 @@ class AnimatedAppDrawer extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Garage & Inventory',
-                    style: TextStyle(
+                  Text(
+                    businessName,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.2,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Management System',
+                    servicesSubtitle,
                     style: TextStyle(
                       color: Colors.white.withAlpha(200),
                       fontSize: 12,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -314,6 +332,17 @@ class AnimatedAppDrawer extends StatelessWidget {
                   ),
 
                   _buildSectionLabel('SYSTEM', theme),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.storefront_rounded,
+                    title: 'Shop Settings',
+                    iconColor: Colors.teal,
+                    theme: theme,
+                    onTap: () => _navigatePush(
+                      context,
+                      const ShopSettingsScreen(),
+                    ),
+                  ),
                   _buildDrawerItem(
                     context,
                     icon: Icons.cloud_sync_rounded,

@@ -4,6 +4,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'dart:io';
 
+import '../core/config/establishment_config.dart';
+
 part 'app_database.g.dart';
 
 // ---------- Tables ----------
@@ -184,6 +186,23 @@ class PersonalFinanceTransactions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('ShopSettingsRow')
+class ShopSettingsTable extends Table {
+  @override
+  String get tableName => 'shop_settings';
+
+  TextColumn get id => text()();
+  TextColumn get businessName => text()();
+  TextColumn get ownerName => text().nullable()();
+  TextColumn get phone => text()();
+  TextColumn get address => text()();
+  TextColumn get services => text()();
+  TextColumn get upiId => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ---------- Database ----------
 
 @DriftDatabase(
@@ -202,6 +221,7 @@ class PersonalFinanceTransactions extends Table {
     Counters,
     PersonalFinanceAccounts,
     PersonalFinanceTransactions,
+    ShopSettingsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -209,7 +229,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e) : super();
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -227,6 +247,19 @@ class AppDatabase extends _$AppDatabase {
           openingBalance: const Value(0.0),
           createdDate: DateTime.now().toIso8601String(),
         ),
+      );
+      // seed default shop settings
+      await into(shopSettingsTable).insert(
+        ShopSettingsTableCompanion.insert(
+          id: 'primary_shop',
+          businessName: EstablishmentConfig.name,
+          ownerName: const Value(''),
+          phone: EstablishmentConfig.phone,
+          address: EstablishmentConfig.address,
+          services: EstablishmentConfig.services,
+          upiId: const Value(''),
+        ),
+        mode: InsertMode.insertOrIgnore,
       );
     },
     onUpgrade: (Migrator m, int from, int to) async {
@@ -260,6 +293,21 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(serviceJobs, serviceJobs.advancePaymentMode);
         await m.addColumn(serviceJobs, serviceJobs.advanceNotes);
         await m.addColumn(invoices, invoices.advanceAmount);
+      }
+      if (from < 7) {
+        await m.createTable(shopSettingsTable);
+        await into(shopSettingsTable).insert(
+          ShopSettingsTableCompanion.insert(
+            id: 'primary_shop',
+            businessName: EstablishmentConfig.name,
+            ownerName: const Value(''),
+            phone: EstablishmentConfig.phone,
+            address: EstablishmentConfig.address,
+            services: EstablishmentConfig.services,
+            upiId: const Value(''),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
       }
     },
   );

@@ -87,6 +87,7 @@ class ShareService {
     String? garageServices = EstablishmentConfig.services,
     String? garageAddress = EstablishmentConfig.address,
     String? garagePhone = EstablishmentConfig.phone,
+    String? upiId,
   }) {
     final buffer = StringBuffer();
     buffer.writeln('*$garageName*');
@@ -141,7 +142,26 @@ class ShareService {
     }
     buffer.writeln('------------------------------------');
     buffer.writeln('*Total: ₹${details.totalAmount.toStringAsFixed(2)}*');
+    if (details.invoice.advanceAmount > 0) {
+      buffer.writeln('Advance Paid: -₹${details.invoice.advanceAmount.toStringAsFixed(2)}');
+      buffer.writeln('------------------------------------');
+      buffer.writeln('*Balance Due: ₹${details.invoice.balanceDue.toStringAsFixed(2)}*');
+    }
     buffer.writeln('------------------------------------');
+
+    final dueAmount = details.invoice.advanceAmount > 0
+        ? (details.invoice.balanceDue > 0 ? details.invoice.balanceDue : 0.0)
+        : details.totalAmount;
+    if (upiId != null && upiId.trim().isNotEmpty && dueAmount > 0) {
+      buffer.writeln('*Pay via UPI:*');
+      buffer.writeln('UPI ID: ${upiId.trim()}');
+      final encodedPn = Uri.encodeComponent(garageName.trim());
+      final amtStr = dueAmount.toStringAsFixed(2);
+      final encodedTn = Uri.encodeComponent('Bill #${details.invoice.invoiceNumber}');
+      buffer.writeln('Payment Link: upi://pay?pa=${upiId.trim()}&pn=$encodedPn&am=$amtStr&cu=INR&tn=$encodedTn');
+      buffer.writeln('------------------------------------');
+    }
+
     buffer.writeln('Thank you for your business!');
 
     return buffer.toString();

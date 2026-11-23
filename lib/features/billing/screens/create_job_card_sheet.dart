@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../customers/customers.dart';
+import '../models/service.dart';
 import '../providers/billing_provider.dart';
 
 class CreateJobCardSheet extends ConsumerStatefulWidget {
   final Customer? preselectedCustomer;
+  final Service? existingJob;
 
   const CreateJobCardSheet({
     super.key,
     this.preselectedCustomer,
+    this.existingJob,
   });
 
   static Future<void> show(
     BuildContext context, {
     Customer? preselectedCustomer,
+    Service? existingJob,
   }) {
     return showModalBottomSheet<void>(
       context: context,
@@ -22,6 +26,7 @@ class CreateJobCardSheet extends ConsumerStatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => CreateJobCardSheet(
         preselectedCustomer: preselectedCustomer,
+        existingJob: existingJob,
       ),
     );
   }
@@ -46,10 +51,23 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
     'Bank Transfer',
   ];
 
+  bool get _isEditing => widget.existingJob != null;
+
   @override
   void initState() {
     super.initState();
     _selectedCustomer = widget.preselectedCustomer;
+    if (_isEditing) {
+      final job = widget.existingJob!;
+      _problemController.text = job.problemDesc ?? '';
+      _advanceController.text = job.advanceAmount > 0
+          ? (job.advanceAmount % 1 == 0
+              ? job.advanceAmount.toInt().toString()
+              : job.advanceAmount.toString())
+          : '';
+      _paymentMode = job.advancePaymentMode ?? 'Cash';
+      _notesController.text = job.advanceNotes ?? '';
+    }
   }
 
   @override
@@ -89,15 +107,27 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
 
     try {
       final billingService = ref.read(billingServiceProvider);
-      await billingService.createJobCard(
-        customerId: _selectedCustomer!.id,
-        problemDesc: _problemController.text.trim(),
-        advanceAmount: advanceAmount,
-        advancePaymentMode: advanceAmount > 0 ? _paymentMode : null,
-        advanceNotes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-      );
+      if (_isEditing) {
+        await billingService.updateJobCard(
+          serviceId: widget.existingJob!.id,
+          problemDesc: _problemController.text.trim(),
+          advanceAmount: advanceAmount,
+          advancePaymentMode: advanceAmount > 0 ? _paymentMode : null,
+          advanceNotes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        );
+      } else {
+        await billingService.createJobCard(
+          customerId: _selectedCustomer!.id,
+          problemDesc: _problemController.text.trim(),
+          advanceAmount: advanceAmount,
+          advancePaymentMode: advanceAmount > 0 ? _paymentMode : null,
+          advanceNotes: _notesController.text.trim().isEmpty
+              ? null
+              : _notesController.text.trim(),
+        );
+      }
 
       ref.invalidate(pendingJobCardsProvider);
       ref.invalidate(
@@ -110,9 +140,11 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            advanceAmount > 0
-                ? 'Job card booked with ₹${advanceAmount.toStringAsFixed(0)} advance recorded.'
-                : 'Job card booked successfully.',
+            _isEditing
+                ? 'Job card updated successfully.'
+                : (advanceAmount > 0
+                    ? 'Job card booked with ₹${advanceAmount.toStringAsFixed(0)} advance recorded.'
+                    : 'Job card booked successfully.'),
           ),
           backgroundColor: Colors.green.shade800,
         ),
@@ -121,7 +153,9 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to create job card: $e'),
+          content: Text(
+            'Failed to ${_isEditing ? "update" : "create"} job card: $e',
+          ),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -137,6 +171,18 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
     final theme = Theme.of(context);
     final customersAsync = ref.watch(customersProvider);
     final allCustomers = customersAsync.asData?.value ?? [];
+
+    if (_selectedCustomer == null &&
+        widget.existingJob != null &&
+        allCustomers.isNotEmpty) {
+      final match = allCustomers.cast<Customer?>().firstWhere(
+            (c) => c?.id == widget.existingJob!.customerId,
+            orElse: () => null,
+          );
+      if (match != null) {
+        _selectedCustomer = match;
+      }
+    }
 
     return Padding(
       padding: EdgeInsets.only(
@@ -186,13 +232,17 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'New Job Card & Advance',
+                            _isEditing
+                                ? 'Edit Job Card & Advance'
+                                : 'New Job Card & Advance',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            'Track pending work & upfront customer payments',
+                            _isEditing
+                                ? 'Update work description or advance payment'
+                                : 'Track pending work & upfront customer payments',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.outline,
                             ),
@@ -377,7 +427,9 @@ class _CreateJobCardSheetState extends ConsumerState<CreateJobCardSheet> {
                         )
                       : const Icon(Icons.check_circle_rounded),
                   label: Text(
-                    _isSaving ? 'Saving...' : 'Create Job Card',
+                    _isSaving
+                        ? 'Saving...'
+                        : (_isEditing ? 'Update Job Card' : 'Create Job Card'),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

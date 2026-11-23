@@ -6,12 +6,12 @@ import 'package:inventory_management_system/database/app_database.dart';
 void main() {
   group('Database Migration Safety', () {
     test(
-      'fresh database has schemaVersion 6 and seeds default owner account',
+      'fresh database has schemaVersion 7 and seeds default owner account and shop settings',
       () async {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
 
-        expect(db.schemaVersion, equals(6));
+        expect(db.schemaVersion, equals(7));
 
         // Verify all tables exist and default account is present
         final accounts = await db.select(db.personalFinanceAccounts).get();
@@ -22,6 +22,11 @@ void main() {
         // Verify stock movements table exists
         final movements = await db.select(db.stockMovements).get();
         expect(movements, isEmpty);
+
+        // Verify shop settings seeded
+        final settings = await db.select(db.shopSettingsTable).get();
+        expect(settings.length, equals(1));
+        expect(settings.first.businessName, equals('Mestry Motors'));
       },
     );
 

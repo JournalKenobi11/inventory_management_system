@@ -206,4 +206,68 @@ void main() {
       throwsA(isA<DuplicatePartNumberException>()),
     );
   });
+
+  test('sorts inventory parts with priority: low stock first (lowest stock at top), then alphabetically', () async {
+    // Normal in-stock items
+    await service.createPart(
+      partNumber: 'P-Z',
+      partName: 'Zebra Part',
+      purchasePrice: 100,
+      sellingPrice: 150,
+      currentStock: 25,
+      lowStockThreshold: 5,
+    );
+    await service.createPart(
+      partNumber: 'P-A',
+      partName: 'Alpha Part',
+      purchasePrice: 100,
+      sellingPrice: 150,
+      currentStock: 10,
+      lowStockThreshold: 5,
+    );
+
+    // Low stock items
+    await service.createPart(
+      partNumber: 'P-LOW-3',
+      partName: 'Clutch Wire',
+      purchasePrice: 100,
+      sellingPrice: 150,
+      currentStock: 3,
+      lowStockThreshold: 5,
+    );
+    await service.createPart(
+      partNumber: 'P-ZERO',
+      partName: 'Battery Unit',
+      purchasePrice: 1000,
+      sellingPrice: 1500,
+      currentStock: 0,
+      lowStockThreshold: 5,
+    );
+    await service.createPart(
+      partNumber: 'P-LOW-1',
+      partName: 'Air Filter',
+      purchasePrice: 100,
+      sellingPrice: 150,
+      currentStock: 1,
+      lowStockThreshold: 5,
+    );
+
+    final sortedParts = await service.getAllParts();
+    final names = sortedParts.map((p) => p.partName).toList();
+
+    // Priority 1 & 2: Low stock sorted by lowest stock first
+    // 0 stock: BATTERY UNIT
+    // 1 stock: AIR FILTER
+    // 3 stock: CLUTCH WIRE
+    // Priority 3: Normal in-stock sorted alphabetically
+    // 10 stock: ALPHA PART
+    // 25 stock: ZEBRA PART
+    expect(names, [
+      'BATTERY UNIT',
+      'AIR FILTER',
+      'CLUTCH WIRE',
+      'ALPHA PART',
+      'ZEBRA PART',
+    ]);
+  });
 }

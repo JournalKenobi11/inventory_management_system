@@ -75,12 +75,48 @@ class PartService {
     return repository.getByPartNumber(partNumber.trim());
   }
 
-  Future<List<Part>> getAllParts() {
-    return repository.getAll();
+  /// Sorts a list of parts according to inventory priority:
+  /// 1. Low stock parts first (`currentStock <= lowStockThreshold`).
+  /// 2. Among low stock parts, lowest stock first (e.g., 0 stock at the top).
+  /// 3. Normal in-stock parts next (`currentStock > lowStockThreshold`), sorted alphabetically by partName.
+  List<Part> sortPartsByInventoryPriority(List<Part> parts) {
+    return List<Part>.from(parts)..sort(compareByInventoryPriority);
   }
 
-  Future<List<Part>> getLowStockParts() {
-    return repository.getLowStock();
+  /// Comparator implementing the inventory priority ordering.
+  static int compareByInventoryPriority(Part a, Part b) {
+    final aIsLow = a.currentStock <= a.lowStockThreshold;
+    final bIsLow = b.currentStock <= b.lowStockThreshold;
+
+    // 1. Low stock parts first
+    if (aIsLow && !bIsLow) return -1;
+    if (!aIsLow && bIsLow) return 1;
+
+    // 2. Among low stock parts, lowest stock first
+    if (aIsLow && bIsLow) {
+      final stockCompare = a.currentStock.compareTo(b.currentStock);
+      if (stockCompare != 0) return stockCompare;
+      final nameCompare =
+          a.partName.toLowerCase().compareTo(b.partName.toLowerCase());
+      if (nameCompare != 0) return nameCompare;
+      return a.partNumber.toLowerCase().compareTo(b.partNumber.toLowerCase());
+    }
+
+    // 3. Normal in-stock parts sorted alphabetically by partName
+    final nameCompare =
+        a.partName.toLowerCase().compareTo(b.partName.toLowerCase());
+    if (nameCompare != 0) return nameCompare;
+    return a.partNumber.toLowerCase().compareTo(b.partNumber.toLowerCase());
+  }
+
+  Future<List<Part>> getAllParts() async {
+    final parts = await repository.getAll();
+    return sortPartsByInventoryPriority(parts);
+  }
+
+  Future<List<Part>> getLowStockParts() async {
+    final parts = await repository.getLowStock();
+    return sortPartsByInventoryPriority(parts);
   }
 
   Future<List<StockMovement>> getStockMovements(String partId) async {

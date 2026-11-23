@@ -5894,6 +5894,466 @@ class PersonalFinanceTransactionsCompanion
   }
 }
 
+class $ShopSettingsTableTable extends ShopSettingsTable
+    with TableInfo<$ShopSettingsTableTable, ShopSettingsRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ShopSettingsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _businessNameMeta = const VerificationMeta(
+    'businessName',
+  );
+  @override
+  late final GeneratedColumn<String> businessName = GeneratedColumn<String>(
+    'business_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerNameMeta = const VerificationMeta(
+    'ownerName',
+  );
+  @override
+  late final GeneratedColumn<String> ownerName = GeneratedColumn<String>(
+    'owner_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _phoneMeta = const VerificationMeta('phone');
+  @override
+  late final GeneratedColumn<String> phone = GeneratedColumn<String>(
+    'phone',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _addressMeta = const VerificationMeta(
+    'address',
+  );
+  @override
+  late final GeneratedColumn<String> address = GeneratedColumn<String>(
+    'address',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _servicesMeta = const VerificationMeta(
+    'services',
+  );
+  @override
+  late final GeneratedColumn<String> services = GeneratedColumn<String>(
+    'services',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _upiIdMeta = const VerificationMeta('upiId');
+  @override
+  late final GeneratedColumn<String> upiId = GeneratedColumn<String>(
+    'upi_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    businessName,
+    ownerName,
+    phone,
+    address,
+    services,
+    upiId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'shop_settings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ShopSettingsRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('business_name')) {
+      context.handle(
+        _businessNameMeta,
+        businessName.isAcceptableOrUnknown(
+          data['business_name']!,
+          _businessNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_businessNameMeta);
+    }
+    if (data.containsKey('owner_name')) {
+      context.handle(
+        _ownerNameMeta,
+        ownerName.isAcceptableOrUnknown(data['owner_name']!, _ownerNameMeta),
+      );
+    }
+    if (data.containsKey('phone')) {
+      context.handle(
+        _phoneMeta,
+        phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_phoneMeta);
+    }
+    if (data.containsKey('address')) {
+      context.handle(
+        _addressMeta,
+        address.isAcceptableOrUnknown(data['address']!, _addressMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_addressMeta);
+    }
+    if (data.containsKey('services')) {
+      context.handle(
+        _servicesMeta,
+        services.isAcceptableOrUnknown(data['services']!, _servicesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_servicesMeta);
+    }
+    if (data.containsKey('upi_id')) {
+      context.handle(
+        _upiIdMeta,
+        upiId.isAcceptableOrUnknown(data['upi_id']!, _upiIdMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ShopSettingsRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ShopSettingsRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      businessName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}business_name'],
+      )!,
+      ownerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_name'],
+      ),
+      phone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone'],
+      )!,
+      address: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}address'],
+      )!,
+      services: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}services'],
+      )!,
+      upiId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}upi_id'],
+      ),
+    );
+  }
+
+  @override
+  $ShopSettingsTableTable createAlias(String alias) {
+    return $ShopSettingsTableTable(attachedDatabase, alias);
+  }
+}
+
+class ShopSettingsRow extends DataClass implements Insertable<ShopSettingsRow> {
+  final String id;
+  final String businessName;
+  final String? ownerName;
+  final String phone;
+  final String address;
+  final String services;
+  final String? upiId;
+  const ShopSettingsRow({
+    required this.id,
+    required this.businessName,
+    this.ownerName,
+    required this.phone,
+    required this.address,
+    required this.services,
+    this.upiId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['business_name'] = Variable<String>(businessName);
+    if (!nullToAbsent || ownerName != null) {
+      map['owner_name'] = Variable<String>(ownerName);
+    }
+    map['phone'] = Variable<String>(phone);
+    map['address'] = Variable<String>(address);
+    map['services'] = Variable<String>(services);
+    if (!nullToAbsent || upiId != null) {
+      map['upi_id'] = Variable<String>(upiId);
+    }
+    return map;
+  }
+
+  ShopSettingsTableCompanion toCompanion(bool nullToAbsent) {
+    return ShopSettingsTableCompanion(
+      id: Value(id),
+      businessName: Value(businessName),
+      ownerName: ownerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ownerName),
+      phone: Value(phone),
+      address: Value(address),
+      services: Value(services),
+      upiId: upiId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(upiId),
+    );
+  }
+
+  factory ShopSettingsRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ShopSettingsRow(
+      id: serializer.fromJson<String>(json['id']),
+      businessName: serializer.fromJson<String>(json['businessName']),
+      ownerName: serializer.fromJson<String?>(json['ownerName']),
+      phone: serializer.fromJson<String>(json['phone']),
+      address: serializer.fromJson<String>(json['address']),
+      services: serializer.fromJson<String>(json['services']),
+      upiId: serializer.fromJson<String?>(json['upiId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'businessName': serializer.toJson<String>(businessName),
+      'ownerName': serializer.toJson<String?>(ownerName),
+      'phone': serializer.toJson<String>(phone),
+      'address': serializer.toJson<String>(address),
+      'services': serializer.toJson<String>(services),
+      'upiId': serializer.toJson<String?>(upiId),
+    };
+  }
+
+  ShopSettingsRow copyWith({
+    String? id,
+    String? businessName,
+    Value<String?> ownerName = const Value.absent(),
+    String? phone,
+    String? address,
+    String? services,
+    Value<String?> upiId = const Value.absent(),
+  }) => ShopSettingsRow(
+    id: id ?? this.id,
+    businessName: businessName ?? this.businessName,
+    ownerName: ownerName.present ? ownerName.value : this.ownerName,
+    phone: phone ?? this.phone,
+    address: address ?? this.address,
+    services: services ?? this.services,
+    upiId: upiId.present ? upiId.value : this.upiId,
+  );
+  ShopSettingsRow copyWithCompanion(ShopSettingsTableCompanion data) {
+    return ShopSettingsRow(
+      id: data.id.present ? data.id.value : this.id,
+      businessName: data.businessName.present
+          ? data.businessName.value
+          : this.businessName,
+      ownerName: data.ownerName.present ? data.ownerName.value : this.ownerName,
+      phone: data.phone.present ? data.phone.value : this.phone,
+      address: data.address.present ? data.address.value : this.address,
+      services: data.services.present ? data.services.value : this.services,
+      upiId: data.upiId.present ? data.upiId.value : this.upiId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShopSettingsRow(')
+          ..write('id: $id, ')
+          ..write('businessName: $businessName, ')
+          ..write('ownerName: $ownerName, ')
+          ..write('phone: $phone, ')
+          ..write('address: $address, ')
+          ..write('services: $services, ')
+          ..write('upiId: $upiId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, businessName, ownerName, phone, address, services, upiId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ShopSettingsRow &&
+          other.id == this.id &&
+          other.businessName == this.businessName &&
+          other.ownerName == this.ownerName &&
+          other.phone == this.phone &&
+          other.address == this.address &&
+          other.services == this.services &&
+          other.upiId == this.upiId);
+}
+
+class ShopSettingsTableCompanion extends UpdateCompanion<ShopSettingsRow> {
+  final Value<String> id;
+  final Value<String> businessName;
+  final Value<String?> ownerName;
+  final Value<String> phone;
+  final Value<String> address;
+  final Value<String> services;
+  final Value<String?> upiId;
+  final Value<int> rowid;
+  const ShopSettingsTableCompanion({
+    this.id = const Value.absent(),
+    this.businessName = const Value.absent(),
+    this.ownerName = const Value.absent(),
+    this.phone = const Value.absent(),
+    this.address = const Value.absent(),
+    this.services = const Value.absent(),
+    this.upiId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ShopSettingsTableCompanion.insert({
+    required String id,
+    required String businessName,
+    this.ownerName = const Value.absent(),
+    required String phone,
+    required String address,
+    required String services,
+    this.upiId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       businessName = Value(businessName),
+       phone = Value(phone),
+       address = Value(address),
+       services = Value(services);
+  static Insertable<ShopSettingsRow> custom({
+    Expression<String>? id,
+    Expression<String>? businessName,
+    Expression<String>? ownerName,
+    Expression<String>? phone,
+    Expression<String>? address,
+    Expression<String>? services,
+    Expression<String>? upiId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (businessName != null) 'business_name': businessName,
+      if (ownerName != null) 'owner_name': ownerName,
+      if (phone != null) 'phone': phone,
+      if (address != null) 'address': address,
+      if (services != null) 'services': services,
+      if (upiId != null) 'upi_id': upiId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ShopSettingsTableCompanion copyWith({
+    Value<String>? id,
+    Value<String>? businessName,
+    Value<String?>? ownerName,
+    Value<String>? phone,
+    Value<String>? address,
+    Value<String>? services,
+    Value<String?>? upiId,
+    Value<int>? rowid,
+  }) {
+    return ShopSettingsTableCompanion(
+      id: id ?? this.id,
+      businessName: businessName ?? this.businessName,
+      ownerName: ownerName ?? this.ownerName,
+      phone: phone ?? this.phone,
+      address: address ?? this.address,
+      services: services ?? this.services,
+      upiId: upiId ?? this.upiId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (businessName.present) {
+      map['business_name'] = Variable<String>(businessName.value);
+    }
+    if (ownerName.present) {
+      map['owner_name'] = Variable<String>(ownerName.value);
+    }
+    if (phone.present) {
+      map['phone'] = Variable<String>(phone.value);
+    }
+    if (address.present) {
+      map['address'] = Variable<String>(address.value);
+    }
+    if (services.present) {
+      map['services'] = Variable<String>(services.value);
+    }
+    if (upiId.present) {
+      map['upi_id'] = Variable<String>(upiId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ShopSettingsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('businessName: $businessName, ')
+          ..write('ownerName: $ownerName, ')
+          ..write('phone: $phone, ')
+          ..write('address: $address, ')
+          ..write('services: $services, ')
+          ..write('upiId: $upiId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5913,6 +6373,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $PersonalFinanceAccountsTable(this);
   late final $PersonalFinanceTransactionsTable personalFinanceTransactions =
       $PersonalFinanceTransactionsTable(this);
+  late final $ShopSettingsTableTable shopSettingsTable =
+      $ShopSettingsTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5932,6 +6394,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     counters,
     personalFinanceAccounts,
     personalFinanceTransactions,
+    shopSettingsTable,
   ];
 }
 
@@ -11034,6 +11497,255 @@ typedef $$PersonalFinanceTransactionsTableProcessedTableManager =
       PersonalFinanceTransaction,
       PrefetchHooks Function({bool accountId})
     >;
+typedef $$ShopSettingsTableTableCreateCompanionBuilder =
+    ShopSettingsTableCompanion Function({
+      required String id,
+      required String businessName,
+      Value<String?> ownerName,
+      required String phone,
+      required String address,
+      required String services,
+      Value<String?> upiId,
+      Value<int> rowid,
+    });
+typedef $$ShopSettingsTableTableUpdateCompanionBuilder =
+    ShopSettingsTableCompanion Function({
+      Value<String> id,
+      Value<String> businessName,
+      Value<String?> ownerName,
+      Value<String> phone,
+      Value<String> address,
+      Value<String> services,
+      Value<String?> upiId,
+      Value<int> rowid,
+    });
+
+class $$ShopSettingsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $ShopSettingsTableTable> {
+  $$ShopSettingsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get businessName => $composableBuilder(
+    column: $table.businessName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerName => $composableBuilder(
+    column: $table.ownerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get services => $composableBuilder(
+    column: $table.services,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get upiId => $composableBuilder(
+    column: $table.upiId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ShopSettingsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $ShopSettingsTableTable> {
+  $$ShopSettingsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get businessName => $composableBuilder(
+    column: $table.businessName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerName => $composableBuilder(
+    column: $table.ownerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phone => $composableBuilder(
+    column: $table.phone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get address => $composableBuilder(
+    column: $table.address,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get services => $composableBuilder(
+    column: $table.services,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get upiId => $composableBuilder(
+    column: $table.upiId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ShopSettingsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ShopSettingsTableTable> {
+  $$ShopSettingsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get businessName => $composableBuilder(
+    column: $table.businessName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get ownerName =>
+      $composableBuilder(column: $table.ownerName, builder: (column) => column);
+
+  GeneratedColumn<String> get phone =>
+      $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get address =>
+      $composableBuilder(column: $table.address, builder: (column) => column);
+
+  GeneratedColumn<String> get services =>
+      $composableBuilder(column: $table.services, builder: (column) => column);
+
+  GeneratedColumn<String> get upiId =>
+      $composableBuilder(column: $table.upiId, builder: (column) => column);
+}
+
+class $$ShopSettingsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ShopSettingsTableTable,
+          ShopSettingsRow,
+          $$ShopSettingsTableTableFilterComposer,
+          $$ShopSettingsTableTableOrderingComposer,
+          $$ShopSettingsTableTableAnnotationComposer,
+          $$ShopSettingsTableTableCreateCompanionBuilder,
+          $$ShopSettingsTableTableUpdateCompanionBuilder,
+          (
+            ShopSettingsRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ShopSettingsTableTable,
+              ShopSettingsRow
+            >,
+          ),
+          ShopSettingsRow,
+          PrefetchHooks Function()
+        > {
+  $$ShopSettingsTableTableTableManager(
+    _$AppDatabase db,
+    $ShopSettingsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ShopSettingsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ShopSettingsTableTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ShopSettingsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> businessName = const Value.absent(),
+                Value<String?> ownerName = const Value.absent(),
+                Value<String> phone = const Value.absent(),
+                Value<String> address = const Value.absent(),
+                Value<String> services = const Value.absent(),
+                Value<String?> upiId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ShopSettingsTableCompanion(
+                id: id,
+                businessName: businessName,
+                ownerName: ownerName,
+                phone: phone,
+                address: address,
+                services: services,
+                upiId: upiId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String businessName,
+                Value<String?> ownerName = const Value.absent(),
+                required String phone,
+                required String address,
+                required String services,
+                Value<String?> upiId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ShopSettingsTableCompanion.insert(
+                id: id,
+                businessName: businessName,
+                ownerName: ownerName,
+                phone: phone,
+                address: address,
+                services: services,
+                upiId: upiId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ShopSettingsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ShopSettingsTableTable,
+      ShopSettingsRow,
+      $$ShopSettingsTableTableFilterComposer,
+      $$ShopSettingsTableTableOrderingComposer,
+      $$ShopSettingsTableTableAnnotationComposer,
+      $$ShopSettingsTableTableCreateCompanionBuilder,
+      $$ShopSettingsTableTableUpdateCompanionBuilder,
+      (
+        ShopSettingsRow,
+        BaseReferences<_$AppDatabase, $ShopSettingsTableTable, ShopSettingsRow>,
+      ),
+      ShopSettingsRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11073,4 +11785,6 @@ class $AppDatabaseManager {
         _db,
         _db.personalFinanceTransactions,
       );
+  $$ShopSettingsTableTableTableManager get shopSettingsTable =>
+      $$ShopSettingsTableTableTableManager(_db, _db.shopSettingsTable);
 }

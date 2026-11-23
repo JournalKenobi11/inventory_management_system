@@ -279,64 +279,140 @@ class CustomerDetailScreen extends ConsumerWidget {
                         ),
                       ],
                       const SizedBox(height: 12),
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (job.advanceAmount > 0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.green.shade300,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.payments_rounded,
-                                    size: 15,
-                                    color: Colors.green.shade800,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '₹${job.advanceAmount.toStringAsFixed(0)} Advance (${job.advancePaymentMode ?? "Cash"})',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green.shade800,
+                          // Top row: Advance Badge & Complete & Bill Button
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              if (job.advanceAmount > 0)
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: Colors.green.shade300,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.payments_rounded,
+                                          size: 15,
+                                          color: Colors.green.shade800,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '₹${job.advanceAmount.toStringAsFixed(0)} Advance (${job.advancePaymentMode ?? "Cash"})',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green.shade800,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            )
-                          else
-                            const Text(
-                              'No Advance Paid',
-                              style: TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          const Spacer(),
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BillingScreen(
-                                    existingPendingJob: job,
-                                    initialCustomer: customer,
+                                )
+                              else
+                                const Text(
+                                  'No Advance Paid',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
                                   ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(Icons.receipt_long, size: 16),
-                            label: const Text('Complete & Bill'),
+                              FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BillingScreen(
+                                        existingPendingJob: job,
+                                        initialCustomer: customer,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.receipt_long, size: 16),
+                                label: const Text('Complete & Bill'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Bottom row: Edit and Delete (in red)
+                          Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: [
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                  foregroundColor:
+                                      theme.colorScheme.onSurfaceVariant,
+                                  side: BorderSide(
+                                    color: theme.colorScheme.outlineVariant,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  CreateJobCardSheet.show(
+                                    context,
+                                    preselectedCustomer: customer,
+                                    existingJob: job,
+                                  );
+                                },
+                                icon: const Icon(Icons.edit_outlined, size: 15),
+                                label: const Text('Edit',
+                                    style: TextStyle(fontSize: 12)),
+                              ),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                  backgroundColor: Colors.red.shade50,
+                                  foregroundColor: Colors.red.shade700,
+                                  side: BorderSide(color: Colors.red.shade200),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                ),
+                                onPressed: () =>
+                                    _confirmCancelJobCard(context, ref, job),
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 15,
+                                  color: Colors.red.shade700,
+                                ),
+                                label: Text(
+                                  'Delete',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -349,6 +425,48 @@ class CustomerDetailScreen extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Future<void> _confirmCancelJobCard(
+    BuildContext context,
+    WidgetRef ref,
+    Service job,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel Work Order?'),
+        content: Text(
+          job.advanceAmount > 0
+              ? 'This job card has an advance of ₹${job.advanceAmount.toStringAsFixed(0)} recorded. Make sure any advance received has been refunded or settled before cancelling.'
+              : 'Are you sure you want to cancel this pending work order?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Back'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red.shade700,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirm Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await ref.read(billingServiceProvider).cancelJobCard(job.id);
+      ref.invalidate(pendingJobCardsProvider);
+      ref.invalidate(customerPendingJobCardsProvider(job.customerId));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Job card cancelled.')),
+        );
+      }
+    }
   }
 
   Widget _buildCustomerInfoCard(BuildContext context, ThemeData theme) {

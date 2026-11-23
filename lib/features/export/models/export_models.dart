@@ -36,6 +36,7 @@ class InvoicePdfData {
   final String? gstNumber;
   final bool isGstRegistered;
   final double gstRatePercentage;
+  final String? upiId;
 
   const InvoicePdfData({
     required this.invoice,
@@ -51,6 +52,7 @@ class InvoicePdfData {
     this.gstNumber,
     this.isGstRegistered = false,
     this.gstRatePercentage = 18.0,
+    this.upiId,
   });
 
   factory InvoicePdfData.fromDetails(
@@ -62,6 +64,7 @@ class InvoicePdfData {
     String? gstNumber,
     bool isGstRegistered = false,
     double gstRatePercentage = 18.0,
+    String? upiId,
   }) {
     return InvoicePdfData(
       invoice: details.invoice,
@@ -88,6 +91,7 @@ class InvoicePdfData {
       gstNumber: gstNumber,
       isGstRegistered: isGstRegistered,
       gstRatePercentage: gstRatePercentage,
+      upiId: upiId,
     );
   }
 
@@ -106,6 +110,28 @@ class InvoicePdfData {
 
   double get grandTotal =>
       isGstRegistered ? (subtotal + totalGstAmount) : totalAmount;
+
+  /// Effective payable amount: if there is an advance, use balance due (or 0 if fully paid);
+  /// otherwise grandTotal.
+  double get payableAmount {
+    if (invoice.advanceAmount > 0) {
+      return invoice.balanceDue > 0 ? invoice.balanceDue : 0.0;
+    }
+    return grandTotal;
+  }
+
+  /// Builds standard NPCI UPI URI if [upiId] is configured.
+  String? get upiUri {
+    final cleanUpi = upiId?.trim() ?? '';
+    if (cleanUpi.isEmpty) return null;
+
+    final encodedName = Uri.encodeComponent(garageName.trim());
+    final amountFormatted = (payableAmount < 0 ? 0.0 : payableAmount).toStringAsFixed(2);
+    final note = 'Bill #${invoice.invoiceNumber}';
+    final encodedNote = Uri.encodeComponent(note);
+
+    return 'upi://pay?pa=$cleanUpi&pn=$encodedName&am=$amountFormatted&cu=INR&tn=$encodedNote';
+  }
 }
 
 class BackupSummary {

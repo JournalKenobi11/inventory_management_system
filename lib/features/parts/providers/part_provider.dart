@@ -78,6 +78,6 @@ class PartNotifier extends AsyncNotifier<List<Part>> {
           (part.category?.toLowerCase().contains(normalizedQuery) ?? false);
     }).toList();
 
-    state = AsyncData(filtered);
+    state = AsyncData(service.sortPartsByInventoryPriority(filtered));
   }
 }

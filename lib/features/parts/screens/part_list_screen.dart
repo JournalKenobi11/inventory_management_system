@@ -338,9 +338,25 @@ class _PartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLowStock = part.currentStock <= part.lowStockThreshold;
+    final isOutOfStock = part.currentStock == 0;
+    final badgeColor = isOutOfStock
+        ? Colors.red.shade700
+        : (isLowStock ? Colors.orange.shade800 : Colors.green.shade700);
+    final badgeBgColor = isOutOfStock
+        ? Colors.red.shade50
+        : (isLowStock ? Colors.orange.shade50 : Colors.green.shade50);
+    final badgeBorderColor = isOutOfStock
+        ? Colors.red.shade200
+        : (isLowStock ? Colors.orange.shade200 : Colors.green.shade200);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: isLowStock
+            ? BorderSide(color: badgeBorderColor, width: 1.5)
+            : BorderSide.none,
+      ),
       child: InkWell(
         onTap: onEdit,
         borderRadius: BorderRadius.circular(12),
@@ -379,28 +395,36 @@ class _PartCard extends StatelessWidget {
                   const SizedBox(width: 12),
                   Column(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
                           '${part.currentStock}',
                           style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: isLowStock
-                                ? Theme.of(context).colorScheme.error
-                                : null,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: badgeColor,
                           ),
                         ),
                       ),
-                      Text(
-                        isLowStock ? 'LOW STOCK' : 'IN STOCK',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: isLowStock
-                              ? Theme.of(context).colorScheme.error
-                              : null,
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: badgeBgColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: badgeBorderColor),
+                        ),
+                        child: Text(
+                          isLowStock ? 'LOW STOCK' : 'IN STOCK',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.4,
+                            color: badgeColor,
+                          ),
                         ),
                       ),
                     ],
