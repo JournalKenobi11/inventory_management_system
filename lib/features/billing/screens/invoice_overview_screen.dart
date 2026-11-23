@@ -13,6 +13,7 @@ import '../../settings/settings.dart';
 import '../models/bill_terms.dart';
 import '../models/invoice_details.dart';
 import '../providers/billing_provider.dart';
+import '../widgets/printable_invoice_document.dart';
 import 'billing_screen.dart';
 
 class InvoiceOverviewScreen extends ConsumerStatefulWidget {
@@ -87,8 +88,8 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
         throw Exception('Bill view is not ready to capture');
       }
 
-      // 2.5x pixel ratio produces high-resolution, ultra-crisp image with sharp text and scan-ready QR
-      final image = await boundary.toImage(pixelRatio: 2.5);
+      // 2.0x pixel ratio produces high-resolution (1400px wide), ultra-crisp image with sharp text and scan-ready QR
+      final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
 
       if (byteData == null) {
@@ -263,76 +264,94 @@ class _InvoiceOverviewScreenState extends ConsumerState<InvoiceOverviewScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 720),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Bill Card Content to be captured as crisp PNG image
-                  RepaintBoundary(
-                    key: _billCaptureKey,
-                    child: Container(
-                      color: theme.scaffoldBackgroundColor,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 1. Success & Status Banner
-                          _buildHeaderCard(details, theme),
-                          const SizedBox(height: 12),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 720),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 1. Success & Status Banner
+                      _buildHeaderCard(details, theme),
+                      const SizedBox(height: 12),
 
-                          // 2. Customer & Vehicle Information
-                          _buildCustomerCard(details, theme, isMobileValid),
-                          const SizedBox(height: 12),
+                      // 2. Customer & Vehicle Information
+                      _buildCustomerCard(details, theme, isMobileValid),
+                      const SizedBox(height: 12),
 
-                          // 3. Service / Problem Description
-                          if (details.service.problemDesc != null &&
-                              details.service.problemDesc!.trim().isNotEmpty) ...[
-                            _buildServiceCard(details, theme),
-                            const SizedBox(height: 12),
-                          ],
+                      // 3. Service / Problem Description
+                      if (details.service.problemDesc != null &&
+                          details.service.problemDesc!.trim().isNotEmpty) ...[
+                        _buildServiceCard(details, theme),
+                        const SizedBox(height: 12),
+                      ],
 
-                          // 4. Parts Used List / Table
-                          _buildPartsCard(details, theme),
-                          const SizedBox(height: 12),
+                      // 4. Parts Used List / Table
+                      _buildPartsCard(details, theme),
+                      const SizedBox(height: 12),
 
-                          // 5. Labour Services Breakdown
-                          if (details.service.labourEntries.isNotEmpty ||
-                              details.labourCharge > 0) ...[
-                            _buildLabourBreakdownCard(details, theme),
-                            const SizedBox(height: 12),
-                          ],
+                      // 5. Labour Services Breakdown
+                      if (details.service.labourEntries.isNotEmpty ||
+                          details.labourCharge > 0) ...[
+                        _buildLabourBreakdownCard(details, theme),
+                        const SizedBox(height: 12),
+                      ],
 
-                          // 6. Cost Breakdown & Totals
-                          _buildSummaryCard(details, theme),
-                          const SizedBox(height: 16),
+                      // 6. Cost Breakdown & Totals
+                      _buildSummaryCard(details, theme),
+                      const SizedBox(height: 16),
 
-                          // 7. Report Section (Service Summary)
-                          if (details.service.serviceReport != null &&
-                              details.service.serviceReport!.trim().isNotEmpty) ...[
-                            _buildReportCard(details, theme),
-                            const SizedBox(height: 16),
-                          ],
+                      // 7. Report Section (Service Summary)
+                      if (details.service.serviceReport != null &&
+                          details.service.serviceReport!.trim().isNotEmpty) ...[
+                        _buildReportCard(details, theme),
+                        const SizedBox(height: 16),
+                      ],
 
-                          // 8. Terms and Conditions (below Report section)
-                          _buildTermsAndConditionsCard(theme),
-                        ],
-                      ),
-                    ),
+                      // 8. Terms and Conditions (below Report section)
+                      _buildTermsAndConditionsCard(theme),
+                      const SizedBox(height: 20),
+
+                      // 9. Action Buttons
+                      _buildActionButtons(details),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // 9. Action Buttons
-                  _buildActionButtons(details),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+
+          // Offscreen render target for the official PDF-style printable invoice bill image
+          Positioned(
+            left: 0,
+            top: 0,
+            child: SizedBox(
+              width: 0,
+              height: 0,
+              child: OverflowBox(
+                minWidth: 700,
+                maxWidth: 700,
+                minHeight: 600,
+                maxHeight: 3000,
+                alignment: Alignment.topLeft,
+                child: RepaintBoundary(
+                  key: _billCaptureKey,
+                  child: Material(
+                    color: Colors.white,
+                    child: PrintableInvoiceDocument(
+                      data: _createPdfData(details),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
